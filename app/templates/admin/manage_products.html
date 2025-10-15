@@ -1,0 +1,68 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block admintitle %}Manajemen Produk{% endblock %}
+{% block adminheader %}Manajemen Produk{% endblock %}
+
+{% block admincontent %}
+<div class="admin-card animated-element">
+    <h3>Tambah Produk Baru</h3>
+    <form method="POST" action="{{ url_for('admin.admin_products') }}" enctype="multipart/form-data">
+        <div class="form-grid">
+            <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" required></div>
+            <div class="form-group"><label for="price">Harga</label><input type="number" id="price" name="price" step="1000" required></div>
+            <div class="form-group"><label for="stock">Stok</label><input type="number" id="stock" name="stock" value="10" required></div>
+            <div class="form-group"><label for="category">Kategori</label><input type="text" id="category" name="category" placeholder="cth: Hoodie, T-Shirt" required></div>
+            <div class="form-group"><label for="sizes">Ukuran (dengan koma)</label><input type="text" id="sizes" name="sizes" placeholder="cth: S, M, L, XL"></div>
+            <div class="form-group"><label for="colors">Warna (dengan koma)</label><input type="text" id="colors" name="colors" placeholder="cth: Hitam, Putih"></div>
+        </div>
+        <div class="form-group"><label for="description">Deskripsi</label><textarea id="description" name="description" rows="4" required></textarea></div>
+        <div class="form-group">
+            <label for="images">Gambar Produk (Bisa lebih dari satu, pilih gambar utama)</label>
+            <div>
+                <label for="images" class="custom-file-upload">Pilih Gambar</label>
+                <input type="file" id="images" name="images" accept="image/*" multiple required>
+                <span id="file-name" class="file-name-display">Belum ada file dipilih</span>
+            </div>
+            <input type="hidden" name="main_image" id="main_image_input">
+        </div>
+        <div id="image-previews" class="image-preview-container"></div>
+        <button type="submit" class="cta-button form-button" style="margin-top: 1rem;">Tambah Produk</button>
+    </form>
+</div>
+
+<div class="admin-card animated-element" data-animation-delay="200">
+    <h3>Daftar Produk</h3>
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Gambar</th><th>Nama</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Aksi</th>
+                </tr>
+            </thead>
+            <!-- Struktur body tabel untuk mendukung kartu yang bisa diciutkan di mobile -->
+            <tbody>
+                {% for product in products %}
+                <tr class="animated-element admin-card-row">
+                    <td data-label="ID:">{{ product.id }}</td>
+                    <td data-label="Gambar:"><img src="{{ url_for('static', filename='uploads/' + product.image_url) if product.image_url else 'https://placehold.co/60x60/1e293b/f1f5f9?text=Img' }}" alt="{{ product.name }}" width="50" style="border-radius: 5px; object-fit: cover;"></td>
+                    <td data-label="Nama:">{{ product.name }}</td>
+                    <!-- Detail yang bisa disembunyikan -->
+                    <td data-label="Kategori:" class="collapsible-detail">{{ product.category }}</td>
+                    <td data-label="Harga:" class="collapsible-detail">{{ product.price|rupiah }}</td>
+                    <td data-label="Stok:" class="collapsible-detail">{{ product.stock }}</td>
+                    <td data-label="Aksi:" class="action-buttons">
+                        <!-- Tombol untuk desktop -->
+                        <div class="desktop-actions">
+                           <a href="{{ url_for('admin.admin_edit_product', id=product.id) }}" class="btn-edit">Edit</a>
+                           <a href="{{ url_for('admin.delete_product', id=product.id) }}" class="btn-delete">Hapus</a>
+                        </div>
+                        <!-- Tombol untuk mobile -->
+                        <button class="mobile-details-toggle">Lihat Detail <i class="fas fa-chevron-down"></i></button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

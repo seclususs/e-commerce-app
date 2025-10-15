@@ -1,0 +1,23 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block admintitle %}Pengaturan Website{% endblock %}
+{% block adminheader %}Pengaturan Konten Website{% endblock %}
+
+{% block admincontent %}
+<div class="admin-card animated-element">
+    <form method="POST" action="{{ url_for('admin.admin_settings') }}">
+        <h3>Konten Halaman "Tentang Kami"</h3>
+        <div class="form-group"><label for="about_title">Judul Halaman</label><input type="text" id="about_title" name="about_title" value="{{ content.about_title }}"></div>
+        <div class="form-group"><label for="about_p1">Paragraf 1</label><textarea id="about_p1" name="about_p1" rows="4">{{ content.about_p1 }}</textarea></div>
+        <div class="form-group"><label for="about_p2">Paragraf 2</label><textarea id="about_p2" name="about_p2" rows="4">{{ content.about_p2 }}</textarea></div>
+        <div class="form-group"><label for="about_p3">Paragraf 3</label><textarea id="about_p3" name="about_p3" rows="4">{{ content.about_p3 }}</textarea></div>
+
+        <h3 style="margin-top:2rem;">Konten Kontak (Footer)</h3>
+         <div class="form-group"><label for="contact_email">Email Kontak</label><input type="email" id="contact_email" name="contact_email" value="{{ content.contact_email }}"></div>
+         <div class="form-group"><label for="contact_phone">Telepon Kontak</label><input type="text" id="contact_phone" name="contact_phone" value="{{ content.contact_phone }}"></div>
+         <div class="form-group"><label for="contact_location">Lokasi Kontak</label><input type="text" id="contact_location" name="contact_location" value="{{ content.contact_location }}"></div>
+
+        <button type="submit" class="cta-button form-button">Simpan Pengaturan</button>
+    </form>
+</div>
+{% endblock %}

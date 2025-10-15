@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block admintitle %}{% endblock %} - Admin HackThread</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="admin-wrapper">
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header">
+                <a href="{{ url_for('product.index') }}" class="logo">HACKTHREAD</a>
+            </div>
+            <nav class="admin-nav">
+                <a href="{{ url_for('admin.admin_dashboard') }}" class="{{ 'active' if 'dashboard' in request.endpoint }}">Dashboard</a>
+                <a href="{{ url_for('admin.admin_products') }}" class="{{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint }}">Produk</a>
+                <a href="{{ url_for('admin.admin_orders') }}" class="{{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}">Pesanan</a>
+                <a href="{{ url_for('admin.admin_settings') }}" class="{{ 'active' if 'settings' in request.endpoint }}">Pengaturan</a>
+                <a href="{{ url_for('auth.logout') }}" id="logoutLink">Logout</a>
+            </nav>
+        </aside>
+        
+        <main class="admin-main-content page-content-wrapper">
+            <div class="admin-main-header">
+                <h2>{% block adminheader %}{% endblock %}</h2>
+            </div>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            <div class="admin-content-area">
+                {% block admincontent %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    
+    <nav class="bottom-navbar">
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="bottom-nav-item {{ 'active' if 'dashboard' in request.endpoint }}">
+            <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('admin.admin_products') }}" class="bottom-nav-item {{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint }}">
+            <i class="fas fa-box-open"></i> <span>Produk</span>
+        </a>
+        <a href="{{ url_for('admin.admin_orders') }}" class="bottom-nav-item {{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}">
+            <i class="fas fa-receipt"></i> <span>Pesanan</span>
+        </a>
+        <a href="{{ url_for('admin.admin_settings') }}" class="bottom-nav-item {{ 'active' if 'settings' in request.endpoint }}">
+            <i class="fas fa-cog"></i> <span>Atur</span>
+        </a>
+        <a href="{{ url_for('auth.logout') }}" class="bottom-nav-item" id="mobileLogoutLink">
+            <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+        </a>
+    </nav>
+
+    {% block additional_scripts %}{% endblock %}
+
+    <script src="{{ url_for('static', filename='js/scroll_animations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui_helpers.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cart_logic.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/event_handlers.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

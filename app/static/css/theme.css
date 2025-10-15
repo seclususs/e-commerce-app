@@ -1,0 +1,31 @@
+
+:root {
+  /* Skema Warna */
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-background-dark: #0f172a;
+  --color-background-med: #1e293b;
+  --color-background-light: #334155;
+  --color-text-light: #f1f5f9;
+  --color-text-med: #94a3b8;
+  --color-text-dark: #64748b;
+  --color-danger: #ef4444;
+  --color-danger-dark: #dc2626;
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-info: #8b5cf6;
+  --color-white: #ffffff;
+
+  /* Tipografi */
+  --font-primary: 'Inter', sans-serif;
+  --font-secondary: 'Orbitron', sans-serif;
+
+  /* Radius & Bayangan */
+  --border-radius-sm: 8px;
+  --border-radius-md: 15px;
+  --border-radius-lg: 20px;
+  --border-radius-full: 50px;
+  --shadow-md: 0 4px 20px rgba(59, 130, 246, 0.4);
+  --shadow-lg: 0 10px 40px rgba(59, 130, 246, 0.3);
+  --shadow-dark: 0 10px 40px rgba(0, 0, 0, 0.4);
+}

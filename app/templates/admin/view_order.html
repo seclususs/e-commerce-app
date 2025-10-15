@@ -1,0 +1,61 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block admintitle %}Detail Pesanan #{{ order.id }}{% endblock %}
+{% block adminheader %}Detail Pesanan #{{ order.id }}{% endblock %}
+
+{% block admincontent %}
+<div class="order-detail-grid">
+    <div class="admin-card">
+        <h3>Informasi Pesanan</h3>
+        <p><strong>ID Pesanan:</strong> #{{ order.id }}</p>
+        <p><strong>Tanggal:</strong> {{ order.order_date }}</p>
+        <p><strong>Pelanggan:</strong> {{ order.customer_name or 'N/A' }} ({{ order.email or 'N/A' }})</p>
+        <p><strong>Total Pembayaran:</strong> {{ order.total_amount|rupiah }}</p>
+        <p><strong>Metode Pembayaran:</strong> {{ order.payment_method or 'N/A' }}</p>
+        <p><strong>Status Saat Ini:</strong> <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></p>
+    </div>
+    <div class="admin-card">
+        <h3>Ubah Status Pesanan</h3>
+        <form action="{{ url_for('admin.update_order_status', id=order.id) }}" method="POST">
+            <div class="form-group">
+                <label for="status">Status Baru</label>
+                <select name="status" id="status" class="form-control">
+                    <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
+                    <option value="Shipped" {% if order.status == 'Shipped' %}selected{% endif %}>Shipped</option>
+                    <option value="Completed" {% if order.status == 'Completed' %}selected{% endif %}>Completed</option>
+                    <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <button type="submit" class="cta-button form-button">Update Status</button>
+        </form>
+    </div>
+</div>
+
+<div class="admin-card">
+    <h3>Informasi Pengiriman</h3>
+    <p><strong>Nama Penerima:</strong> {{ order.shipping_name or 'N/A' }}</p>
+    <p><strong>Telepon:</strong> {{ order.shipping_phone or 'N/A' }}</p>
+    <p><strong>Alamat:</strong><br>
+        {{ order.shipping_address_line_1 or '' }}<br>
+        {% if order.shipping_address_line_2 %}{{ order.shipping_address_line_2 }}<br>{% endif %}
+        {{ order.shipping_city or '' }}, {{ order.shipping_province or '' }} {{ order.shipping_postal_code or '' }}
+    </p>
+</div>
+
+<div class="admin-card">
+    <h3>Item yang Dipesan</h3>
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead><tr><th>Nama Produk</th><th>Jumlah</th><th>Harga Satuan</th><th>Subtotal</th></tr></thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.name }}</td><td>{{ item.quantity }}</td><td>{{ item.price|rupiah }}</td><td>{{ (item.price * item.quantity)|rupiah }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

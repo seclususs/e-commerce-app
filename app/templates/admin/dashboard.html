@@ -1,0 +1,120 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block admintitle %}Dashboard{% endblock %}
+{% block adminheader %}Dashboard Ringkasan{% endblock %}
+
+{% block admincontent %}
+<div class="dashboard-stats">
+    <div class="stat-card animated-element" data-animation-delay="100">
+        <h4>Total Produk</h4>
+        <p>{{ stats.product_count }}</p>
+    </div>
+    <div class="stat-card animated-element" data-animation-delay="200">
+        <h4>Total Pesanan</h4>
+        <p>{{ stats.order_count }}</p>
+    </div>
+    <div class="stat-card animated-element" data-animation-delay="300">
+        <h4>Total Penjualan</h4>
+        <p>{{ stats.total_sales|rupiah }}</p>
+    </div>
+</div>
+
+<div class="dashboard-charts-grid">
+    <div class="admin-card animated-element" data-animation-delay="400">
+        <h3>Penjualan 7 Hari Terakhir</h3>
+        <canvas id="salesChart"></canvas>
+    </div>
+    <div class="admin-card animated-element" data-animation-delay="500">
+        <h3>Pesanan Terbaru</h3>
+        <div class="table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>ID</th><th>Total</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                    <tr>
+                        <td><a href="{{ url_for('admin.admin_order_detail', id=order.id) }}" class="btn-view">#{{ order.id }}</a></td>
+                        <td>{{ order.total_amount|rupiah }}</td>
+                        <td><span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" style="text-align: center;">Belum ada pesanan.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('salesChart');
+        if (ctx) {
+            // JSON.parse untuk mem-parsing data dengan aman
+            const chartLabels = JSON.parse('{{ chart_labels | tojson | safe }}');
+            const chartData = JSON.parse('{{ chart_data | tojson | safe }}');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Total Penjualan',
+                        data: chartData,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        borderRadius: 5,
+                        hoverBackgroundColor: 'rgba(59, 130, 246, 0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 12 },
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(203, 213, 225, 0.1)' },
+                            ticks: { 
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    return 'Rp ' + (value / 1000) + 'k';
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

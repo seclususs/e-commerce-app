@@ -1,0 +1,116 @@
+{% extends "layouts/base_layout.html" %}
+
+{% block title %}{{ product.name }} - HackThread{% endblock %}
+
+{% block content %}
+<section class="product-detail-section">
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary">&larr; Kembali ke Koleksi</a>
+    </div>
+
+    <div class="product-detail-container">
+        <div class="product-image-gallery animated-element">
+            <div class="main-image">
+                <img id="mainProductImage" src="{{ url_for('static', filename='uploads/' + product.image_url) if product.image_url else 'https://placehold.co/600x600/0f172a/f1f5f9?text=' + product.name }}" alt="Gambar utama {{ product.name }}">
+            </div>
+            {% if product.all_images|length > 1 %}
+            <div class="thumbnail-gallery">
+                {% for image_file in product.all_images %}
+                <div class="thumbnail-item {% if loop.first %}active{% endif %}">
+                    <img src="{{ url_for('static', filename='uploads/' + image_file) }}" data-full-src="{{ url_for('static', filename='uploads/' + image_file) }}" alt="Thumbnail {{ product.name }} {{ loop.index }}">
+                </div>
+                {% endfor %}
+            </div>
+            <div class="gallery-dots" id="galleryDots"></div>
+            {% endif %}
+        </div>
+
+        <div class="product-info-details animated-element" data-animation-delay="200">
+            <h1 class="product-title">{{ product.name }}</h1>
+            <p class="product-category-detail">{{ product.category }}</p>
+            <p class="product-price-detail">{{ product.price|rupiah }}</p>
+            
+            <div class="product-details-static">
+                <h3 class="details-title">Deskripsi</h3>
+                <div class="details-content">
+                    <p>{{ product.description | safe }}</p>
+                </div>
+
+                <h3 class="details-title">Spesifikasi</h3>
+                <div class="details-content">
+                    <ul>
+                        {% if product.sizes %}<li><strong>Ukuran Tersedia:</strong> {{ product.sizes }}</li>{% endif %}
+                        {% if product.colors %}<li><strong>Warna Tersedia:</strong> {{ product.colors }}</li>{% endif %}
+                        <li><strong>Stok:</strong> 
+                            {% if product.stock > 10 %}<span style="color: #22c55e;">Tersedia</span>
+                            {% elif product.stock > 0 %}<span style="color: #f59e0b;">Tersisa {{ product.stock }}</span>
+                            {% else %}<span style="color: #ef4444;">Habis</span>{% endif %}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="hide-on-mobile-cta" style="margin-top: 2rem;">
+                {% if product.stock > 0 %}
+                    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}"><i class="fas fa-shopping-cart"></i> Tambah ke Keranjang</button>
+                {% else %}
+                    <button class="cta-button" disabled>Stok Habis</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="reviews-section animated-element" data-animation-delay="400">
+        <h2 class="section-title">Ulasan Pelanggan</h2>
+
+        {% if session.user_id and can_review %}
+            <div class="admin-card add-review-form">
+                <h3>Bagikan Pendapat Anda</h3>
+                <form action="{{ url_for('product.add_review', id=product.id) }}" method="POST">
+                    <div class="form-group">
+                        <label for="rating">Rating Anda</label>
+                        <div class="star-rating">
+                            <input type="radio" id="5-stars" name="rating" value="5" required/><label for="5-stars" class="star">&#9733;</label>
+                            <input type="radio" id="4-stars" name="rating" value="4" /><label for="4-stars" class="star">&#9733;</label>
+                            <input type="radio" id="3-stars" name="rating" value="3" /><label for="3-stars" class="star">&#9733;</label>
+                            <input type="radio" id="2-stars" name="rating" value="2" /><label for="2-stars" class="star">&#9733;</label>
+                            <input type="radio" id="1-star" name="rating" value="1" /><label for="1-star" class="star">&#9733;</label>
+                        </div>
+                    </div>
+                    <div class="form-group"><label for="comment">Komentar</label><textarea name="comment" id="comment" rows="4" placeholder="Tulis ulasan Anda di sini..." required></textarea></div>
+                    <button type="submit" class="cta-button form-button">Kirim Ulasan</button>
+                </form>
+            </div>
+        {% elif session.user_id %}
+            <div class="admin-card add-review-form" style="text-align: center;">
+                <p style="color: #94a3b8; margin:0;">Anda sudah memberikan ulasan atau harus membeli produk ini terlebih dahulu untuk dapat memberikan ulasan.</p>
+            </div>
+        {% else %}
+            <div class="admin-card add-review-form" style="text-align: center;">
+                <p style="color: #94a3b8; margin:0;"><a href="{{ url_for('auth.login', next=request.url) }}" style="color: var(--color-primary);">Login</a> untuk memberikan ulasan.</p>
+            </div>
+        {% endif %}
+
+        <div class="reviews-grid">
+            {% if reviews %}
+                {% for review in reviews %}
+                <div class="testimonial-card">
+                    <div class="testimonial-header"><strong class="testimonial-name">{{ review.username }}</strong><div class="testimonial-rating">{% for i in range(5) %}<i class="fas fa-star {% if i < review.rating %}rated{% endif %}"></i>{% endfor %}</div></div>
+                    <p class="testimonial-comment">"{{ review.comment }}"</p>
+                    <small class="review-date">{{ review.created_at.split(' ')[0] }}</small>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="text-align: center; color: #94a3b8;">Jadilah yang pertama mengulas produk ini!</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Floating bar untuk tombol Tambah ke Keranjang di mobile -->
+{% if product.stock > 0 %}
+<div class="mobile-cta-bar">
+    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}"><i class="fas fa-shopping-cart"></i> Tambah ke Keranjang</button>
+</div>
+{% endif %}
+{% endblock %}

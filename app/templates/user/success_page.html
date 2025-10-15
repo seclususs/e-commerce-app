@@ -1,0 +1,36 @@
+{% extends "layouts/base_layout.html" %}
+
+{% block title %}Pesanan Berhasil - HackThread{% endblock %}
+
+{% block content %}
+<section class="auth-section order-success-page">
+    <div class="form-container animated-element" style="max-width: 500px; text-align: center; background: none; border: none; padding: 2rem;">
+        <h2 class="section-title">Pesanan Berhasil!</h2>
+        
+        <!-- Pesan dinamis untuk pengguna login dan tamu -->
+        {% if guest_order_details %}
+            <p style="color: #94a3b8; margin-bottom: 2rem;">Terima kasih telah berbelanja di HackThread. Pesanan Anda #{{ guest_order_id }} sedang kami proses.</p>
+            <div class="admin-card" style="margin-top: 2rem; text-align: left;">
+                <h3>Buat Akun untuk Lacak Pesanan</h3>
+                <p style="color: #94a3b8; margin-bottom: 1rem;">Buat akun dengan detail di bawah untuk melacak pesanan Anda dan checkout lebih cepat di lain waktu.</p>
+                <form method="POST" action="{{ url_for('auth.register_from_order') }}">
+                    <input type="hidden" name="order_details" value="{{ guest_order_details | tojson | safe }}">
+                    <input type="hidden" name="order_id" value="{{ guest_order_id }}">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control" value="{{ guest_order_details.email }}" disabled>
+                    </div>
+                     <div class="form-group">
+                        <label for="password">Buat Password</label>
+                        <input type="password" id="password" name="password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="cta-button form-button">Buat Akun & Login</button>
+                </form>
+            </div>
+        {% else %}
+            <p style="color: #94a3b8; margin-bottom: 2rem;">Terima kasih telah berbelanja di HackThread. Anda dapat melihat detail pesanan Anda di halaman profil.</p>
+            <a href="{{ url_for('user.user_profile') }}" class="cta-button">Lihat Riwayat Pesanan</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

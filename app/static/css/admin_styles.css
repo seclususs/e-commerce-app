@@ -1,0 +1,191 @@
+.admin-wrapper {
+    min-height: 100vh;
+}
+
+.admin-sidebar {
+    width: 250px;
+    background: #1e293b;
+    border-right: 1px solid #334155;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
+}
+
+.sidebar-header .logo {
+    font-size: 1.3rem;
+    letter-spacing: 1px;
+    text-align: center;
+    display: block;
+    margin-bottom: 2rem;
+}
+
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.admin-nav a {
+    color: #cbd5e1;
+    text-decoration: none;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.admin-nav a:hover {
+    background: #334155;
+    color: #f1f5f9;
+}
+
+.admin-nav a.active {
+    background: #3b82f6;
+    color: white;
+    font-weight: 600;
+}
+
+.admin-main-content {
+    margin-left: 250px;
+    padding: 2rem;
+    background-color: #0f172a;
+}
+
+.admin-main-header {
+    margin-bottom: 2rem;
+}
+
+.admin-main-header h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+}
+
+.admin-main-content .flash-messages {
+    padding: 0;
+    margin-bottom: 1.5rem;
+}
+
+/* Dashboard Stats */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    padding: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+.stat-card h4 {
+    color: #94a3b8;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+/* Grid untuk menampung chart dan tabel pesanan */
+.dashboard-charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* Ukuran canvas chart agar responsif */
+.dashboard-charts-grid canvas {
+    max-height: 350px;
+}
+
+/* Penyesuaian tabel pesanan di dashboard */
+.dashboard-charts-grid .admin-table th, 
+.dashboard-charts-grid .admin-table td {
+    padding: 0.8rem;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Gaya untuk preview gambar di form admin */
+.image-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.preview-item {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.main-image-radio {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+    transform: scale(1.5);
+}
+
+.delete-image-checkbox {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    cursor: pointer;
+    transform: scale(1.5);
+}
+
+.preview-item.is-main {
+    border-color: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.preview-item.marked-for-deletion img {
+    opacity: 0.4;
+}
+
+.preview-item.marked-for-deletion::after {
+    content: 'X';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ef4444;
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+.form-hint {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin-bottom: 1rem;
+    margin-top: -0.5rem;
+}

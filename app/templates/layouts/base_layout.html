@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}HackThread - Wear The Code{% endblock %}</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=1.9">
+</head>
+<body>
+    {% if not hide_navbar %}
+    <nav class="navbar">
+        <a href="{{ url_for('product.index') }}" class="logo">HACKTHREAD</a>
+        
+        <ul class="nav-menu">
+            {% if session.user_id %}
+                <li><a href="{{ url_for('product.products_page') }}">Produk</a></li>
+                {% if session.is_admin %}
+                    <li><a href="{{ url_for('admin.admin_dashboard') }}">Admin</a></li>
+                {% else %}
+                     <!-- [DIUBAH] Menambahkan kelas 'nav-link-secondary' -->
+                     <li><a href="{{ url_for('user.user_profile') }}" class="nav-link-secondary">Profil Saya</a></li>
+                {% endif %}
+                <!-- [DIUBAH] Menambahkan kelas 'nav-link-secondary' -->
+                <li><a href="{{ url_for('auth.logout') }}" id="logoutLink" class="nav-link-secondary">Logout</a></li>
+            {% else %}
+                <li><a href="{{ url_for('product.index') }}">Beranda</a></li>
+                <li><a href="{{ url_for('product.products_page') }}">Produk</a></li>
+                <li><a href="{{ url_for('product.about') }}">Tentang</a></li>
+                <!-- [DIUBAH] Menambahkan kelas 'nav-link-secondary' -->
+                <li><a href="{{ url_for('auth.login') }}" class="nav-link-secondary">Login</a></li>
+                <li><a href="{{ url_for('auth.register') }}" class="cta-button nav-cta">Daftar</a></li>
+            {% endif %}
+
+            {% if not session.is_admin %}
+            <li class="cart-icon-wrapper">
+                <a href="{{ url_for('user.cart_page') }}" class="cart-icon" id="cartIconLink" aria-label="Lihat Keranjang">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    <main class="page-content-wrapper">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if request.endpoint not in ['auth.login', 'auth.register'] %}
+    <footer id="contact" class="footer">
+        {% if is_homepage is defined and is_homepage %}
+        <div class="footer-content">
+            <div class="footer-section animated-element">
+                <h3>HACKTHREAD</h3>
+                <p>Fashion untuk generasi digital.</p>
+            </div>
+            <div class="footer-section animated-element" data-animation-delay="200">
+                <h3>Kontak</h3>
+                <p>Email: {{ content.contact_email }}</p>
+                <p>Phone: {{ content.contact_phone }}</p>
+                <p>{{ content.contact_location }}</p>
+            </div>
+            <div class="footer-section animated-element" data-animation-delay="400">
+                <h3>Sosial Media</h3>
+                <p style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <a href="https://github.com/seclususs" target="_blank" rel="noopener noreferrer" style="color: #f1f5f9; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fab fa-github"></i> seclususs
+                    </a>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+        <div class="copyright">
+            <p>&copy; 2025 Seclususs. All rights reserved.</p>
+        </div>
+    </footer>
+    {% endif %}
+    
+    {% if not hide_navbar and not session.is_admin %}
+    <nav class="bottom-navbar">
+        {% if session.user_id %}
+            <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'product' in request.endpoint and 'admin' not in request.endpoint }}">
+                <i class="fas fa-store"></i> <span>Produk</span>
+            </a>
+            <!-- [DIUBAH] Menambahkan ID untuk target animasi -->
+            <a href="{{ url_for('user.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
+                <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
+            </a>
+            <a href="{{ url_for('user.user_profile') }}" class="bottom-nav-item {{ 'active' if 'profile' in request.endpoint }}">
+                <i class="fas fa-user"></i> <span>Profil</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" id="mobileLogoutLink" class="bottom-nav-item">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </a>
+        {% else %}
+            <a href="{{ url_for('product.index') }}" class="bottom-nav-item {{ 'active' if 'index' in request.endpoint }}">
+                <i class="fas fa-home"></i> <span>Beranda</span>
+            </a>
+            <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'products_page' in request.endpoint }}">
+                <i class="fas fa-store"></i> <span>Produk</span>
+            </a>
+            <!-- [DIUBAH] Menambahkan ID untuk target animasi -->
+            <a href="{{ url_for('user.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
+                <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="bottom-nav-item {{ 'active' if 'login' in request.endpoint or 'register' in request.endpoint }}">
+                <i class="fas fa-sign-in-alt"></i> <span>Login</span>
+            </a>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    {% if session.user_id and not session.is_admin %}
+        {% include 'partials/cart_popup.html' %}
+    {% endif %}
+
+    <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-modal-content">
+            <h3 id="confirmModalTitle">Konfirmasi Tindakan</h3>
+            <p id="confirmModalText">Apakah Anda yakin?</p>
+            <div class="confirm-modal-actions">
+                <button class="cta-button-secondary" id="confirmCancelBtn">Batal</button>
+                <button class="cta-button btn-danger" id="confirmOkBtn">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/scroll_animations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ui_helpers.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cart_logic.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/event_handlers.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

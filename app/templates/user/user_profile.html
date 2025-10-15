@@ -1,0 +1,65 @@
+{% extends "layouts/base_layout.html" %}
+
+{% block title %}Profil Saya - HackThread{% endblock %}
+
+{% block content %}
+<section class="user-profile-section">
+    <div class="profile-container animated-element">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+            <h2 class="section-title" style="margin: 0;">Profil Saya</h2>
+            <a href="{{ url_for('user.edit_profile') }}" class="cta-button-secondary">Edit Profil</a>
+        </div>
+        
+        <div class="admin-card animated-element" data-animation-delay="200">
+            <div class="order-detail-grid">
+                <div>
+                    <h3>Informasi Akun</h3>
+                    <p><strong>Username:</strong> {{ user.username }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                </div>
+                <div>
+                    <h3>Alamat Utama</h3>
+                    {% if user.address_line_1 %}
+                        <p><strong>Telepon:</strong> {{ user.phone }}</p>
+                        <p>{{ user.address_line_1 }}<br>
+                           {% if user.address_line_2 %}{{ user.address_line_2 }}<br>{% endif %}
+                           {{ user.city }}, {{ user.province }} {{ user.postal_code }}
+                        </p>
+                    {% else %}
+                        <p style="color: #94a3b8;">Anda belum mengatur alamat utama.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-card animated-element" data-animation-delay="400">
+            <h3>Riwayat Pesanan</h3>
+            <div class="table-wrapper">
+                <table class="admin-table">
+                    <thead><tr><th>ID Pesanan</th><th>Tanggal</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td data-label="ID Pesanan:">#{{ order.id }}</td>
+                            <td data-label="Tanggal:">{{ order.order_date.split(' ')[0] }}</td>
+                            <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
+                            <td data-label="Status:"><span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></td>
+                            <td data-label="Aksi:">
+                                {% if order.status in ['Pending', 'Processing'] %}
+                                <form method="POST" action="{{ url_for('user.cancel_order', order_id=order.id) }}" class="cancel-order-form">
+                                    <button type="submit" class="btn-cancel">Batalkan</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" style="text-align: center;">Anda belum memiliki riwayat pesanan.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary" style="display:inline-block; margin-top: 2rem;">Lanjutkan Belanja</a>
+    </div>
+</section>
+{% endblock %}

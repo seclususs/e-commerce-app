@@ -1,0 +1,15 @@
+{% extends "layouts/base_layout.html" %}
+
+{% block title %}Tentang Kami - HackThread{% endblock %}
+
+{% block content %}
+    <section class="about-section-full">
+        <div class="about-content animated-element">
+            <h2 class="section-title">{{ content.about_title }}</h2>
+            <p>{{ content.about_p1 }}</p>
+            <p>{{ content.about_p2 }}</p>
+            <p>{{ content.about_p3 }}</p>
+            <a href="{{ url_for('product.index') }}" class="cta-button-secondary" style="margin-top: 2rem;">Kembali ke Beranda</a>
+        </div>
+    </section>
+{% endblock %}
