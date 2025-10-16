@@ -49,7 +49,16 @@ const cartModule = (() => {
 
         if (productsInCart.length === 0) {
             listContainer.classList.add('is-empty');
-            container.innerHTML = '<div class="cart-empty">Keranjang belanja Anda masih kosong.</div>';
+            const pageSection = document.querySelector('.cart-page-section');
+            const productsUrl = pageSection ? pageSection.dataset.productsUrl : '/products';
+            
+            container.innerHTML = `
+                <div class="cart-empty-container">
+                    <h2>Keranjang belanja Anda masih kosong</h2>
+                    <p>Sepertinya Anda belum menambahkan produk apapun.</p>
+                    <a href="${productsUrl}" class="cta-button">Lanjutkan Belanja</a>
+                </div>
+            `;
             if(summary) summary.style.display = 'none';
         } else {
             listContainer.classList.remove('is-empty');

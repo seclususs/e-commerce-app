@@ -63,19 +63,35 @@ def checkout():
 
     if request.method == 'POST':
         cart_json = request.form.get('cart_data')
-        if not cart_json:
-            flash("Data keranjang tidak ditemukan.", 'danger')
+        if not cart_json or cart_json == '{}':
+            flash("Keranjang Anda kosong. Silakan tambahkan produk terlebih dahulu.", 'danger')
             return redirect(url_for('user.cart_page'))
         
         cart_data = json.loads(cart_json)
-        shipping_details = {
-            'name': request.form['full_name'], 'phone': request.form['phone'],
-            'address1': request.form['address_line_1'], 'address2': request.form.get('address_line_2', ''),
-            'city': request.form['city'], 'province': request.form['province'],
-            'postal_code': request.form['postal_code']
-        }
-        payment_method = request.form['payment_method']
+        
         user_id_for_order = session.get('user_id')
+        
+        if user_id_for_order:
+            if not user:
+                 user = user_service.get_user_by_id(user_id_for_order)
+            shipping_details = {
+                'name': user.get('username'), 'phone': user.get('phone'),
+                'address1': user.get('address_line_1'), 'address2': user.get('address_line_2', ''),
+                'city': user.get('city'), 'province': user.get('province'),
+                'postal_code': user.get('postal_code')
+            }
+            if not all([shipping_details['phone'], shipping_details['address1'], shipping_details['city']]):
+                flash('Alamat pengiriman Anda belum lengkap. Silakan lengkapi terlebih dahulu.', 'danger')
+                return redirect(url_for('user.edit_address'))
+        else:
+            shipping_details = {
+                'name': request.form['full_name'], 'phone': request.form['phone'],
+                'address1': request.form['address_line_1'], 'address2': request.form.get('address_line_2', ''),
+                'city': request.form['city'], 'province': request.form['province'],
+                'postal_code': request.form['postal_code']
+            }
+
+        payment_method = request.form['payment_method']
 
         if not user_id_for_order:
             email_for_order = request.form.get('email')
@@ -89,24 +105,99 @@ def checkout():
             if existing_user:
                 flash('Email sudah terdaftar. Silakan login untuk melanjutkan.', 'danger')
                 return redirect(url_for('auth.login', next=url_for('user.checkout')))
+            
+            session['guest_order_details'] = {
+                'email': email_for_order, **shipping_details
+            }
 
-        save_address = 'save_address' in request.form and user_id_for_order is not None
-        result = order_service.create_order(user_id_for_order, cart_data, shipping_details, payment_method, save_address)
+        result = order_service.create_order(user_id_for_order, cart_data, shipping_details, payment_method)
 
         if result['success']:
+            order_id = result['order_id']
             if not user_id_for_order:
-                session['guest_order_id'] = result['order_id']
-                session['guest_order_details'] = {
-                    'email': request.form.get('email'),
-                    **shipping_details
-                }
-            flash(f"Pesanan #{result['order_id']} berhasil dibuat!", 'success')
-            return redirect(url_for('user.order_success'))
+                session['guest_order_id'] = order_id
+            
+            # Jika COD, langsung ke halaman sukses. Jika tidak, ke halaman pembayaran.
+            if payment_method == 'COD':
+                flash(f"Pesanan #{order_id} berhasil dibuat! Siapkan pembayaran saat kurir tiba.", 'success')
+                return redirect(url_for('user.order_success'))
+            else:
+                return redirect(url_for('user.payment_page', order_id=order_id))
         else:
             flash(result['message'], 'danger')
             return redirect(url_for('user.cart_page'))
 
     return render_template('user/checkout_page.html', user=user, content=get_content())
+
+@user_bp.route('/checkout/edit_address', methods=['GET', 'POST'])
+@login_required
+def edit_address():
+    user_id = session['user_id']
+    if request.method == 'POST':
+        address_data = {
+            'phone': request.form['phone'], 'address1': request.form['address_line_1'],
+            'address2': request.form.get('address_line_2', ''), 'city': request.form['city'],
+            'province': request.form['province'], 'postal_code': request.form['postal_code']
+        }
+        result = user_service.update_user_address(user_id, address_data)
+        flash(result['message'], 'success' if result['success'] else 'danger')
+        return redirect(url_for('user.checkout'))
+
+    user = user_service.get_user_by_id(user_id)
+    return render_template('user/edit_address_page.html', user=user, content=get_content())
+
+
+@user_bp.route('/order/pay/<int:order_id>')
+def payment_page(order_id):
+    user_id = session.get('user_id')
+    guest_order_id = session.get('guest_order_id')
+    
+    conn = get_db_connection()
+    
+    if user_id:
+        order = conn.execute('SELECT * FROM orders WHERE id = ? AND user_id = ?', (order_id, user_id)).fetchone()
+    elif guest_order_id and guest_order_id == order_id:
+        order = conn.execute('SELECT * FROM orders WHERE id = ? AND user_id IS NULL', (order_id,)).fetchone()
+    else:
+        order = None
+        
+    if not order or order['payment_method'] == 'COD':
+        flash("Pesanan tidak ditemukan atau tidak memerlukan pembayaran online.", "danger")
+        return redirect(url_for('product.index'))
+
+    items = conn.execute('SELECT p.name, oi.quantity, oi.price FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?', (order_id,)).fetchall()
+    conn.close()
+
+    return render_template('user/payment_page.html', order=order, items=items, content=get_content())
+
+
+@user_bp.route('/order/confirm_payment/<int:order_id>', methods=['POST'])
+def confirm_payment(order_id):
+    user_id = session.get('user_id')
+    guest_order_id = session.get('guest_order_id')
+
+    conn = get_db_connection()
+    if user_id:
+        order = conn.execute('SELECT id, status FROM orders WHERE id = ? AND user_id = ?', (order_id, user_id)).fetchone()
+    elif guest_order_id and guest_order_id == order_id:
+        order = conn.execute('SELECT id, status FROM orders WHERE id = ? AND user_id IS NULL', (order_id,)).fetchone()
+    else:
+        order = None
+    
+    if not order:
+        flash("Pesanan tidak ditemukan.", "danger")
+        conn.close()
+        return redirect(url_for('product.index'))
+    
+    if order['status'] == 'Pending':
+        conn.execute("UPDATE orders SET status = 'Processing' WHERE id = ?", (order_id,))
+        conn.commit()
+        flash("Pembayaran Anda telah dikonfirmasi dan pesanan sedang diproses.", "success")
+    else:
+        flash("Status pesanan ini tidak dapat diubah.", "warning")
+
+    conn.close()
+    return redirect(url_for('user.order_success'))
 
 
 @user_bp.route('/order_success')

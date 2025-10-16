@@ -3,12 +3,14 @@
 {% block title %}Keranjang Belanja - HackThread{% endblock %}
 
 {% block content %}
-<section class="cart-page-section">
+<section class="cart-page-section" data-products-url="{{ url_for('product.products_page') }}">
     <div class="cart-page-container animated-element">
         <h2 class="section-title">Keranjang Belanja Anda</h2>
         <div class="cart-layout">
             <div class="cart-items-list">
-                <div id="cartPageItems"><div class="cart-empty">Memuat item keranjang...</div></div>
+                <div id="cartPageItems" class="cart-items-container">
+                    <!-- Konten keranjang dinamis akan dimuat di sini oleh JavaScript -->
+                </div>
             </div>
             <div class="cart-summary admin-card animated-element" data-animation-delay="200">
                 <h3>Ringkasan</h3>
@@ -16,8 +18,6 @@
                 <div class="summary-row"><span>Pengiriman</span><span>Gratis</span></div>
                 <div class="summary-total"><span>Total</span><span id="cartPageTotal">Rp 0</span></div>
                 
-                <!-- Tombol ini selalu mengarah ke checkout untuk mendukung guest checkout -->
-                <!-- dan disembunyikan di mobile, digantikan oleh floating bar. -->
                 <div class="hide-on-mobile-cta">
                     <a href="{{ url_for('user.checkout') }}" id="checkout-link" class="cta-button" style="width: 100%; text-align:center; margin-top: 1rem;">
                         Lanjutkan ke Checkout

@@ -3,47 +3,48 @@
 {% block title %}Checkout - HackThread{% endblock %}
 
 {% block content %}
-<section class="cart-page-section">
-    <div class="cart-page-container animated-element">
+<section class="checkout-page-section">
+    <div class="checkout-page-container animated-element">
         <h2 class="section-title">Checkout</h2>
         <form id="checkout-form" method="POST" action="{{ url_for('user.checkout') }}">
             <div class="cart-layout">
-                <div class="admin-card animated-element" data-animation-delay="200">
-                    <!-- Formulir dinamis untuk pengguna login dan tamu -->
-                    {% if not session.user_id %}
+                <div class="admin-card checkout-details-card animated-element" data-animation-delay="200">
+                    <!-- Tampilan dinamis untuk pengguna login dan tamu -->
+                    {% if session.user_id and user %}
+                        <h3>Alamat Pengiriman</h3>
+                        <div class="address-display-box">
+                            {% if user.address_line_1 and user.phone %}
+                                <p><strong>{{ user.username }}</strong> ({{ user.phone }})</p>
+                                <p>{{ user.address_line_1 }}<br>
+                                   {% if user.address_line_2 %}{{ user.address_line_2 }}<br>{% endif %}
+                                   {{ user.city }}, {{ user.province }} {{ user.postal_code }}
+                                </p>
+                            {% else %}
+                                <p class="text-warning">Alamat pengiriman Anda belum lengkap.</p>
+                            {% endif %}
+                            <a href="{{ url_for('user.edit_address') }}" class="cta-button-secondary edit-address-btn">Ubah Alamat</a>
+                        </div>
+                    {% else %}
+                        <!-- Form untuk tamu -->
                         <h3>Kontak & Pengiriman</h3>
                         <div class="form-group"><label for="email">Alamat Email</label><input type="email" id="email" name="email" required></div>
                         <div class="form-group"><label for="full_name">Nama Lengkap Penerima</label><input type="text" id="full_name" name="full_name" required></div>
-                    {% else %}
-                        <h3>Alamat Pengiriman</h3>
-                        <div class="form-group"><label for="full_name">Nama Lengkap Penerima</label><input type="text" id="full_name" name="full_name" value="{{ user.username }}" required></div>
-                    {% endif %}
-                    
-                    <div class="form-group"><label for="phone">Nomor Telepon</label><input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}" required></div>
-                    <div class="form-group"><label for="address_line_1">Alamat Lengkap</label><input type="text" id="address_line_1" name="address_line_1" value="{{ user.address_line_1 or '' }}" placeholder="Nama jalan, nomor rumah, RT/RW" required></div>
-                    <div class="form-group"><label for="address_line_2">Detail Alamat (Opsional)</label><input type="text" id="address_line_2" name="address_line_2" value="{{ user.address_line_2 or '' }}" placeholder="Contoh: Apartemen, lantai, unit"></div>
-                    <div class="form-grid">
-                        <div class="form-group"><label for="city">Kota/Kabupaten</label><input type="text" id="city" name="city" value="{{ user.city or '' }}" required></div>
-                        <div class="form-group"><label for="province">Provinsi</label><input type="text" id="province" name="province" value="{{ user.province or '' }}" required></div>
-                    </div>
-                    <div class="form-group"><label for="postal_code">Kode Pos</label><input type="text" id="postal_code" name="postal_code" value="{{ user.postal_code or '' }}" required></div>
-                    
-                    {% if session.user_id %}
-                    <div class="form-group">
-                        <label class="custom-checkbox" for="save_address">
-                            <input type="checkbox" id="save_address" name="save_address" value="true" class="checkbox-input" checked>
-                            <span class="checkbox-box"><span class="checkmark"></span></span>
-                            <span>Simpan alamat ini sebagai alamat utama saya.</span>
-                        </label>
-                    </div>
+                        <div class="form-group"><label for="phone">Nomor Telepon</label><input type="tel" id="phone" name="phone" required></div>
+                        <div class="form-group"><label for="address_line_1">Alamat Lengkap</label><input type="text" id="address_line_1" name="address_line_1" placeholder="Nama jalan, nomor rumah, RT/RW" required></div>
+                        <div class="form-group"><label for="address_line_2">Detail Alamat (Opsional)</label><input type="text" id="address_line_2" name="address_line_2" placeholder="Contoh: Apartemen, lantai, unit"></div>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="city">Kota/Kabupaten</label><input type="text" id="city" name="city" required></div>
+                            <div class="form-group"><label for="province">Provinsi</label><input type="text" id="province" name="province" required></div>
+                        </div>
+                        <div class="form-group"><label for="postal_code">Kode Pos</label><input type="text" id="postal_code" name="postal_code" required></div>
                     {% endif %}
                     
                     <h3 style="margin-top: 2rem;">Metode Pembayaran</h3>
                     <div class="form-group">
                         <select name="payment_method" class="form-control" required>
                             <option value="" disabled selected>Pilih Metode Pembayaran</option>
-                            <option value="Bank Transfer">Bank Transfer (BCA/Mandiri)</option>
-                            <option value="E-Wallet">E-Wallet (GoPay/OVO)</option>
+                            <option value="Virtual Account">Virtual Account (Simulasi)</option>
+                            <option value="E-Wallet">E-Wallet (Simulasi)</option>
                             <option value="COD">Bayar di Tempat (COD)</option>
                         </select>
                     </div>

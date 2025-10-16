@@ -1,4 +1,6 @@
 import os
+import json
+import random
 from flask import Flask
 
 from routes.main_routes import product_bp
@@ -39,7 +41,11 @@ def create_app():
             return round(100 * (whole - part) / whole)
         except (ValueError, TypeError):
             return 0
-        
+            
+    @app.template_filter('tojson_safe')
+    def tojson_safe_filter(obj):
+        return json.dumps(obj)
+
     # Registrasi semua blueprint
     app.register_blueprint(product_bp)
     app.register_blueprint(auth_bp)

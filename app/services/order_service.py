@@ -7,7 +7,7 @@ class OrderService:
     Layanan untuk mengelola semua logika bisnis yang terkait dengan pesanan.
     """
 
-    def create_order(self, user_id, cart_data, shipping_details, payment_method, save_address):
+    def create_order(self, user_id, cart_data, shipping_details, payment_method):
         """
         Membuat pesanan baru berdasarkan data keranjang dan informasi pengiriman.
         user_id bisa None untuk guest checkout.
@@ -37,13 +37,16 @@ class OrderService:
                 effective_price = product['discount_price'] if product['discount_price'] and product['discount_price'] > 0 else product['price']
                 total_amount += effective_price * int(qty)
 
+            # Tentukan status awal berdasarkan metode pembayaran
+            initial_status = 'Processing' if payment_method == 'COD' else 'Pending'
+
             cursor = conn.cursor()
             cursor.execute("""
                 INSERT INTO orders (user_id, total_amount, status, payment_method, shipping_name, 
                                     shipping_phone, shipping_address_line_1, shipping_address_line_2,
                                     shipping_city, shipping_province, shipping_postal_code)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, total_amount, 'Pending', payment_method, 
+            """, (user_id, total_amount, initial_status, payment_method, 
                   shipping_details['name'], shipping_details['phone'], 
                   shipping_details['address1'], shipping_details.get('address2', ''),
                   shipping_details['city'], shipping_details['province'], 
@@ -58,11 +61,6 @@ class OrderService:
                     (order_id, pid, int(qty), effective_price)
                 )
                 cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (int(qty), pid))
-
-            if save_address and user_id:
-                # Menggunakan koneksi database (conn) yang sudah ada
-                # untuk menghindari error 'database is locked'.
-                user_service.update_user_address(user_id, shipping_details, conn=conn)
 
             conn.commit()
             return {'success': True, 'order_id': order_id}

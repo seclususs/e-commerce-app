@@ -1,0 +1,44 @@
+{% extends "layouts/base_layout.html" %}
+
+{% block title %}Pembayaran Pesanan #{{ order.id }} - HackThread{% endblock %}
+
+{% block content %}
+<section class="payment-page-section">
+    <div class="payment-container animated-element">
+        <div class="admin-card">
+            <h2 class="section-title" style="margin-bottom: 1.5rem;">Selesaikan Pembayaran</h2>
+            <p class="payment-intro">Pesanan Anda <strong>#{{ order.id }}</strong> telah kami terima. Segera selesaikan pembayaran agar pesanan dapat kami proses.</p>
+
+            <div class="payment-details">
+                <div class="payment-method-info">
+                    <h3>Instruksi Pembayaran (Simulasi)</h3>
+                    <p>Silakan transfer sejumlah <strong>{{ order.total_amount|rupiah }}</strong> ke nomor Virtual Account di bawah ini:</p>
+                    <div class="virtual-account-box">
+                        <span>123-456-7890</span>
+                    </div>
+                    <p class="payment-note">Ini hanya simulasi untuk keperluan prototipe. Tidak ada transfer nyata yang diperlukan.</p>
+                </div>
+                <div class="payment-summary">
+                    <h3>Ringkasan Pesanan</h3>
+                    <div class="summary-items-list">
+                        {% for item in items %}
+                        <div class="summary-row">
+                            <span>{{ item.name }} (x{{ item.quantity }})</span>
+                            <span>{{ (item.price * item.quantity)|rupiah }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="summary-total">
+                        <span>Total</span>
+                        <span>{{ order.total_amount|rupiah }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('user.confirm_payment', order_id=order.id) }}" style="margin-top: 2rem;">
+                 <button type="submit" class="cta-button cta-button-prominent" style="width: 100%;">Saya Sudah Bayar</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

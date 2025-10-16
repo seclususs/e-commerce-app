@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import csv
+import random
 from io import StringIO
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app, Response
 from werkzeug.utils import secure_filename
@@ -308,8 +309,8 @@ def admin_orders():
         query += ' AND date(o.order_date) <= ?'
         params.append(end_date)
     if search_query:
-        query += " AND (o.id LIKE ? OR u.username LIKE ?)"
-        params.extend([f'%{search_query}%', f'%{search_query}%'])
+        query += " AND (o.id LIKE ? OR u.username LIKE ? OR o.shipping_name LIKE ?)"
+        params.extend([f'%{search_query}%', f'%{search_query}%', f'%{search_query}%'])
 
     query += ' ORDER BY o.order_date DESC'
     
@@ -342,26 +343,30 @@ def admin_order_invoice(id):
 def update_order_status(id):
     conn = get_db_connection()
     
-    # Update Status
     status = request.form.get('status')
-    if status:
-        order = conn.execute('SELECT * FROM orders WHERE id = ?', (id,)).fetchone()
-        if status == 'Cancelled' and order['status'] != 'Cancelled':
-            order_items = conn.execute('SELECT * FROM order_items WHERE order_id = ?', (id,)).fetchall()
-            for item in order_items:
-                conn.execute('UPDATE products SET stock = stock + ? WHERE id = ?', (item['quantity'], item['product_id']))
-            flash(f'Stok untuk pesanan #{id} telah dikembalikan.', 'info')
-        conn.execute('UPDATE orders SET status = ? WHERE id = ?', (status, id))
-        flash(f'Status pesanan #{id} berhasil diperbarui!', 'success')
-
-    # Update Tracking Number
     tracking_number = request.form.get('tracking_number')
-    if tracking_number is not None: # Bisa string kosong
-        conn.execute('UPDATE orders SET tracking_number = ? WHERE id = ?', (tracking_number, id))
-        flash(f'Nomor resi untuk pesanan #{id} berhasil diperbarui.', 'success')
-        
+
+    # Ambil status order saat ini
+    order = conn.execute('SELECT status, tracking_number FROM orders WHERE id = ?', (id,)).fetchone()
+
+    # Logika untuk nomor resi otomatis
+    if status == 'Shipped' and not order['tracking_number']:
+        tracking_number = f"HT-{random.randint(10000000, 99999999)}"
+        flash(f'Nomor resi otomatis digenerate: {tracking_number}', 'info')
+    
+    # Logika untuk pengembalian stok
+    if status == 'Cancelled' and order['status'] != 'Cancelled':
+        order_items = conn.execute('SELECT * FROM order_items WHERE order_id = ?', (id,)).fetchall()
+        for item in order_items:
+            conn.execute('UPDATE products SET stock = stock + ? WHERE id = ?', (item['quantity'], item['product_id']))
+        flash(f'Stok untuk pesanan #{id} telah dikembalikan.', 'info')
+
+    # Update status dan nomor resi
+    conn.execute('UPDATE orders SET status = ?, tracking_number = ? WHERE id = ?', (status, tracking_number, id))
     conn.commit()
     conn.close()
+
+    flash(f'Pesanan #{id} berhasil diperbarui!', 'success')
     return redirect(url_for('admin.admin_order_detail', id=id))
 
 @admin_bp.route('/settings', methods=['GET', 'POST'])
