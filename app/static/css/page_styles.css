@@ -32,6 +32,23 @@
     text-align: center; text-decoration: none; display: inline-flex; font-size: 1rem; position: relative; z-index: 2;
 }
 
+/* Info Tambahan di Kartu Produk (Hover) */
+.product-info .additional-info {
+    opacity: 0;
+    height: 0;
+    overflow: hidden;
+    transition: opacity 0.3s ease, height 0.3s ease, margin-top 0.3s ease;
+    font-size: 0.85rem;
+    color: var(--color-text-med);
+    line-height: 1.5;
+}
+.product-card:hover .additional-info {
+    opacity: 1;
+    height: auto;
+    margin-top: var(--spacing-unit);
+    margin-bottom: var(--spacing-unit);
+}
+
 /* Gaya tombol Tambah ke Keranjang di kartu produk untuk desktop */
 @media (min-width: 1024px) {
     .product-card .add-to-cart-btn {
@@ -107,19 +124,31 @@
 }
 .filter-overlay.active { opacity: 1; visibility: visible; }
 
+/* Gaya Skeleton Loading */
+.skeleton-card { background-color: var(--color-background-med); border-radius: var(--border-radius-md); overflow: hidden; border: 1px solid var(--color-background-light); }
+.skeleton-image { width: 100%; padding-top: 100%; background-color: var(--color-background-light); animation: pulse 1.5s infinite ease-in-out; }
+.skeleton-info { padding: 1.5rem; }
+.skeleton-line { height: 1em; background-color: var(--color-background-light); border-radius: var(--border-radius-sm); margin-bottom: 1rem; animation: pulse 1.5s infinite ease-in-out; }
+.skeleton-line.short { width: 60%; }
+.skeleton-line.button { height: 40px; margin-top: 1.5rem; margin-bottom: 0; }
+@keyframes pulse { 0% { background-color: var(--color-background-light); } 50% { background-color: #475569; } 100% { background-color: var(--color-background-light); } }
+
+
 /* --- HALAMAN DETAIL PRODUK --- */
 .product-detail-section { padding: 4rem 5%; max-width: 1200px; margin: 0 auto; }
 .product-detail-container { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-bottom: 4rem; align-items: start;}
-.product-image-gallery .main-image { background: #1e293b; border-radius: 15px; overflow: hidden; margin-bottom: 1rem; border: 1px solid #334155; touch-action: pan-y; }
-.product-image-gallery .main-image img { width: 100%; height: auto; display: block; aspect-ratio: 1/1; object-fit: cover; transition: opacity 0.2s ease-in-out; }
+/* Penyesuaian Galeri untuk Swipe */
+.product-image-gallery { position: relative; }
+.gallery-slider-container { overflow: hidden; border-radius: 15px; background: #1e293b; border: 1px solid #334155; margin-bottom: 1rem; }
+.gallery-slider { display: flex; transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.gallery-slide { flex: 0 0 100%; min-width: 100%; }
+.gallery-slide img { width: 100%; height: auto; display: block; aspect-ratio: 1/1; object-fit: cover; }
 .thumbnail-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.75rem; }
 .thumbnail-item { border: 2px solid transparent; border-radius: 8px; overflow: hidden; cursor: pointer; transition: all 0.3s ease; }
 .thumbnail-item img { width: 100%; height: auto; display: block; aspect-ratio: 1/1; object-fit: cover; }
 .thumbnail-item:hover { border-color: #60a5fa; }
 .thumbnail-item.active { border-color: #3b82f6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-.gallery-dots { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 1rem; }
-.gallery-dot { width: 10px; height: 10px; border-radius: 50%; background-color: var(--color-background-light); transition: background-color 0.3s ease, transform 0.3s ease; cursor: pointer; }
-.gallery-dot.active { background-color: var(--color-primary); transform: scale(1.2); }
+.gallery-dots { display: none; } /* Dots disembunyikan, digantikan thumbnail */
 .product-title { font-family: 'Orbitron', sans-serif; font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.5rem; }
 .product-category-detail { background: #334155; color: #cbd5e1; display: inline-block; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.9rem; margin-bottom: 1rem; }
 .product-price-detail { font-size: 2.5rem; font-weight: 700; color: #3b82f6; margin-bottom: 1.5rem; }
@@ -131,19 +160,26 @@
 .quantity-input-field::-webkit-outer-spin-button, .quantity-input-field::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .stock-warning-message { font-size: 0.9rem; color: var(--color-warning); margin-top: 0.5rem; min-height: 1.2em; }
 
-/* Gaya untuk Detail Produk Statis */
+/* Gaya untuk Hierarki Detail Produk */
 .product-details-static .details-title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 600;
     padding-top: 1.5rem;
     padding-bottom: 0.5rem;
     margin-top: 1rem;
     border-bottom: 1px solid var(--color-background-light);
-    color: var(--color-primary);
+    color: var(--color-text-med);
+}
+.product-details-static .details-title.description-title {
+    font-size: 1.4rem;
+    color: var(--color-text-light);
 }
 .product-details-static .details-content {
     padding-top: 1rem;
     color: #cbd5e1;
+}
+.product-details-static .details-content.description-content {
+    line-height: 1.8;
 }
 .product-details-static .details-content ul {
     list-style-position: inside;

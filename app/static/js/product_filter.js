@@ -12,14 +12,32 @@ function initProductFiltering() {
         return;
     }
 
+    const createSkeletonCard = () => `
+        <div class="product-card skeleton-card">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-info">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line short"></div>
+                <div class="skeleton-line button"></div>
+            </div>
+        </div>
+    `;
+
+    const showLoadingState = () => {
+        let skeletons = '';
+        // Tampilkan jumlah skeleton yang sesuai, misal 8
+        for(let i = 0; i < 8; i++) {
+            skeletons += createSkeletonCard();
+        }
+        container.innerHTML = skeletons;
+    };
+
     const handleFilterChange = async (form) => {
         const formData = new FormData(form);
         const params = new URLSearchParams(formData);
         const url = `/api/products?${params.toString()}`;
 
-        // Tambahkan status loading untuk memberikan umpan balik visual
-        container.style.opacity = '0.5';
-        container.style.transition = 'opacity 0.3s ease-out';
+        showLoadingState();
 
         try {
             const response = await fetch(url);
@@ -28,11 +46,9 @@ function initProductFiltering() {
             }
             const data = await response.json();
 
-            // Perbarui URL di bilah alamat browser tanpa memuat ulang halaman
             const newUrl = `/products?${params.toString()}`;
             history.pushState({ path: newUrl }, '', newUrl);
 
-            // Perbarui konten dengan efek fade
             if (data.html && data.html.trim() !== '') {
                  container.innerHTML = data.html;
             } else {
@@ -42,27 +58,21 @@ function initProductFiltering() {
         } catch (error) {
             console.error('Gagal mengambil data produk:', error);
             container.innerHTML = '<p class="no-products-found">Gagal memuat produk. Silakan coba lagi.</p>';
-        } finally {
-            // Hilangkan status loading
-            container.style.opacity = '1';
         }
     };
 
     [formDesktop, formMobile].forEach(form => {
         if (form) {
-            // Tangani pengiriman form (misalnya, menekan Enter di kolom pencarian)
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 handleFilterChange(form);
 
-                // Jika di perangkat mobile, tutup panel filter setelah diterapkan
                 const canvas = document.getElementById('filterOffCanvas');
                 if (canvas && canvas.classList.contains('active')) {
                     document.getElementById('closeFilterBtn').click();
                 }
             });
 
-            // Tangani perubahan langsung pada input radio (kategori, urutan)
             form.addEventListener('change', (e) => {
                 if (e.target.type === 'radio') {
                     handleFilterChange(form);

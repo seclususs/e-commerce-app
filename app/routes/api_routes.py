@@ -29,7 +29,13 @@ PRODUCT_CARD_TEMPLATE = """
                 <span class="product-price">{{ product.price|rupiah }}</span>
             {% endif %}
         </div>
+        <!-- [BARU] Info tambahan untuk hover -->
+        <div class="additional-info">
+            {% if product.sizes %}<span>Ukuran: {{ product.sizes }}</span><br>{% endif %}
+            <span>Stok: {% if product.stock > 10 %}Tersedia{% elif product.stock > 0 %}Tersisa {{ product.stock }}{% else %}Habis{% endif %}</span>
+        </div>
         <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}" {% if product.stock == 0 %}disabled{% endif %}>
+            <i class="fas fa-shopping-cart"></i>
             <span>{% if product.stock > 0 %}Tambah ke Keranjang{% else %}Stok Habis{% endif %}</span>
         </button>
     </div>

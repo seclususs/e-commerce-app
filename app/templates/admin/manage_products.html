@@ -98,8 +98,8 @@
                         <td data-label="Stok:" class="collapsible-detail">{{ product.stock }}</td>
                         <td data-label="Aksi:" class="action-buttons">
                             <div class="desktop-actions">
-                               <a href="{{ url_for('admin.admin_edit_product', id=product.id) }}" class="btn-edit">Edit</a>
-                               <a href="{{ url_for('admin.delete_product', id=product.id) }}" class="btn-delete">Hapus</a>
+                               <a href="{{ url_for('admin.admin_edit_product', id=product.id) }}" class="action-link action-link-edit">Edit</a>
+                               <a href="{{ url_for('admin.delete_product', id=product.id) }}" class="action-link action-link-delete">Hapus</a>
                             </div>
                             <button class="mobile-details-toggle">Lihat Detail <i class="fas fa-chevron-down"></i></button>
                         </td>

@@ -9,19 +9,26 @@
     </div>
 
     <div class="product-detail-container">
+        <!-- Struktur Galeri Gambar untuk Swipe -->
         <div class="product-image-gallery animated-element">
-            <div class="main-image">
-                <img id="mainProductImage" src="{{ url_for('static', filename='uploads/' + product.image_url) if product.image_url else 'https://placehold.co/600x600/0f172a/f1f5f9?text=' + product.name }}" alt="Gambar utama {{ product.name }}">
+            <div class="gallery-slider-container">
+                <div class="gallery-slider" id="gallerySlider">
+                    {% for image_file in product.all_images %}
+                    <div class="gallery-slide">
+                        <img src="{{ url_for('static', filename='uploads/' + image_file) if image_file else 'https://placehold.co/600x600/0f172a/f1f5f9?text=' + product.name }}" alt="Gambar produk {{ product.name }} {{ loop.index }}">
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
+            
             {% if product.all_images|length > 1 %}
             <div class="thumbnail-gallery">
                 {% for image_file in product.all_images %}
                 <div class="thumbnail-item {% if loop.first %}active{% endif %}">
-                    <img src="{{ url_for('static', filename='uploads/' + image_file) }}" data-full-src="{{ url_for('static', filename='uploads/' + image_file) }}" alt="Thumbnail {{ product.name }} {{ loop.index }}">
+                    <img src="{{ url_for('static', filename='uploads/' + image_file) }}" alt="Thumbnail {{ product.name }} {{ loop.index }}">
                 </div>
                 {% endfor %}
             </div>
-            <div class="gallery-dots" id="galleryDots"></div>
             {% endif %}
         </div>
 
@@ -39,8 +46,9 @@
             </div>
             
             <div class="product-details-static">
-                <h3 class="details-title">Deskripsi</h3>
-                <div class="details-content">
+                <!-- Kelas untuk Hierarki Visual -->
+                <h3 class="details-title description-title">Deskripsi</h3>
+                <div class="details-content description-content">
                     <p>{{ product.description | safe }}</p>
                 </div>
 
@@ -56,7 +64,7 @@
                         </li>
                     </ul>
                 </div>
-                 <!-- [BARU] Input Kuantitas -->
+
                 {% if product.stock > 0 %}
                 <div class="product-quantity-selector">
                     <h3 class="details-title">Jumlah</h3>

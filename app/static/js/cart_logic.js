@@ -213,7 +213,7 @@ const cartModule = (() => {
 
             document.body.addEventListener('click', (e) => {
                 const btn = e.target.closest('.add-to-cart-btn');
-                if (!btn || btn.disabled) return;
+                if (!btn || btn.disabled || btn.classList.contains('is-added')) return;
                 
                 e.preventDefault();
                 const id = btn.dataset.id, name = btn.dataset.name, maxStock = parseInt(btn.dataset.stock);
@@ -226,25 +226,34 @@ const cartModule = (() => {
                     return;
                 }
 
-                // Tampilkan indikator loading
-                const btnText = btn.querySelector('span');
-                const originalText = btnText ? btnText.textContent : '';
-                btn.classList.add('is-loading');
-                if (btnText) btnText.textContent = 'Memproses...';
                 btn.disabled = true;
+                const btnTextEl = btn.querySelector('span');
+                const originalText = btnTextEl ? btnTextEl.textContent : '';
 
+                // Add checkmark icon if it doesn't exist
+                if (!btn.querySelector('.checkmark-icon')) {
+                    const checkmark = document.createElement('i');
+                    checkmark.className = 'fas fa-check checkmark-icon';
+                    btn.prepend(checkmark);
+                }
+
+                cart[id] = { quantity: currentInCart + quantityToAdd };
+                save();
+                updateCount();
+                showNotification(`'${name}' x ${quantityToAdd} ditambahkan!`);
+                triggerCartAnimation();
+                if (isLoggedIn && !document.getElementById('quantity-input')) toggleModal();
+
+                // Success state
+                btn.classList.add('is-added');
+                if (btnTextEl) btnTextEl.textContent = 'Ditambahkan!';
+                
+                // Revert back after 2 seconds
                 setTimeout(() => {
-                    cart[id] = { quantity: currentInCart + quantityToAdd };
-                    save();
-                    updateCount();
-                    showNotification(`'${name}' x ${quantityToAdd} ditambahkan!`);
-                    triggerCartAnimation();
-                    if (isLoggedIn) toggleModal();
-
-                    btn.classList.remove('is-loading');
-                    if (btnText) btnText.textContent = originalText;
+                    btn.classList.remove('is-added');
+                    if (btnTextEl) btnTextEl.textContent = originalText;
                     btn.disabled = false;
-                }, 400);
+                }, 2000);
             });
             
             if (isLoggedIn && cartModalEl) {

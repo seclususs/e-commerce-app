@@ -9,18 +9,18 @@ const initActionConfirmations = () => {
     if (!mainContent) return;
 
     mainContent.addEventListener('click', (e) => {
-        const deleteButton = e.target.closest('.btn-delete, .btn-delete-lookalike');
-        if (deleteButton) {
+        const deleteLink = e.target.closest('.action-link-delete');
+        if (deleteLink) {
             e.preventDefault();
-            const form = deleteButton.closest('form');
-            const url = deleteButton.href;
+            const form = deleteLink.closest('form');
+            const url = deleteLink.href;
             confirmModal.show(
                 'Konfirmasi Hapus',
                 'Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat diurungkan.',
                 () => { 
                     if (form) {
-                        const actionName = deleteButton.getAttribute('name');
-                        const actionValue = deleteButton.getAttribute('value');
+                        const actionName = deleteLink.getAttribute('name');
+                        const actionValue = deleteLink.getAttribute('value');
 
                         if (actionName && actionValue) {
                             const actionInput = document.createElement('input');
@@ -103,10 +103,8 @@ const initLogout = () => {
 };
 
 const initProductGallery = () => {
-    const mainImage = document.getElementById('mainProductImage');
     const gallery = document.querySelector('.product-image-gallery');
-    
-    if (!mainImage || !gallery) return;
+    if (!gallery) return;
 
     gallery.addEventListener('click', function(e) {
         const thumbnail = e.target.closest('.thumbnail-item');
@@ -114,86 +112,112 @@ const initProductGallery = () => {
 
         const clickedIndex = Array.from(gallery.querySelectorAll('.thumbnail-item')).findIndex(item => item === thumbnail);
         
-        if(window.updateSwipeableGallery) {
+        if (window.updateSwipeableGallery) {
              window.updateSwipeableGallery(clickedIndex);
         }
     });
 };
 
 const initSwipeableGallery = () => {
-    const mainImageContainer = document.querySelector('.product-image-gallery .main-image');
-    const mainImage = document.getElementById('mainProductImage');
+    const container = document.querySelector('.gallery-slider-container');
+    const slider = document.getElementById('gallerySlider');
     const thumbnailsContainer = document.querySelector('.thumbnail-gallery');
-    const dotsContainer = document.getElementById('galleryDots');
 
-    if (!mainImageContainer || !mainImage) return;
+    if (!container || !slider) return;
 
+    const slides = slider.querySelectorAll('.gallery-slide');
     const thumbnails = thumbnailsContainer ? Array.from(thumbnailsContainer.querySelectorAll('.thumbnail-item')) : [];
-    if (thumbnails.length <= 1) {
-        if(dotsContainer) dotsContainer.style.display = 'none';
+    
+    if (slides.length <= 1) {
+        if (thumbnailsContainer) thumbnailsContainer.style.display = 'none';
         return;
     }
 
-    const imageUrls = thumbnails.map(thumb => thumb.querySelector('img').getAttribute('data-full-src'));
     let currentIndex = 0;
     let startX = 0;
-    let isSwiping = false;
+    let currentTranslate = 0;
+    let prevTranslate = 0;
+    let isDragging = false;
+    let animationID = 0;
 
-    if (dotsContainer) {
-        dotsContainer.innerHTML = '';
-        imageUrls.forEach((_, index) => {
-            const dot = document.createElement('span');
-            dot.classList.add('gallery-dot');
-            dot.dataset.index = index;
-            dotsContainer.appendChild(dot);
-        });
-    }
-    const dots = dotsContainer ? Array.from(dotsContainer.querySelectorAll('.gallery-dot')) : [];
-
-    const updateGallery = (newIndex) => {
-        if (newIndex < 0) newIndex = imageUrls.length - 1;
-        else if (newIndex >= imageUrls.length) newIndex = 0;
+    const updateGallery = (newIndex, animate = true) => {
+        if (newIndex < 0 || newIndex >= slides.length) return;
         
         currentIndex = newIndex;
+        const offset = -currentIndex * container.offsetWidth;
 
-        mainImage.style.opacity = 0;
-        setTimeout(() => { mainImage.src = imageUrls[currentIndex]; mainImage.style.opacity = 1; }, 200);
+        if (animate) {
+            slider.style.transition = 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        } else {
+            slider.style.transition = 'none';
+        }
+
+        slider.style.transform = `translateX(${offset}px)`;
+        currentTranslate = offset;
+        prevTranslate = offset;
 
         if (thumbnails.length > 0) {
             thumbnails.forEach((item, index) => {
                 item.classList.toggle('active', index === currentIndex);
-                if (index === currentIndex) item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                if (index === currentIndex) {
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
             });
-        }
-        
-        if (dots.length > 0) {
-            dots.forEach((dot, index) => dot.classList.toggle('active', index === currentIndex));
         }
     };
     
     window.updateSwipeableGallery = updateGallery;
+    
+    const touchStart = (index) => (e) => {
+        isDragging = true;
+        startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+        animationID = requestAnimationFrame(animation);
+        slider.style.transition = 'none';
+    };
 
-    if(dotsContainer) {
-        dotsContainer.addEventListener('click', (e) => {
-            if(e.target.matches('.gallery-dot')) {
-                updateGallery(parseInt(e.target.dataset.index));
-            }
-        });
-    }
-
-    mainImageContainer.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; isSwiping = true; }, { passive: true });
-    mainImageContainer.addEventListener('touchend', (e) => {
-        if (!isSwiping) return;
-        const endX = e.changedTouches[0].clientX;
-        const diffX = startX - endX;
-        if (Math.abs(diffX) > 50) {
-            updateGallery(currentIndex + (diffX > 0 ? 1 : -1));
+    const touchMove = (e) => {
+        if (isDragging) {
+            const currentPosition = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+            currentTranslate = prevTranslate + currentPosition - startX;
         }
-        isSwiping = false;
+    };
+
+    const touchEnd = () => {
+        isDragging = false;
+        cancelAnimationFrame(animationID);
+        const movedBy = currentTranslate - prevTranslate;
+
+        if (movedBy < -100 && currentIndex < slides.length - 1) {
+            currentIndex += 1;
+        }
+
+        if (movedBy > 100 && currentIndex > 0) {
+            currentIndex -= 1;
+        }
+        
+        updateGallery(currentIndex);
+    };
+
+    function animation() {
+        slider.style.transform = `translateX(${currentTranslate}px)`;
+        if (isDragging) requestAnimationFrame(animation);
+    }
+    
+    slides.forEach((slide, index) => {
+        slide.addEventListener('touchstart', touchStart(index), { passive: true });
+        slide.addEventListener('touchend', touchEnd);
+        slide.addEventListener('touchmove', touchMove, { passive: true });
+        slide.addEventListener('mousedown', touchStart(index));
+        slide.addEventListener('mouseup', touchEnd);
+        slide.addEventListener('mouseleave', touchEnd);
+        slide.addEventListener('mousemove', touchMove);
     });
 
-    updateGallery(0);
+    window.addEventListener('resize', () => updateGallery(currentIndex, false));
+
+    updateGallery(0, false); // Initialize without animation
 };
+
 
 const initFilterModal = () => {
     const toggleBtn = document.getElementById('filterToggleButton');

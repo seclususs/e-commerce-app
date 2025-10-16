@@ -1,4 +1,3 @@
-
 :root {
   /* Skema Warna */
   --color-primary: #3b82f6;
@@ -16,9 +15,16 @@
   --color-info: #8b5cf6;
   --color-white: #ffffff;
 
+  /* Variabel Warna Tautan Aksi */
+  --color-text-link: var(--color-primary);
+  --color-text-danger: var(--color-danger);
+
   /* Tipografi */
   --font-primary: 'Inter', sans-serif;
   --font-secondary: 'Orbitron', sans-serif;
+
+  /* Sistem Spasi */
+  --spacing-unit: 8px;
 
   /* Radius & Bayangan */
   --border-radius-sm: 8px;

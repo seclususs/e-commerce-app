@@ -51,7 +51,7 @@
         color: var(--color-text-med);
         font-size: 0.7rem;
         padding: 4px 0;
-        transition: color 0.3s ease;
+        transition: color 0.3s ease, background-color 0.3s ease;
         -webkit-tap-highlight-color: transparent;
     }
 
@@ -60,11 +60,26 @@
         margin-bottom: 5px;
         width: 24px;
         text-align: center;
+        transition: transform 0.3s ease;
     }
 
-    .bottom-nav-item:hover,
+    .bottom-nav-item:hover {
+        color: var(--color-primary);
+    }
+
+    /* Animasi untuk item navigasi aktif */
+    @keyframes pulse-icon {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+        100% { transform: scale(1); }
+    }
+
     .bottom-nav-item.active {
         color: var(--color-primary);
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    .bottom-nav-item.active i {
+        animation: pulse-icon 0.6s ease-in-out;
     }
 
     /* Floating Action Bar untuk CTAs di Mobile, sebelumnya .mobile-cta-bar */

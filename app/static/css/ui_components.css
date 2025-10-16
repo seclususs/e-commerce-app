@@ -7,8 +7,11 @@
 }
 .animated-element.is-visible { opacity: 1; transform: translateY(0); }
 @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
-.page-content-wrapper { animation: pageFadeIn 0.4s ease-out; }
-.page-content-wrapper.page-is-leaving { opacity: 0; transition: opacity 0.3s ease-in; }
+.page-content-wrapper { 
+    animation: pageFadeIn 0.4s ease-out; 
+    transition: opacity 0.3s ease-in;
+}
+.page-content-wrapper.page-is-leaving { opacity: 0; }
 
 /* Flash Messages */
 .flash-messages { padding: 0 5%; margin-top: 1rem; }
@@ -55,7 +58,17 @@
 .cta-button.is-loading .spinner { display: inline-block; }
 .cta-button.is-loading span { vertical-align: middle; }
 .cta-button.is-loading { cursor: wait; }
-.add-to-cart-btn.is-loading .fa-shopping-cart { display: none; }
+
+/* Status "Ditambahkan" pada Tombol Add to Cart */
+.add-to-cart-btn .checkmark-icon { display: none; }
+.add-to-cart-btn.is-added {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: var(--color-white);
+    transform: scale(1.02);
+}
+.add-to-cart-btn.is-added .fa-shopping-cart { display: none; }
+.add-to-cart-btn.is-added .checkmark-icon { display: inline-block; }
 
 
 .cta-button-secondary {
@@ -71,8 +84,17 @@
 .cta-button-outline:hover { background: var(--color-primary); color: var(--color-white); transform: translateY(-3px); }
 .btn-danger { background: var(--color-danger-dark); }
 .btn-danger:hover { background: #b91c1c; }
-.btn-edit { color: var(--color-primary); text-decoration: none; font-weight: 600; }
-.btn-delete { color: var(--color-danger); text-decoration: none; font-weight: 600; }
+
+/* Menggunakan Variabel Baru untuk Tautan Aksi */
+.action-link {
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.3s ease;
+}
+.action-link:hover { opacity: 0.7; }
+.action-link-edit { color: var(--color-text-link); }
+.action-link-delete { color: var(--color-text-danger); }
+
 .btn-view { color: #a5b4fc; text-decoration: none; font-weight: 600; }
 .btn-cancel {
     background: transparent; border: 1px solid var(--color-danger); color: var(--color-danger);
@@ -98,11 +120,15 @@
 }
 .admin-card {
     background: rgba(30, 41, 59, 0.5); border: 1px solid var(--color-background-light);
-    padding: 2rem; border-radius: var(--border-radius-md); margin-bottom: 2rem;
+    padding: calc(var(--spacing-unit) * 3); 
+    border-radius: var(--border-radius-md); 
+    margin-bottom: calc(var(--spacing-unit) * 3);
 }
 .admin-card h3 {
-    font-family: var(--font-secondary); color: #60a5fa; margin-bottom: 1.5rem;
-    border-bottom: 1px solid var(--color-background-light); padding-bottom: 0.5rem;
+    font-family: var(--font-secondary); color: #60a5fa; 
+    margin-bottom: calc(var(--spacing-unit) * 2);
+    border-bottom: 1px solid var(--color-background-light); 
+    padding-bottom: var(--spacing-unit);
 }
 .order-detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; }
 .testimonial-card {
@@ -130,7 +156,8 @@
     width: 100%; padding: 0.8rem; background: var(--color-background-dark);
     border: 1px solid var(--color-background-light); border-radius: var(--border-radius-sm);
     color: var(--color-text-light); font-size: 1rem; font-family: var(--font-primary);
-    transition: all 0.3s ease;
+    /* Transisi lebih spesifik */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .form-group input:focus, .form-group textarea:focus, .form-group select:focus, .form-control:focus {
     outline: none; border-color: var(--color-primary); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
