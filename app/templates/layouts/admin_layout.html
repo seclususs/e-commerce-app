@@ -17,7 +17,9 @@
             <nav class="admin-nav">
                 <a href="{{ url_for('admin.admin_dashboard') }}" class="{{ 'active' if 'dashboard' in request.endpoint }}">Dashboard</a>
                 <a href="{{ url_for('admin.admin_products') }}" class="{{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint }}">Produk</a>
+                <a href="{{ url_for('admin.admin_categories') }}" class="{{ 'active' if 'categories' in request.endpoint }}">Kategori</a>
                 <a href="{{ url_for('admin.admin_orders') }}" class="{{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}">Pesanan</a>
+                <a href="{{ url_for('admin.admin_reports') }}" class="{{ 'active' if 'reports' in request.endpoint }}">Laporan</a>
                 <a href="{{ url_for('admin.admin_settings') }}" class="{{ 'active' if 'settings' in request.endpoint }}">Pengaturan</a>
                 <a href="{{ url_for('auth.logout') }}" id="logoutLink">Logout</a>
             </nav>
@@ -46,17 +48,17 @@
         <a href="{{ url_for('admin.admin_dashboard') }}" class="bottom-nav-item {{ 'active' if 'dashboard' in request.endpoint }}">
             <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
         </a>
-        <a href="{{ url_for('admin.admin_products') }}" class="bottom-nav-item {{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint }}">
+        <a href="{{ url_for('admin.admin_products') }}" class="bottom-nav-item {{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint or 'categories' in request.endpoint }}">
             <i class="fas fa-box-open"></i> <span>Produk</span>
         </a>
         <a href="{{ url_for('admin.admin_orders') }}" class="bottom-nav-item {{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}">
             <i class="fas fa-receipt"></i> <span>Pesanan</span>
         </a>
+         <a href="{{ url_for('admin.admin_reports') }}" class="bottom-nav-item {{ 'active' if 'reports' in request.endpoint }}">
+            <i class="fas fa-chart-line"></i> <span>Laporan</span>
+        </a>
         <a href="{{ url_for('admin.admin_settings') }}" class="bottom-nav-item {{ 'active' if 'settings' in request.endpoint }}">
             <i class="fas fa-cog"></i> <span>Atur</span>
-        </a>
-        <a href="{{ url_for('auth.logout') }}" class="bottom-nav-item" id="mobileLogoutLink">
-            <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
         </a>
     </nav>
 

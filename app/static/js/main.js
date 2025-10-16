@@ -1,12 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Inisialisasi modul UI
     initFlashMessages();
-    
-    // Inisialisasi modul lain
     initAnimations();
     cartModule.init();
 
-    // Inisialisasi event handler spesifik halaman
+    // Event handler spesifik halaman
     initOrderSuccessPage();
     initActionConfirmations();
     initQuickCheckout();
@@ -15,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminImagePreviews();
     initFilterModal();
     initSwipeableGallery();
-    initMobileCtaHandlers(); // Untuk tombol checkout mobile
-    initAdminCardToggle();   // Untuk kartu admin mobile
+    initMobileCtaHandlers();
+    initAdminCardToggle();
+    initBulkActions();
 });

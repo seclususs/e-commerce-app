@@ -4,21 +4,27 @@
 {% block adminheader %}Detail Pesanan #{{ order.id }}{% endblock %}
 
 {% block admincontent %}
+<div style="margin-bottom: 2rem;">
+    <a href="{{ url_for('admin.admin_orders') }}" class="cta-button-secondary">&larr; Kembali ke Daftar Pesanan</a>
+    <!-- Tombol Cetak Invoice -->
+    <a href="{{ url_for('admin.admin_order_invoice', id=order.id) }}" target="_blank" class="cta-button" style="float: right;">Cetak Invoice</a>
+</div>
 <div class="order-detail-grid">
     <div class="admin-card">
         <h3>Informasi Pesanan</h3>
         <p><strong>ID Pesanan:</strong> #{{ order.id }}</p>
         <p><strong>Tanggal:</strong> {{ order.order_date }}</p>
-        <p><strong>Pelanggan:</strong> {{ order.customer_name or 'N/A' }} ({{ order.email or 'N/A' }})</p>
+        <p><strong>Pelanggan:</strong> {{ order.customer_name or 'Tamu' }} ({{ order.email or 'N/A' }})</p>
         <p><strong>Total Pembayaran:</strong> {{ order.total_amount|rupiah }}</p>
         <p><strong>Metode Pembayaran:</strong> {{ order.payment_method or 'N/A' }}</p>
         <p><strong>Status Saat Ini:</strong> <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></p>
     </div>
     <div class="admin-card">
-        <h3>Ubah Status Pesanan</h3>
+        <h3>Update Pesanan</h3>
         <form action="{{ url_for('admin.update_order_status', id=order.id) }}" method="POST">
+             <!-- Update status dan nomor resi dalam satu form -->
             <div class="form-group">
-                <label for="status">Status Baru</label>
+                <label for="status">Ubah Status</label>
                 <select name="status" id="status" class="form-control">
                     <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
                     <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
@@ -27,7 +33,11 @@
                     <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
                 </select>
             </div>
-            <button type="submit" class="cta-button form-button">Update Status</button>
+             <div class="form-group">
+                <label for="tracking_number">Nomor Resi Pengiriman</label>
+                <input type="text" name="tracking_number" id="tracking_number" class="form-control" value="{{ order.tracking_number or '' }}" placeholder="Masukkan nomor resi di sini">
+            </div>
+            <button type="submit" class="cta-button form-button">Update Pesanan</button>
         </form>
     </div>
 </div>

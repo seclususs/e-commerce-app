@@ -4,18 +4,15 @@
 
 {% block content %}
 <section class="products-page-section">
-    <!-- Tombol Filter untuk Mobile -->
     <button class="cta-button filter-toggle-btn" id="filterToggleButton">
         <i class="fas fa-filter"></i> Filter & Urutkan
     </button>
 
-    <!-- Off-canvas Filter Menu -->
     <div class="filter-off-canvas" id="filterOffCanvas">
         <div class="filter-off-canvas-header">
             <h3>Filter & Urutkan</h3>
             <button id="closeFilterBtn" class="close-cart">&times;</button>
         </div>
-        <!-- Konten di-wrap untuk layout sticky footer -->
         <div class="filter-off-canvas-body">
             <div class="filter-off-canvas-content">
                 <form method="GET" action="{{ url_for('product.products_page') }}" id="filter-form-mobile">
@@ -34,7 +31,7 @@
                         <label>Kategori:</label>
                         <div class="checkbox-group">
                             <label class="checkbox-label"><input type="radio" name="category" value="" {% if not request.args.get('category') %}checked{% endif %}> Semua</label>
-                            {% for cat in categories %}<label class="checkbox-label"><input type="radio" name="category" value="{{ cat }}" {% if request.args.get('category') == cat %}checked{% endif %}> {{ cat }}</label>{% endfor %}
+                            {% for cat in categories %}<label class="checkbox-label"><input type="radio" name="category" value="{{ cat.id }}" {% if request.args.get('category')|int == cat.id %}checked{% endif %}> {{ cat.name }}</label>{% endfor %}
                         </div>
                     </div>
                      <div class="filter-actions">
@@ -47,8 +44,6 @@
     </div>
     <div class="filter-overlay" id="filterOverlay"></div>
 
-
-    <!-- Filter Bar untuk Desktop -->
     <div class="filters-bar admin-card animated-element">
         <form method="GET" action="{{ url_for('product.products_page') }}" id="filter-form-desktop">
             <div class="search-bar">
@@ -67,7 +62,7 @@
                 <label>Kategori:</label>
                 <div class="checkbox-group">
                     <label class="checkbox-label"><input type="radio" name="category" value="" onchange="this.form.submit()" {% if not request.args.get('category') %}checked{% endif %}> Semua</label>
-                    {% for cat in categories %}<label class="checkbox-label"><input type="radio" name="category" value="{{ cat }}" onchange="this.form.submit()" {% if request.args.get('category') == cat %}checked{% endif %}> {{ cat }}</label>{% endfor %}
+                    {% for cat in categories %}<label class="checkbox-label"><input type="radio" name="category" value="{{ cat.id }}" onchange="this.form.submit()" {% if request.args.get('category')|int == cat.id %}checked{% endif %}> {{ cat.name }}</label>{% endfor %}
                 </div>
             </div>
             <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary reset-filter-btn">Reset</a>
@@ -86,9 +81,16 @@
                     </div>
                     <div class="product-info">
                         <h3 class="product-name">{{ product.name }}</h3>
-                        <p class="product-category">{{ product.category }}</p>
-                        <p class="product-price">{{ product.price|rupiah }}</p>
-                        <!-- Tombol ini akan disembunyikan dan muncul saat hover di desktop -->
+                        <p class="product-category">{{ product.category_name or 'N/A' }}</p>
+                        <!-- Tampilkan harga diskon -->
+                        <div class="product-price-container">
+                            {% if product.discount_price and product.discount_price > 0 %}
+                                <span class="product-price discount-price">{{ product.discount_price|rupiah }}</span>
+                                <del class="original-price">{{ product.price|rupiah }}</del>
+                            {% else %}
+                                <span class="product-price">{{ product.price|rupiah }}</span>
+                            {% endif %}
+                        </div>
                         <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" {% if product.stock == 0 %}disabled{% endif %}>
                             {% if product.stock > 0 %}Tambah ke Keranjang{% else %}Stok Habis{% endif %}
                         </button>

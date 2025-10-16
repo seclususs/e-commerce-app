@@ -14,7 +14,7 @@
                 <h3>Buat Akun untuk Lacak Pesanan</h3>
                 <p style="color: #94a3b8; margin-bottom: 1rem;">Buat akun dengan detail di bawah untuk melacak pesanan Anda dan checkout lebih cepat di lain waktu.</p>
                 <form method="POST" action="{{ url_for('auth.register_from_order') }}">
-                    <input type="hidden" name="order_details" value="{{ guest_order_details | tojson | safe }}">
+                    <input type="hidden" name="order_details" value='{{ guest_order_details | tojson | safe }}'>
                     <input type="hidden" name="order_id" value="{{ guest_order_id }}">
                     <div class="form-group">
                         <label>Email</label>

@@ -20,16 +20,13 @@
                 {% if session.is_admin %}
                     <li><a href="{{ url_for('admin.admin_dashboard') }}">Admin</a></li>
                 {% else %}
-                     <!-- [DIUBAH] Menambahkan kelas 'nav-link-secondary' -->
                      <li><a href="{{ url_for('user.user_profile') }}" class="nav-link-secondary">Profil Saya</a></li>
                 {% endif %}
-                <!-- [DIUBAH] Menambahkan kelas 'nav-link-secondary' -->
                 <li><a href="{{ url_for('auth.logout') }}" id="logoutLink" class="nav-link-secondary">Logout</a></li>
             {% else %}
                 <li><a href="{{ url_for('product.index') }}">Beranda</a></li>
                 <li><a href="{{ url_for('product.products_page') }}">Produk</a></li>
                 <li><a href="{{ url_for('product.about') }}">Tentang</a></li>
-                <!-- [DIUBAH] Menambahkan kelas 'nav-link-secondary' -->
                 <li><a href="{{ url_for('auth.login') }}" class="nav-link-secondary">Login</a></li>
                 <li><a href="{{ url_for('auth.register') }}" class="cta-button nav-cta">Daftar</a></li>
             {% endif %}
@@ -95,7 +92,7 @@
             <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'product' in request.endpoint and 'admin' not in request.endpoint }}">
                 <i class="fas fa-store"></i> <span>Produk</span>
             </a>
-            <!-- [DIUBAH] Menambahkan ID untuk target animasi -->
+            <!-- Menambahkan ID untuk target animasi -->
             <a href="{{ url_for('user.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
                 <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
             </a>
@@ -112,7 +109,7 @@
             <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'products_page' in request.endpoint }}">
                 <i class="fas fa-store"></i> <span>Produk</span>
             </a>
-            <!-- [DIUBAH] Menambahkan ID untuk target animasi -->
+            <!-- Menambahkan ID untuk target animasi -->
             <a href="{{ url_for('user.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
                 <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
             </a>

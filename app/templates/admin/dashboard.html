@@ -4,48 +4,101 @@
 {% block adminheader %}Dashboard Ringkasan{% endblock %}
 
 {% block admincontent %}
+<!-- Form Filter Rentang Waktu -->
+<div class="admin-card animated-element">
+    <h3>Filter Tampilan</h3>
+    <form method="GET" action="{{ url_for('admin.admin_dashboard') }}" id="dashboard-filter-form">
+        <div class="form-grid" style="align-items: flex-end;">
+            <div class="form-group">
+                <label for="period">Rentang Waktu Cepat</label>
+                <select name="period" id="period" class="form-control" onchange="this.form.submit()">
+                    <option value="last_7_days" {% if selected_period == 'last_7_days' %}selected{% endif %}>7 Hari Terakhir</option>
+                    <option value="last_30_days" {% if selected_period == 'last_30_days' %}selected{% endif %}>30 Hari Terakhir</option>
+                    <option value="this_month" {% if selected_period == 'this_month' %}selected{% endif %}>Bulan Ini</option>
+                    <option value="custom" {% if selected_period == 'custom' %}selected{% endif %} disabled>Rentang Kustom</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="custom_start">Tanggal Mulai (Kustom)</label>
+                <input type="date" name="custom_start" id="custom_start" class="form-control" value="{{ custom_start or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="custom_end">Tanggal Selesai (Kustom)</label>
+                <input type="date" name="custom_end" id="custom_end" class="form-control" value="{{ custom_end or '' }}">
+            </div>
+            <div class="form-actions" style="margin-bottom: 0;">
+                <button type="submit" class="cta-button">Terapkan Kustom</button>
+            </div>
+        </div>
+    </form>
+</div>
+
 <div class="dashboard-stats">
     <div class="stat-card animated-element" data-animation-delay="100">
-        <h4>Total Produk</h4>
-        <p>{{ stats.product_count }}</p>
+        <h4>Total Penjualan</h4>
+        <p>{{ stats.total_sales|rupiah }}</p>
     </div>
     <div class="stat-card animated-element" data-animation-delay="200">
         <h4>Total Pesanan</h4>
         <p>{{ stats.order_count }}</p>
     </div>
     <div class="stat-card animated-element" data-animation-delay="300">
-        <h4>Total Penjualan</h4>
-        <p>{{ stats.total_sales|rupiah }}</p>
+        <h4>Pengguna Baru</h4>
+        <p>{{ stats.new_user_count }}</p>
+    </div>
+     <div class="stat-card animated-element" data-animation-delay="400">
+        <h4>Total Produk</h4>
+        <p>{{ stats.product_count }}</p>
     </div>
 </div>
 
 <div class="dashboard-charts-grid">
     <div class="admin-card animated-element" data-animation-delay="400">
-        <h3>Penjualan 7 Hari Terakhir</h3>
+        <h3>Grafik Penjualan</h3>
         <canvas id="salesChart"></canvas>
     </div>
     <div class="admin-card animated-element" data-animation-delay="500">
-        <h3>Pesanan Terbaru</h3>
+        <h3>Produk Terlaris</h3>
         <div class="table-wrapper">
             <table class="admin-table">
-                <thead>
-                    <tr><th>ID</th><th>Total</th><th>Status</th></tr>
-                </thead>
                 <tbody>
-                    {% for order in recent_orders %}
+                    {% for product in stats.top_products %}
                     <tr>
-                        <td><a href="{{ url_for('admin.admin_order_detail', id=order.id) }}" class="btn-view">#{{ order.id }}</a></td>
-                        <td>{{ order.total_amount|rupiah }}</td>
-                        <td><span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></td>
+                        <td>{{ product.name }}</td>
+                        <td style="text-align: right;"><strong>{{ product.total_sold }}</strong> terjual</td>
                     </tr>
                     {% else %}
-                    <tr>
-                        <td colspan="3" style="text-align: center;">Belum ada pesanan.</td>
-                    </tr>
+                    <tr><td colspan="2">Tidak ada data penjualan.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+    </div>
+</div>
+
+<div class="admin-card animated-element">
+    <h3>Stok Segera Habis (Stok ≤ 5)</h3>
+    <div class="table-wrapper">
+        <table class="admin-table">
+             <thead>
+                <tr>
+                    <th>Nama Produk</th>
+                    <th>Sisa Stok</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in stats.low_stock_products %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td><span style="color: var(--color-warning); font-weight: bold;">{{ product.stock }}</span></td>
+                    <td><a href="{{ url_for('admin.admin_edit_product', id=product.id) }}" class="btn-edit">Kelola Stok</a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" style="text-align: center;">Tidak ada produk dengan stok menipis.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
@@ -54,9 +107,42 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Logika untuk menonaktifkan form kustom jika bukan 'custom'
+        const periodSelect = document.getElementById('period');
+        const customStart = document.getElementById('custom_start');
+        const customEnd = document.getElementById('custom_end');
+        
+        // Logika untuk submit on change, kecuali untuk kustom
+        periodSelect.addEventListener('change', function() {
+            if (this.value !== 'custom') {
+                // Hapus nilai kustom agar tidak ikut terkirim
+                customStart.value = '';
+                customEnd.value = '';
+                this.form.submit();
+            }
+        });
+        
+        // Jika form kustom di-submit, pastikan periode diset ke 'custom'
+        document.getElementById('dashboard-filter-form').addEventListener('submit', function(e) {
+            // Cek apakah yang memicu adalah tanggal kustom
+            if (e.submitter && e.submitter.textContent.includes('Terapkan Kustom')) {
+                 if (customStart.value && customEnd.value) {
+                    // Buat option 'custom' baru jika tidak ada
+                    if (!periodSelect.querySelector('option[value="custom"]')) {
+                        const customOption = new Option('Rentang Kustom', 'custom');
+                        periodSelect.add(customOption);
+                    }
+                    periodSelect.value = 'custom';
+                 } else {
+                     e.preventDefault();
+                     alert('Harap isi tanggal mulai dan tanggal selesai untuk rentang kustom.');
+                 }
+            }
+        });
+
+
         const ctx = document.getElementById('salesChart');
         if (ctx) {
-            // JSON.parse untuk mem-parsing data dengan aman
             const chartLabels = JSON.parse('{{ chart_labels | tojson | safe }}');
             const chartData = JSON.parse('{{ chart_data | tojson | safe }}');
 
@@ -77,40 +163,25 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#1e293b',
-                            titleFont: { size: 14, weight: 'bold' },
-                            bodyFont: { size: 12 },
-                            padding: 10,
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) { label += ': '; }
-                                    if (context.parsed.y !== null) {
-                                        label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(context.parsed.y);
-                                    }
-                                    return label;
+                    plugins: { legend: { display: false }, tooltip: {
+                        backgroundColor: '#1e293b', titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 12 }, padding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(context.parsed.y);
                                 }
+                                return label;
                             }
                         }
-                    },
+                    }},
                     scales: {
                         y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(203, 213, 225, 0.1)' },
-                            ticks: { 
-                                color: '#94a3b8',
-                                callback: function(value) {
-                                    return 'Rp ' + (value / 1000) + 'k';
-                                }
-                            }
+                            beginAtZero: true, grid: { color: 'rgba(203, 213, 225, 0.1)' },
+                            ticks: { color: '#94a3b8', callback: function(value) { return 'Rp ' + (value / 1000) + 'k'; } }
                         },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#94a3b8' }
-                        }
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
                     }
                 }
             });

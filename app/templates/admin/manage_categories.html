@@ -1,0 +1,60 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block admintitle %}Manajemen Kategori{% endblock %}
+{% block adminheader %}Manajemen Kategori Produk{% endblock %}
+
+{% block admincontent %}
+<div class="admin-card animated-element">
+    <h3>Tambah Kategori Baru</h3>
+    <form method="POST" action="{{ url_for('admin.admin_categories') }}" class="form-actions">
+        <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+            <input type="text" id="name" name="name" placeholder="Nama Kategori Baru" required>
+        </div>
+        <button type="submit" name="action" value="add" class="cta-button">Tambah</button>
+    </form>
+</div>
+
+<div class="admin-card animated-element" data-animation-delay="200">
+    <h3>Daftar Kategori</h3>
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama Kategori</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td data-label="ID:">{{ category.id }}</td>
+                    <td data-label="Nama:">
+                        <form method="POST" action="{{ url_for('admin.admin_categories') }}">
+                            <div class="form-actions" style="justify-content: space-between;">
+                                <input type="hidden" name="id" value="{{ category.id }}">
+                                <input type="text" name="name" value="{{ category.name }}" class="form-control" style="max-width: 300px;">
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button type="submit" name="action" value="edit" class="cta-button-secondary" style="border-color: var(--color-primary); color: var(--color-primary);">Update</button>
+                                    <button type="submit" name="action" value="delete" class="cta-button-secondary btn-delete-lookalike">Hapus</button>
+                                </div>
+                            </div>
+                        </form>
+                    </td>
+                    <td data-label="Aksi:" class="action-buttons desktop-actions-only">
+                         <form method="POST" action="{{ url_for('admin.admin_categories') }}">
+                             <input type="hidden" name="id" value="{{ category.id }}">
+                             <button type="submit" name="action" value="delete" class="btn-delete" onclick="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">Hapus</button>
+                         </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" style="text-align: center;">Belum ada kategori.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

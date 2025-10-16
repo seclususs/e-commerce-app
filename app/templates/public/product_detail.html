@@ -27,8 +27,16 @@
 
         <div class="product-info-details animated-element" data-animation-delay="200">
             <h1 class="product-title">{{ product.name }}</h1>
-            <p class="product-category-detail">{{ product.category }}</p>
-            <p class="product-price-detail">{{ product.price|rupiah }}</p>
+            <p class="product-category-detail">{{ product.category_name or 'N/A' }}</p>
+            <!-- Tampilkan harga diskon -->
+            <div class="product-price-detail-container">
+                 {% if product.discount_price and product.discount_price > 0 %}
+                    <span class="product-price-detail discount-price">{{ product.discount_price|rupiah }}</span>
+                    <del class="original-price-detail">{{ product.price|rupiah }}</del>
+                {% else %}
+                    <span class="product-price-detail">{{ product.price|rupiah }}</span>
+                {% endif %}
+            </div>
             
             <div class="product-details-static">
                 <h3 class="details-title">Deskripsi</h3>

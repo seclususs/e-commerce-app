@@ -27,37 +27,37 @@ def about():
 def products_page():
     conn = get_db_connection()
     search_term = request.args.get('search')
-    category = request.args.get('category')
+    category_id = request.args.get('category')
     sort_by = request.args.get('sort', 'popularity')
     
-    query = "SELECT * FROM products WHERE 1=1"
+    query = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1"
     params = []
     
     if search_term:
-        query += " AND name LIKE ?"
+        query += " AND p.name LIKE ?"
         params.append(f'%{search_term}%')
-    if category:
-        query += " AND category = ?"
-        params.append(category)
+    if category_id:
+        query += " AND p.category_id = ?"
+        params.append(category_id)
     
     if sort_by == 'price_asc':
-        query += " ORDER BY price ASC"
+        # Logika sorting harga dengan mempertimbangkan harga diskon
+        query += " ORDER BY CASE WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 THEN p.discount_price ELSE p.price END ASC"
     elif sort_by == 'price_desc':
-        query += " ORDER BY price DESC"
+        query += " ORDER BY CASE WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 THEN p.discount_price ELSE p.price END DESC"
     else:
-        query += " ORDER BY popularity DESC"
+        query += " ORDER BY p.popularity DESC"
         
     products = conn.execute(query, params).fetchall()
-    categories_raw = conn.execute("SELECT DISTINCT category FROM products WHERE category IS NOT NULL AND category != ''").fetchall()
+    categories = conn.execute("SELECT * FROM categories ORDER BY name ASC").fetchall()
     conn.close()
     
-    categories = [c['category'] for c in categories_raw]
     return render_template('public/product_catalog.html', products=products, categories=categories, content=get_content())
 
 @product_bp.route('/product/<int:id>')
 def product_detail(id):
     conn = get_db_connection()
-    product_row = conn.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
+    product_row = conn.execute('SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.id = ?', (id,)).fetchone()
     
     if product_row is None:
         flash("Produk tidak ditemukan.", "danger")

@@ -9,8 +9,16 @@
         <div class="form-grid">
             <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" value="{{ product.name }}" required></div>
             <div class="form-group"><label for="price">Harga</label><input type="number" id="price" name="price" step="1000" value="{{ product.price }}" required></div>
+            <div class="form-group"><label for="discount_price">Harga Diskon (Kosongkan jika tidak ada)</label><input type="number" id="discount_price" name="discount_price" step="1000" value="{{ product.discount_price or '' }}"></div>
             <div class="form-group"><label for="stock">Stok</label><input type="number" id="stock" name="stock" value="{{ product.stock }}" required></div>
-            <div class="form-group"><label for="category">Kategori</label><input type="text" id="category" name="category" value="{{ product.category }}" placeholder="cth: Hoodie, T-Shirt" required></div>
+            <div class="form-group">
+                <label for="category_id">Kategori</label>
+                <select id="category_id" name="category_id" class="form-control" required>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if cat.id == product.category_id %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             <div class="form-group"><label for="sizes">Ukuran</label><input type="text" id="sizes" name="sizes" value="{{ product.sizes }}" placeholder="cth: S, M, L, XL"></div>
             <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" value="{{ product.colors }}" placeholder="cth: Hitam, Putih"></div>
         </div>
@@ -19,7 +27,7 @@
             <label>Gambar Saat Ini</label>
             <p class="form-hint">Pilih satu gambar sebagai gambar utama. Centang untuk menghapus.</p>
             <div id="existing-image-previews" class="image-preview-container">
-                <div class="preview-item is-main">
+                <div class="preview-item {% if product.image_url %}is-main{% endif %}">
                     <img src="{{ url_for('static', filename='uploads/' + product.image_url) }}" alt="{{ product.name }}">
                     <input type="radio" name="main_image" value="{{ product.image_url }}" class="main-image-radio" checked>
                     <input type="checkbox" name="delete_image" value="{{ product.image_url }}" class="delete-image-checkbox" title="Tandai untuk hapus">

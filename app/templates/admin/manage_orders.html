@@ -4,18 +4,50 @@
 {% block adminheader %}Manajemen Pesanan{% endblock %}
 
 {% block admincontent %}
+<!-- Form Filter & Pencarian -->
 <div class="admin-card animated-element">
-    <h3>Semua Pesanan</h3>
+    <h3>Filter & Cari Pesanan</h3>
+    <form method="GET" action="{{ url_for('admin.admin_orders') }}">
+        <div class="form-grid" style="align-items: flex-end;">
+            <div class="form-group">
+                <label for="search">Cari ID Pesanan / Nama</label>
+                <input type="search" id="search" name="search" class="form-control" placeholder="cth: 123 atau John Doe" value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="form-group">
+                <label for="status">Filter Status</label>
+                <select id="status" name="status" class="form-control">
+                    <option value="">Semua Status</option>
+                    <option value="Pending" {% if request.args.get('status') == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Processing" {% if request.args.get('status') == 'Processing' %}selected{% endif %}>Processing</option>
+                    <option value="Shipped" {% if request.args.get('status') == 'Shipped' %}selected{% endif %}>Shipped</option>
+                    <option value="Completed" {% if request.args.get('status') == 'Completed' %}selected{% endif %}>Completed</option>
+                    <option value="Cancelled" {% if request.args.get('status') == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="start_date">Dari Tanggal</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') }}">
+            </div>
+            <div class="form-group">
+                <label for="end_date">Sampai Tanggal</label>
+                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') }}">
+            </div>
+        </div>
+        <div class="form-actions" style="margin-top: 1.5rem;">
+            <button type="submit" class="cta-button">Terapkan</button>
+            <a href="{{ url_for('admin.admin_orders') }}" class="cta-button-secondary">Reset Filter</a>
+        </div>
+    </form>
+</div>
+
+
+<div class="admin-card animated-element" data-animation-delay="200">
+    <h3>Daftar Pesanan</h3>
     <div class="table-wrapper">
         <table class="admin-table">
             <thead>
                 <tr>
-                    <th>ID Pesanan</th>
-                    <th>Tanggal</th>
-                    <th>Pelanggan</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Aksi</th>
+                    <th>ID Pesanan</th><th>Tanggal</th><th>Pelanggan</th><th>Total</th><th>Status</th><th>Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -23,7 +55,7 @@
                 <tr>
                     <td data-label="ID Pesanan:">#{{ order.id }}</td>
                     <td data-label="Tanggal:">{{ order.order_date.split(' ')[0] }}</td>
-                    <td data-label="Pelanggan:">{{ order.customer_name }}</td>
+                    <td data-label="Pelanggan:">{{ order.customer_name or 'Tamu' }}</td>
                     <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
                     <td data-label="Status:"><span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></td>
                     <td data-label="Aksi:">
@@ -32,7 +64,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" style="text-align: center;">Belum ada pesanan.</td>
+                    <td colspan="6" style="text-align: center;">Tidak ada pesanan yang cocok dengan filter Anda.</td>
                 </tr>
                 {% endfor %}
             </tbody>

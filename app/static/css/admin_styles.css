@@ -105,12 +105,10 @@
     align-items: start;
 }
 
-/* Ukuran canvas chart agar responsif */
 .dashboard-charts-grid canvas {
     max-height: 350px;
 }
 
-/* Penyesuaian tabel pesanan di dashboard */
 .dashboard-charts-grid .admin-table th, 
 .dashboard-charts-grid .admin-table td {
     padding: 0.8rem;
@@ -122,8 +120,6 @@
     }
 }
 
-
-/* Gaya untuk preview gambar di form admin */
 .image-preview-container {
     display: flex;
     flex-wrap: wrap;
@@ -188,4 +184,52 @@
     color: #94a3b8;
     margin-bottom: 1rem;
     margin-top: -0.5rem;
+}
+
+/* Gaya untuk harga diskon */
+.discount-price {
+    color: var(--color-primary);
+    font-weight: bold;
+}
+.original-price, .original-price-detail {
+    color: var(--color-text-dark);
+    text-decoration: line-through;
+    font-size: 0.9em;
+    margin-left: 0.5rem;
+}
+
+/* Bulk Actions */
+.bulk-actions-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--color-background-dark);
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 1.5rem;
+}
+.hidden { display: none; }
+
+/* Laporan */
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+.btn-delete-lookalike {
+    border-color: var(--color-danger) !important;
+    color: var(--color-danger) !important;
+}
+.desktop-actions-only {
+    display: table-cell;
+}
+@media (max-width: 767px) {
+    .desktop-actions-only { display: none; }
+    .admin-table td[data-label="Aksi:"] { border: none; }
 }

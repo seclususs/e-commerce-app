@@ -1,7 +1,5 @@
 const initOrderSuccessPage = () => {
-    // Membersihkan keranjang setelah pesanan berhasil
     if (document.querySelector('.order-success-page')) {
-        // Panggil fungsi clear dari cartModule setelah halaman dimuat
         cartModule.clear();
     }
 };
@@ -10,21 +8,23 @@ const initActionConfirmations = () => {
     const mainContent = document.querySelector('main.page-content-wrapper, .admin-main-content');
     if (!mainContent) return;
 
-    // Listener untuk klik (misalnya, tombol hapus)
     mainContent.addEventListener('click', (e) => {
-        const deleteButton = e.target.closest('.btn-delete');
+        const deleteButton = e.target.closest('.btn-delete, .btn-delete-lookalike');
         if (deleteButton) {
             e.preventDefault();
+            const form = deleteButton.closest('form');
             const url = deleteButton.href;
             confirmModal.show(
                 'Konfirmasi Hapus',
                 'Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat diurungkan.',
-                () => { window.location.href = url; }
+                () => { 
+                    if (form) form.submit();
+                    else if(url) window.location.href = url; 
+                }
             );
         }
     });
 
-    // Listener untuk submit form (misalnya, form pembatalan pesanan)
     mainContent.addEventListener('submit', (e) => {
         const cancelForm = e.target.closest('.cancel-order-form');
         if (cancelForm) {
@@ -62,7 +62,6 @@ const initQuickCheckout = () => {
             const result = await response.json();
 
             if (response.ok) {
-                // Redirect akan membersihkan keranjang melalui initOrderSuccessPage
                 window.location.href = '/order_success';
             } else {
                 showNotification(result.message || 'Gagal membuat pesanan.', true);
@@ -82,12 +81,9 @@ const initQuickCheckout = () => {
 const initLogout = () => {
     document.body.addEventListener('click', (e) => {
         const logoutLink = e.target.closest('#logoutLink, #mobileLogoutLink');
-        
-        // Jika link logout ditemukan
         if (logoutLink) {
-            e.preventDefault(); // Hentikan aksi default link
-            localStorage.removeItem('hackthreadCart'); // Hapus keranjang dari local storage
-            // Arahkan ke URL yang ada di atribut href dari link yang benar
+            e.preventDefault();
+            localStorage.removeItem('hackthreadCart');
             window.location.href = logoutLink.href;
         }
     });
@@ -99,32 +95,14 @@ const initProductGallery = () => {
     
     if (!mainImage || !gallery) return;
 
-    const thumbnails = gallery.querySelectorAll('.thumbnail-item');
-    
     gallery.addEventListener('click', function(e) {
         const thumbnail = e.target.closest('.thumbnail-item');
         if (!thumbnail) return;
 
-        const fullSrc = thumbnail.querySelector('img').getAttribute('data-full-src');
+        const clickedIndex = Array.from(gallery.querySelectorAll('.thumbnail-item')).findIndex(item => item === thumbnail);
         
-        // Cari index thumbnail yang diklik
-        const clickedIndex = Array.from(thumbnails).findIndex(item => item === thumbnail);
-        
-        // Panggil fungsi swipeable gallery untuk update (jika ada)
-        // Ini akan mengupdate gambar utama, thumbnail aktif, dan titik-titik
         if(window.updateSwipeableGallery) {
              window.updateSwipeableGallery(clickedIndex);
-        } else {
-            // Fallback jika swipeable gallery tidak ada
-            thumbnails.forEach(item => item.classList.remove('active'));
-            thumbnail.classList.add('active');
-            if (mainImage.src !== fullSrc) {
-                mainImage.style.opacity = 0;
-                setTimeout(() => {
-                    mainImage.src = fullSrc;
-                    mainImage.style.opacity = 1;
-                }, 200);
-            }
         }
     });
 };
@@ -148,9 +126,8 @@ const initSwipeableGallery = () => {
     let startX = 0;
     let isSwiping = false;
 
-    // Buat dots
     if (dotsContainer) {
-        dotsContainer.innerHTML = ''; // Hapus dots yang mungkin sudah ada
+        dotsContainer.innerHTML = '';
         imageUrls.forEach((_, index) => {
             const dot = document.createElement('span');
             dot.classList.add('gallery-dot');
@@ -171,12 +148,8 @@ const initSwipeableGallery = () => {
 
         if (thumbnails.length > 0) {
             thumbnails.forEach((item, index) => {
-                if (index === currentIndex) {
-                    item.classList.add('active');
-                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                } else {
-                    item.classList.remove('active');
-                }
+                item.classList.toggle('active', index === currentIndex);
+                if (index === currentIndex) item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
             });
         }
         
@@ -185,7 +158,6 @@ const initSwipeableGallery = () => {
         }
     };
     
-    // Jadikan fungsi update dapat diakses secara global
     window.updateSwipeableGallery = updateGallery;
 
     if(dotsContainer) {
@@ -201,15 +173,14 @@ const initSwipeableGallery = () => {
         if (!isSwiping) return;
         const endX = e.changedTouches[0].clientX;
         const diffX = startX - endX;
-        if (Math.abs(diffX) > 50) { // Swipe threshold
+        if (Math.abs(diffX) > 50) {
             updateGallery(currentIndex + (diffX > 0 ? 1 : -1));
         }
         isSwiping = false;
     });
 
-    updateGallery(0); // Inisialisasi
+    updateGallery(0);
 };
-
 
 const initFilterModal = () => {
     const toggleBtn = document.getElementById('filterToggleButton');
@@ -326,14 +297,12 @@ const initAdminImagePreviews = () => {
     }
 };
 
-// [BARU] Handler untuk tombol CTA mobile di halaman checkout
 const initMobileCtaHandlers = () => {
     const mobileCheckoutBtn = document.getElementById('placeOrderBtnMobile');
     const mainCheckoutBtn = document.getElementById('placeOrderBtn');
     const checkoutForm = document.getElementById('checkout-form');
 
     if (mobileCheckoutBtn && mainCheckoutBtn && checkoutForm) {
-        // Sinkronisasi status disabled antara tombol utama dan mobile
         const observer = new MutationObserver(mutations => {
             mutations.forEach(mutation => {
                 if (mutation.attributeName === 'disabled') {
@@ -342,16 +311,14 @@ const initMobileCtaHandlers = () => {
             });
         });
         observer.observe(mainCheckoutBtn, { attributes: true });
-        mobileCheckoutBtn.disabled = mainCheckoutBtn.disabled; // Sinkronisasi awal
+        mobileCheckoutBtn.disabled = mainCheckoutBtn.disabled;
 
-        // Event listener untuk tombol mobile
         mobileCheckoutBtn.addEventListener('click', () => {
-            checkoutForm.requestSubmit(); // Submit form terkait
+            checkoutForm.requestSubmit();
         });
     }
 };
 
-// Handler untuk tombol detail di kartu admin mobile
 const initAdminCardToggle = () => {
     const adminTable = document.querySelector('.admin-table');
     if (!adminTable) return;
@@ -364,8 +331,49 @@ const initAdminCardToggle = () => {
             
             const isExpanded = row.classList.contains('is-expanded');
             const btnText = isExpanded ? 'Sembunyikan Detail' : 'Lihat Detail';
-            // Perbarui teks tombol dan ikon
             toggleBtn.innerHTML = `${btnText} <i class="fas fa-chevron-down"></i>`;
         }
     });
+};
+
+const initBulkActions = () => {
+    const selectAllCheckbox = document.getElementById('select-all-products');
+    const productCheckboxes = document.querySelectorAll('.product-checkbox');
+    const bulkActionSelect = document.getElementById('bulk-action-select');
+    const bulkCategorySelector = document.getElementById('bulk-category-selector');
+
+    if (selectAllCheckbox && productCheckboxes.length > 0) {
+        selectAllCheckbox.addEventListener('change', function() {
+            productCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+
+    if (bulkActionSelect && bulkCategorySelector) {
+        bulkActionSelect.addEventListener('change', function() {
+            if (this.value === 'set_category') {
+                bulkCategorySelector.classList.remove('hidden');
+            } else {
+                bulkCategorySelector.classList.add('hidden');
+            }
+        });
+    }
+    
+    const bulkActionForm = document.getElementById('bulk-action-form');
+    if(bulkActionForm){
+        bulkActionForm.addEventListener('submit', function(e){
+            const selectedAction = bulkActionSelect.value;
+            if(!selectedAction){
+                e.preventDefault();
+                alert('Silakan pilih aksi massal terlebih dahulu.');
+                return;
+            }
+            if(selectedAction === 'delete'){
+                if(!confirm('Apakah Anda yakin ingin menghapus produk yang dipilih?')){
+                    e.preventDefault();
+                }
+            }
+        });
+    }
 };

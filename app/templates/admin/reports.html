@@ -1,0 +1,103 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block admintitle %}Laporan & Analitik{% endblock %}
+{% block adminheader %}Laporan & Analitik{% endblock %}
+
+{% block admincontent %}
+<div class="admin-card animated-element">
+    <h3>Filter Laporan</h3>
+    <form method="GET" action="{{ url_for('admin.admin_reports') }}" id="reports-filter-form">
+        <div class="form-grid" style="gap: 1.5rem;">
+            <div class="form-group">
+                <label for="start_date">Tanggal Mulai</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.args.get('start_date') }}">
+            </div>
+            <div class="form-group">
+                <label for="end_date">Tanggal Selesai</label>
+                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.args.get('end_date') }}">
+            </div>
+            <div class="form-actions" style="align-items: flex-end;">
+                <button type="submit" class="cta-button">Terapkan Filter</button>
+                <a href="{{ url_for('admin.admin_reports') }}" class="cta-button-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Laporan Penjualan Detail -->
+<div class="admin-card animated-element" data-animation-delay="200">
+    <div class="report-header">
+        <h3>Laporan Penjualan Detail</h3>
+        <a href="{{ url_for('admin.export_report', report_name='sales', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
+    </div>
+    <div class="dashboard-stats" style="margin-top: 1rem;">
+        <div class="stat-card"><h4>Total Pendapatan</h4><p>{{ reports.sales.total_revenue|rupiah }}</p></div>
+        <div class="stat-card"><h4>Jumlah Pesanan</h4><p>{{ reports.sales.total_orders }}</p></div>
+        <div class="stat-card"><h4>Produk Terjual</h4><p>{{ reports.sales.total_items_sold }}</p></div>
+    </div>
+</div>
+
+<!-- Laporan Produk -->
+<div class="admin-card animated-element" data-animation-delay="300">
+     <div class="report-header">
+        <h3>Laporan Produk</h3>
+        <a href="{{ url_for('admin.export_report', report_name='products', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
+    </div>
+    <div class="report-grid">
+        <div>
+            <h4>Produk Paling Laris</h4>
+            <div class="table-wrapper">
+                <table class="admin-table">
+                    <thead><tr><th>Nama Produk</th><th>Terjual</th></tr></thead>
+                    <tbody>
+                    {% for product in reports.products.top_selling %}
+                        <tr><td>{{ product.name }}</td><td>{{ product.total_sold }}</td></tr>
+                    {% else %}
+                        <tr><td colspan="2">Tidak ada data.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div>
+            <h4>Produk Paling Sering Dilihat</h4>
+            <div class="table-wrapper">
+                <table class="admin-table">
+                     <thead><tr><th>Nama Produk</th><th>Dilihat</th></tr></thead>
+                     <tbody>
+                     {% for product in reports.products.most_viewed %}
+                         <tr><td>{{ product.name }}</td><td>{{ product.popularity }} kali</td></tr>
+                     {% else %}
+                         <tr><td colspan="2">Tidak ada data.</td></tr>
+                     {% endfor %}
+                     </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Laporan Pelanggan -->
+<div class="admin-card animated-element" data-animation-delay="400">
+    <div class="report-header">
+        <h3>Laporan Pelanggan</h3>
+        <a href="{{ url_for('admin.export_report', report_name='customers', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
+    </div>
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead><tr><th>Nama Pelanggan</th><th>Email</th><th>Total Belanja</th></tr></thead>
+            <tbody>
+                {% for customer in reports.customers.top_spenders %}
+                <tr>
+                    <td>{{ customer.username }}</td>
+                    <td>{{ customer.email }}</td>
+                    <td>{{ customer.total_spent|rupiah }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3">Tidak ada data.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

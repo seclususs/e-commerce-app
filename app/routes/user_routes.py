@@ -12,6 +12,7 @@ user_bp = Blueprint('user', __name__)
 def user_profile():
     conn = get_db_connection()
     user = conn.execute('SELECT * FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+    # Menambahkan tracking_number ke query
     orders = conn.execute('SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC', (session['user_id'],)).fetchall()
     conn.close()
     return render_template('user/user_profile.html', user=user, orders=orders, content=get_content())
