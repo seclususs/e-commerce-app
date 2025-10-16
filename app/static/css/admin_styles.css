@@ -157,6 +157,32 @@
     box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 
+/* Indikator Gambar Utama */
+.main-image-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(59, 130, 246, 0.9);
+    color: var(--color-white);
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-bottom-right-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transform: translateY(-100%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 1;
+}
+
+.preview-item.is-main .main-image-indicator {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
 .preview-item.marked-for-deletion img {
     opacity: 0.4;
 }
@@ -197,27 +223,46 @@
     margin-top: -0.5rem;
 }
 
-/* Gaya untuk harga diskon */
-.discount-price {
-    color: var(--color-primary);
-    font-weight: bold;
+/* Gaya untuk harga diskon di tabel admin */
+.admin-table .price-cell {
+    line-height: 1.3;
 }
-.original-price, .original-price-detail {
-    color: var(--color-text-dark);
-    text-decoration: line-through;
+.admin-table .price-cell span,
+.admin-table .price-cell del {
+    display: block;
+}
+.admin-table .price-cell .discount-price {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+.admin-table .price-cell del {
     font-size: 0.9em;
-    margin-left: 0.5rem;
+    color: var(--color-text-med);
 }
 
-/* Bulk Actions */
+/* Proporsi Bar Aksi Massal */
 .bulk-actions-container {
     display: flex;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: var(--spacing-unit);
     align-items: center;
     padding: 1rem;
     background-color: var(--color-background-dark);
     border-radius: var(--border-radius-sm);
     margin-bottom: 1.5rem;
+}
+.bulk-actions-container > .form-control,
+.bulk-actions-container > .form-group {
+    flex-shrink: 1;
+    flex-basis: auto;
+    margin-bottom: 0;
+}
+.bulk-actions-container > #bulk-category-selector {
+    flex-grow: 1;
+    min-width: 200px;
+}
+.bulk-actions-container > button {
+    flex-shrink: 0;
 }
 .hidden { display: none; }
 

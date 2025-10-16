@@ -52,7 +52,7 @@
                 <option value="delete">Hapus yang Dipilih</option>
                 <option value="set_category">Ubah Kategori yang Dipilih</option>
             </select>
-            <div id="bulk-category-selector" class="form-group hidden" style="margin-bottom:0;">
+            <div id="bulk-category-selector" class="form-group hidden">
                  <select name="bulk_category_id" class="form-control">
                     <option value="">Pilih Kategori...</option>
                     {% for cat in categories %}
@@ -88,11 +88,12 @@
                         <td data-label="Gambar:"><img src="{{ url_for('static', filename='uploads/' + product.image_url) if product.image_url else 'https://placehold.co/60x60/1e293b/f1f5f9?text=Img' }}" alt="{{ product.name }}" width="50" style="border-radius: 5px; object-fit: cover;"></td>
                         <td data-label="Nama:">{{ product.name }}</td>
                         <td data-label="Kategori:" class="collapsible-detail">{{ product.category_name or 'N/A' }}</td>
-                        <td data-label="Harga:" class="collapsible-detail">
+                        <td data-label="Harga:" class="collapsible-detail price-cell">
                             {% if product.discount_price and product.discount_price > 0 %}
-                                <del>{{ product.price|rupiah }}</del> <span class="discount-price">{{ product.discount_price|rupiah }}</span>
+                                <span class="discount-price">{{ product.discount_price|rupiah }}</span>
+                                <del>{{ product.price|rupiah }}</del>
                             {% else %}
-                                {{ product.price|rupiah }}
+                                <span>{{ product.price|rupiah }}</span>
                             {% endif %}
                         </td>
                         <td data-label="Stok:" class="collapsible-detail">{{ product.stock }}</td>

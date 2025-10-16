@@ -35,11 +35,11 @@
         <div class="product-info-details animated-element" data-animation-delay="200">
             <h1 class="product-title">{{ product.name }}</h1>
             <p class="product-category-detail">{{ product.category_name or 'N/A' }}</p>
-            <div class="product-price-detail-container" style="display: flex; align-items: center; gap: 1rem;">
+            <div class="product-price-detail-container">
                  {% if product.discount_price and product.discount_price > 0 %}
                     <span class="product-price-detail discount-price">{{ product.discount_price|rupiah }}</span>
                     <del class="original-price-detail">{{ product.price|rupiah }}</del>
-                    <span class="discount-badge" style="position: static;">Hemat {{ product.discount_price|percentage(product.price) }}%</span>
+                    <span class="discount-badge">Hemat {{ product.discount_price|percentage(product.price) }}%</span>
                 {% else %}
                     <span class="product-price-detail">{{ product.price|rupiah }}</span>
                 {% endif %}

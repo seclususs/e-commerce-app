@@ -109,7 +109,13 @@
     transition: all 0.3s ease; border: 1px solid rgba(59, 130, 246, 0.2);
     display: flex; flex-direction: column; position: relative;
 }
-.product-card:hover { transform: translateY(-10px); box-shadow: var(--shadow-lg); border-color: var(--color-primary); }
+/* Mengubah efek hover untuk membesarkan kartu dan menambahkan z-index */
+.product-card:hover { 
+    transform: scale(1.03) translateY(-5px); 
+    box-shadow: var(--shadow-lg); 
+    border-color: var(--color-primary);
+    z-index: 10; /* Memastikan kartu yang di-hover tampil di atas yang lain */
+}
 .product-card.out-of-stock { opacity: 0.6; }
 .product-card.out-of-stock:hover { transform: none; box-shadow: none; border-color: rgba(59, 130, 246, 0.2); }
 .stock-overlay {

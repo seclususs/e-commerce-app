@@ -32,6 +32,7 @@
             <div id="existing-image-previews" class="image-preview-container">
                 <div class="preview-item {% if product.image_url %}is-main{% endif %}">
                     <img src="{{ url_for('static', filename='uploads/' + product.image_url) }}" alt="{{ product.name }}">
+                    <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
                     <input type="radio" name="main_image" value="{{ product.image_url }}" class="main-image-radio" checked>
                     <div class="delete-checkbox-overlay">
                         <label class="custom-checkbox" title="Tandai untuk hapus">
@@ -43,6 +44,7 @@
                 {% for image in additional_images %}
                 <div class="preview-item">
                     <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="{{ product.name }}">
+                    <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
                     <input type="radio" name="main_image" value="{{ image }}" class="main-image-radio">
                      <div class="delete-checkbox-overlay">
                         <label class="custom-checkbox" title="Tandai untuk hapus">
