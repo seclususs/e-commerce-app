@@ -1,4 +1,3 @@
-
 /* --- ANIMATIONS --- */
 .animated-element {
     opacity: 0;
@@ -121,6 +120,49 @@
 .file-name-display { margin-left: 1rem; color: var(--color-text-med); font-style: italic; font-size: 0.9rem; }
 .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1.5rem; }
 .form-actions .cta-button, .form-actions .cta-button-secondary { width: auto; }
+
+/* --- Custom Checkbox --- */
+.custom-checkbox {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    gap: 0.75rem; /* Jarak antara checkbox dan label */
+}
+.custom-checkbox .checkbox-input {
+    display: none; /* Sembunyikan checkbox asli */
+}
+.custom-checkbox .checkbox-box {
+    width: 22px;
+    height: 22px;
+    background-color: var(--color-background-dark);
+    border: 2px solid var(--color-background-light);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    flex-shrink: 0;
+}
+.custom-checkbox .checkbox-box .checkmark {
+    display: block;
+    width: 12px;
+    height: 12px;
+    background-color: var(--color-white);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    transform: scale(0);
+    transition: transform 0.3s ease;
+}
+.custom-checkbox .checkbox-input:checked + .checkbox-box {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+.custom-checkbox .checkbox-input:checked + .checkbox-box .checkmark {
+    transform: scale(1);
+}
+.custom-checkbox:hover .checkbox-box {
+    border-color: var(--color-primary);
+}
+
 
 /* Status Badge */
 .status-badge { padding: 0.3rem 0.8rem; border-radius: var(--border-radius-full); font-size: 0.8rem; font-weight: 600; text-transform: capitalize; color: var(--color-white); }

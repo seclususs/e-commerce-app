@@ -21,8 +21,7 @@
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Nama Kategori</th>
-                    <th>Aksi</th>
+                    <th>Nama Kategori & Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -30,27 +29,20 @@
                 <tr>
                     <td data-label="ID:">{{ category.id }}</td>
                     <td data-label="Nama:">
-                        <form method="POST" action="{{ url_for('admin.admin_categories') }}">
-                            <div class="form-actions" style="justify-content: space-between;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                            <!-- Form for updating the category name -->
+                            <form method="POST" action="{{ url_for('admin.admin_categories') }}" style="flex-grow: 1; display: flex; gap: 1rem; align-items: center;">
                                 <input type="hidden" name="id" value="{{ category.id }}">
-                                <input type="text" name="name" value="{{ category.name }}" class="form-control" style="max-width: 300px;">
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <button type="submit" name="action" value="edit" class="cta-button-secondary" style="border-color: var(--color-primary); color: var(--color-primary);">Update</button>
-                                    <button type="submit" name="action" value="delete" class="cta-button-secondary btn-delete-lookalike">Hapus</button>
-                                </div>
-                            </div>
-                        </form>
-                    </td>
-                    <td data-label="Aksi:" class="action-buttons desktop-actions-only">
-                         <form method="POST" action="{{ url_for('admin.admin_categories') }}">
-                             <input type="hidden" name="id" value="{{ category.id }}">
-                             <button type="submit" name="action" value="delete" class="btn-delete" onclick="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">Hapus</button>
-                         </form>
+                                <input type="text" name="name" value="{{ category.name }}" class="form-control">
+                                <button type="submit" name="action" value="edit" class="cta-button-secondary" style="border-color: var(--color-primary); color: var(--color-primary); white-space: nowrap;">Update</button>
+                            </form>
+                            <a href="{{ url_for('admin.delete_category', id=category.id) }}" class="cta-button-secondary btn-delete-lookalike" style="white-space: nowrap;">Hapus</a>
+                        </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="3" style="text-align: center;">Belum ada kategori.</td>
+                    <td colspan="2" style="text-align: center;">Belum ada kategori.</td>
                 </tr>
                 {% endfor %}
             </tbody>

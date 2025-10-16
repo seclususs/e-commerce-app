@@ -29,7 +29,13 @@
                     <div class="form-group"><label for="postal_code">Kode Pos</label><input type="text" id="postal_code" name="postal_code" value="{{ user.postal_code or '' }}" required></div>
                     
                     {% if session.user_id %}
-                    <div class="form-group"><input type="checkbox" id="save_address" name="save_address" value="true" checked><label for="save_address"> Simpan alamat ini sebagai alamat utama saya.</label></div>
+                    <div class="form-group">
+                        <label class="custom-checkbox" for="save_address">
+                            <input type="checkbox" id="save_address" name="save_address" value="true" class="checkbox-input" checked>
+                            <span class="checkbox-box"><span class="checkmark"></span></span>
+                            <span>Simpan alamat ini sebagai alamat utama saya.</span>
+                        </label>
+                    </div>
                     {% endif %}
                     
                     <h3 style="margin-top: 2rem;">Metode Pembayaran</h3>

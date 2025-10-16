@@ -15,4 +15,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initMobileCtaHandlers();
     initAdminCardToggle();
     initBulkActions();
+    initAdminPriceFormatting();
 });

@@ -18,8 +18,21 @@ const initActionConfirmations = () => {
                 'Konfirmasi Hapus',
                 'Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat diurungkan.',
                 () => { 
-                    if (form) form.submit();
-                    else if(url) window.location.href = url; 
+                    if (form) {
+                        const actionName = deleteButton.getAttribute('name');
+                        const actionValue = deleteButton.getAttribute('value');
+
+                        if (actionName && actionValue) {
+                            const actionInput = document.createElement('input');
+                            actionInput.type = 'hidden';
+                            actionInput.name = actionName;
+                            actionInput.value = actionValue;
+                            form.appendChild(actionInput);
+                        }
+                        form.submit();
+                    } else if(url) {
+                        window.location.href = url; 
+                    }
                 }
             );
         }
@@ -336,11 +349,13 @@ const initAdminCardToggle = () => {
     });
 };
 
+// Menggunakan modal kustom untuk konfirmasi hapus massal
 const initBulkActions = () => {
     const selectAllCheckbox = document.getElementById('select-all-products');
     const productCheckboxes = document.querySelectorAll('.product-checkbox');
     const bulkActionSelect = document.getElementById('bulk-action-select');
     const bulkCategorySelector = document.getElementById('bulk-category-selector');
+    const bulkActionForm = document.getElementById('bulk-action-form');
 
     if (selectAllCheckbox && productCheckboxes.length > 0) {
         selectAllCheckbox.addEventListener('change', function() {
@@ -359,21 +374,79 @@ const initBulkActions = () => {
             }
         });
     }
-    
-    const bulkActionForm = document.getElementById('bulk-action-form');
-    if(bulkActionForm){
-        bulkActionForm.addEventListener('submit', function(e){
-            const selectedAction = bulkActionSelect.value;
-            if(!selectedAction){
+
+    if (bulkActionForm) {
+        bulkActionForm.addEventListener('submit', function(e) {
+            const selectedAction = bulkActionSelect ? bulkActionSelect.value : '';
+            const anyProductSelected = document.querySelector('.product-checkbox:checked');
+
+            if (!selectedAction) {
                 e.preventDefault();
-                alert('Silakan pilih aksi massal terlebih dahulu.');
+                showNotification('Silakan pilih aksi massal terlebih dahulu.', true);
                 return;
             }
-            if(selectedAction === 'delete'){
-                if(!confirm('Apakah Anda yakin ingin menghapus produk yang dipilih?')){
-                    e.preventDefault();
-                }
+            
+            if (!anyProductSelected) {
+                e.preventDefault();
+                showNotification('Silakan pilih setidaknya satu produk.', true);
+                return;
+            }
+
+            if (selectedAction === 'delete') {
+                e.preventDefault(); // Selalu cegah submit untuk menampilkan modal
+                confirmModal.show(
+                    'Konfirmasi Hapus Massal',
+                    'Apakah Anda yakin ingin menghapus semua produk yang dipilih? Tindakan ini tidak dapat diurungkan.',
+                    () => {
+                        bulkActionForm.submit(); // Submit form jika dikonfirmasi
+                    }
+                );
             }
         });
     }
+};
+
+
+// Fungsi untuk memformat input harga di halaman admin
+const initAdminPriceFormatting = () => {
+    const productForms = document.querySelectorAll('form[action*="/admin/products"], form[action*="/admin/edit_product"]');
+    if (productForms.length === 0) {
+        return;
+    }
+
+    const formatPrice = (value) => {
+        if (!value) return '';
+        const numberString = String(value).replace(/[^0-9]/g, '');
+        if (numberString === '') return '';
+        return parseInt(numberString, 10).toLocaleString('id-ID');
+    };
+
+    const unformatPrice = (value) => {
+        return String(value).replace(/[^0-9]/g, '');
+    };
+
+    productForms.forEach(form => {
+        const priceInputs = form.querySelectorAll('input[name="price"], input[name="discount_price"]');
+
+        priceInputs.forEach(input => {
+            input.type = 'text';
+            input.setAttribute('inputmode', 'numeric');
+            
+            input.value = formatPrice(input.value);
+
+            input.addEventListener('input', (e) => {
+                const originalValue = e.target.value;
+                const formattedValue = formatPrice(originalValue);
+                if (originalValue !== formattedValue) {
+                    e.target.value = formattedValue;
+                }
+            });
+        });
+
+        form.addEventListener('submit', () => {
+            priceInputs.forEach(input => {
+                input.value = unformatPrice(input.value);
+            });
+        });
+    });
 };

@@ -37,7 +37,11 @@ const cartModule = (() => {
             body: JSON.stringify({ product_ids: ids })
         });
         const products = await response.json();
-        const total = products.reduce((sum, p) => sum + (p.price * (cart[p.id] || 0)), 0);
+        // Hitung total menggunakan harga diskon jika ada
+        const total = products.reduce((sum, p) => {
+            const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
+            return sum + (effectivePrice * (cart[p.id] || 0));
+        }, 0);
         return { products, total };
     };
 
@@ -61,16 +65,24 @@ const cartModule = (() => {
                 const imageUrl = (p.image_url && p.image_url !== 'placeholder.jpg')
                     ? `/static/uploads/${p.image_url}`
                     : `https://placehold.co/80x80/0f172a/f1f5f9?text=${p.name}`;
+                // Tentukan harga efektif dan apakah ada diskon
+                const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
+                const hasDiscount = (p.discount_price && p.discount_price > 0);
                 return `
                 <div class="cart-page-item">
                     <div class="cart-page-item-img"><img src="${imageUrl}" alt="${p.name}"></div>
-                    <div class="cart-page-item-info"><strong>${p.name}</strong><span>${formatRupiah(p.price)}</span></div>
+                    <div class="cart-page-item-info">
+                        <strong>${p.name}</strong>
+                        <span>
+                           ${hasDiscount ? `<del style="opacity: 0.7;">${formatRupiah(p.price)}</del> ${formatRupiah(effectivePrice)}` : formatRupiah(p.price)}
+                        </span>
+                    </div>
                     <div class="cart-item-quantity">
                         <button class="quantity-btn" data-id="${p.id}" data-change="-1">-</button>
                         <span>${quantity}</span>
                         <button class="quantity-btn" data-id="${p.id}" data-change="1">+</button>
                     </div>
-                    <div class="item-price">${formatRupiah(p.price * quantity)}</div>
+                    <div class="item-price">${formatRupiah(effectivePrice * quantity)}</div>
                     <button class="remove-item-btn" data-id="${p.id}">✕</button>
                 </div>
             `}).join('');
@@ -95,12 +107,14 @@ const cartModule = (() => {
             return;
         }
 
-        summaryContainer.innerHTML = productsInCart.map(p => `
+        summaryContainer.innerHTML = productsInCart.map(p => {
+            const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
+            return `
             <div class="summary-row">
                 <span>${p.name} (x${cart[p.id]})</span>
-                <span>${formatRupiah(p.price * cart[p.id])}</span>
+                <span>${formatRupiah(effectivePrice * cart[p.id])}</span>
             </div>
-        `).join('');
+        `}).join('');
         
         totalEl.textContent = formatRupiah(total);
         cartDataInput.value = JSON.stringify(cart);
@@ -118,15 +132,23 @@ const cartModule = (() => {
         } else {
             cartItemsContainer.innerHTML = productsInCart.map(p => {
                 const quantity = cart[p.id];
+                // Tentukan harga efektif dan apakah ada diskon
+                const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
+                const hasDiscount = (p.discount_price && p.discount_price > 0);
                 return `
                 <div class="cart-item">
-                    <div class="cart-item-info"><strong>${p.name}</strong><span>${formatRupiah(p.price)}</span></div>
+                    <div class="cart-item-info">
+                        <strong>${p.name}</strong>
+                         <span>
+                           ${hasDiscount ? `<del style="opacity: 0.7;">${formatRupiah(p.price)}</del> ${formatRupiah(effectivePrice)}` : formatRupiah(p.price)}
+                        </span>
+                    </div>
                     <div class="cart-item-quantity">
                         <button class="quantity-btn" data-id="${p.id}" data-change="-1">-</button>
                         <span>${quantity}</span>
                         <button class="quantity-btn" data-id="${p.id}" data-change="1">+</button>
                     </div>
-                    <div class="item-price">${formatRupiah(p.price * quantity)}</div>
+                    <div class="item-price">${formatRupiah(effectivePrice * quantity)}</div>
                     <button class="remove-item-btn" data-id="${p.id}">✕</button>
                 </div>`
             }).join('');

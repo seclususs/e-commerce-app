@@ -61,6 +61,17 @@
             <i class="fas fa-cog"></i> <span>Atur</span>
         </a>
     </nav>
+    
+    <div class="confirm-modal" id="confirmModal">
+        <div class="confirm-modal-content">
+            <h3 id="confirmModalTitle">Konfirmasi Tindakan</h3>
+            <p id="confirmModalText">Apakah Anda yakin?</p>
+            <div class="confirm-modal-actions">
+                <button class="cta-button-secondary" id="confirmCancelBtn">Batal</button>
+                <button class="cta-button btn-danger" id="confirmOkBtn">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
 
     {% block additional_scripts %}{% endblock %}
 

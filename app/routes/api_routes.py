@@ -13,7 +13,8 @@ def get_cart_items():
     if not product_ids: return jsonify([])
     conn = get_db_connection()
     placeholders = ', '.join(['?'] * len(product_ids))
-    query = f'SELECT id, name, price, image_url, stock FROM products WHERE id IN ({placeholders})'
+    # Ambil `discount_price` untuk dikirim ke frontend
+    query = f'SELECT id, name, price, discount_price, image_url, stock FROM products WHERE id IN ({placeholders})'
     products = conn.execute(query, product_ids).fetchall()
     conn.close()
     return jsonify([dict(p) for p in products])

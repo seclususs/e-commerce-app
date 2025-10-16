@@ -265,16 +265,24 @@ def admin_categories():
             conn.execute('UPDATE categories SET name = ? WHERE id = ?', (name, category_id))
             conn.commit()
             flash('Kategori berhasil diperbarui.', 'success')
-        elif action == 'delete' and category_id:
-            conn.execute('UPDATE products SET category_id = NULL WHERE category_id = ?', (category_id,))
-            conn.execute('DELETE FROM categories WHERE id = ?', (category_id,))
-            conn.commit()
-            flash('Kategori berhasil dihapus.', 'success')
+        
         return redirect(url_for('admin.admin_categories'))
     
     categories = conn.execute('SELECT * FROM categories ORDER BY name ASC').fetchall()
     conn.close()
     return render_template('admin/manage_categories.html', categories=categories, content=get_content())
+
+@admin_bp.route('/delete_category/<int:id>')
+@admin_required
+def delete_category(id):
+    conn = get_db_connection()
+    conn.execute('UPDATE products SET category_id = NULL WHERE category_id = ?', (id,))
+    conn.execute('DELETE FROM categories WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    flash('Kategori berhasil dihapus.', 'success')
+    return redirect(url_for('admin.admin_categories'))
+
 
 @admin_bp.route('/orders')
 @admin_required

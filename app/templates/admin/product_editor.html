@@ -8,8 +8,11 @@
     <form method="POST" action="{{ url_for('admin.admin_edit_product', id=product.id) }}" enctype="multipart/form-data">
         <div class="form-grid">
             <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" value="{{ product.name }}" required></div>
-            <div class="form-group"><label for="price">Harga</label><input type="number" id="price" name="price" step="1000" value="{{ product.price }}" required></div>
-            <div class="form-group"><label for="discount_price">Harga Diskon (Kosongkan jika tidak ada)</label><input type="number" id="discount_price" name="discount_price" step="1000" value="{{ product.discount_price or '' }}"></div>
+            <div class="form-group"><label for="price">Harga Asli</label><input type="text" inputmode="numeric" id="price" name="price" value="{{ product.price }}" required></div>
+            <div class="form-group">
+                <label for="discount_price">Harga Setelah Diskon</label>
+                <input type="text" inputmode="numeric" id="discount_price" name="discount_price" value="{{ product.discount_price or '' }}">
+            </div>
             <div class="form-group"><label for="stock">Stok</label><input type="number" id="stock" name="stock" value="{{ product.stock }}" required></div>
             <div class="form-group">
                 <label for="category_id">Kategori</label>
@@ -30,13 +33,23 @@
                 <div class="preview-item {% if product.image_url %}is-main{% endif %}">
                     <img src="{{ url_for('static', filename='uploads/' + product.image_url) }}" alt="{{ product.name }}">
                     <input type="radio" name="main_image" value="{{ product.image_url }}" class="main-image-radio" checked>
-                    <input type="checkbox" name="delete_image" value="{{ product.image_url }}" class="delete-image-checkbox" title="Tandai untuk hapus">
+                    <div class="delete-checkbox-overlay">
+                        <label class="custom-checkbox" title="Tandai untuk hapus">
+                            <input type="checkbox" name="delete_image" value="{{ product.image_url }}" class="checkbox-input delete-image-checkbox">
+                            <span class="checkbox-box"><span class="checkmark"></span></span>
+                        </label>
+                    </div>
                 </div>
                 {% for image in additional_images %}
                 <div class="preview-item">
                     <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="{{ product.name }}">
                     <input type="radio" name="main_image" value="{{ image }}" class="main-image-radio">
-                    <input type="checkbox" name="delete_image" value="{{ image }}" class="delete-image-checkbox" title="Tandai untuk hapus">
+                     <div class="delete-checkbox-overlay">
+                        <label class="custom-checkbox" title="Tandai untuk hapus">
+                            <input type="checkbox" name="delete_image" value="{{ image }}" class="checkbox-input delete-image-checkbox">
+                            <span class="checkbox-box"><span class="checkmark"></span></span>
+                        </label>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
