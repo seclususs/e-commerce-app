@@ -27,6 +27,18 @@ def create_app():
             return f"Rp {val:,.0f}".replace(',', '.')
         except (ValueError, TypeError, AttributeError):
             return "Rp 0"
+
+    # Filter kustom untuk menghitung persentase diskon
+    @app.template_filter('percentage')
+    def format_percentage(part, whole):
+        try:
+            part = float(part)
+            whole = float(whole)
+            if whole == 0:
+                return 0
+            return round(100 * (whole - part) / whole)
+        except (ValueError, TypeError):
+            return 0
         
     # Registrasi semua blueprint
     app.register_blueprint(product_bp)

@@ -29,7 +29,7 @@
 .add-to-cart-btn {
     width: 100%; background: transparent; border: 2px solid #3b82f6; color: #3b82f6; padding: 0.8rem;
     border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; margin-top: auto;
-    text-align: center; text-decoration: none; display: inline-block; font-size: 1rem; position: relative; z-index: 2;
+    text-align: center; text-decoration: none; display: inline-flex; font-size: 1rem; position: relative; z-index: 2;
 }
 
 /* Gaya tombol Tambah ke Keranjang di kartu produk untuk desktop */
@@ -124,6 +124,13 @@
 .product-category-detail { background: #334155; color: #cbd5e1; display: inline-block; padding: 0.2rem 0.8rem; border-radius: 20px; font-size: 0.9rem; margin-bottom: 1rem; }
 .product-price-detail { font-size: 2.5rem; font-weight: 700; color: #3b82f6; margin-bottom: 1.5rem; }
 
+/* Input Kuantitas */
+.product-quantity-selector { margin-top: 1rem; }
+.quantity-input-wrapper { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; max-width: 150px; }
+.quantity-input-field { text-align: center; padding: 0.5rem; -moz-appearance: textfield; }
+.quantity-input-field::-webkit-outer-spin-button, .quantity-input-field::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.stock-warning-message { font-size: 0.9rem; color: var(--color-warning); margin-top: 0.5rem; min-height: 1.2em; }
+
 /* Gaya untuk Detail Produk Statis */
 .product-details-static .details-title {
     font-size: 1.2rem;
@@ -193,8 +200,10 @@
 .cart-page-item { display: grid; grid-template-columns: 80px 1fr auto auto auto; gap: 1.5rem; align-items: center; padding: 1.5rem; border-bottom: 1px solid #334155; }
 .cart-page-item:last-child { border-bottom: none; }
 .cart-page-item-img img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; }
+.cart-page-item-info { position: relative; }
 .cart-page-item-info strong { display: block; font-size: 1.1rem; }
 .cart-page-item-info span { color: #94a3b8; }
+.cart-page-item-info .stock-warning-message { font-size: 0.8rem; min-height: 0; }
 .cart-summary { position: sticky; top: 100px; }
 .summary-row, .summary-total { display: flex; justify-content: space-between; margin-bottom: 1rem; color: #cbd5e1; }
 .summary-total { font-size: 1.3rem; font-weight: bold; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #334155; }

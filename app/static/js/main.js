@@ -16,4 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminCardToggle();
     initBulkActions();
     initAdminPriceFormatting();
+    initProductFiltering(); // Untuk katalog produk
+    initProductPage();      // Untuk detail produk
+    initCheckoutForm();     // Untuk halaman checkout
 });

@@ -53,16 +53,16 @@
             <div class="filter-group">
                 <label>Urutkan:</label>
                 <div class="checkbox-group">
-                    <label class="checkbox-label"><input type="radio" name="sort" value="popularity" onchange="this.form.submit()" {% if not request.args.get('sort') or request.args.get('sort') == 'popularity' %}checked{% endif %}> Popularitas</label>
-                    <label class="checkbox-label"><input type="radio" name="sort" value="price_asc" onchange="this.form.submit()" {% if request.args.get('sort') == 'price_asc' %}checked{% endif %}> Harga Terendah</label>
-                    <label class="checkbox-label"><input type="radio" name="sort" value="price_desc" onchange="this.form.submit()" {% if request.args.get('sort') == 'price_desc' %}checked{% endif %}> Harga Tertinggi</label>
+                    <label class="checkbox-label"><input type="radio" name="sort" value="popularity" {% if not request.args.get('sort') or request.args.get('sort') == 'popularity' %}checked{% endif %}> Popularitas</label>
+                    <label class="checkbox-label"><input type="radio" name="sort" value="price_asc" {% if request.args.get('sort') == 'price_asc' %}checked{% endif %}> Harga Terendah</label>
+                    <label class="checkbox-label"><input type="radio" name="sort" value="price_desc" {% if request.args.get('sort') == 'price_desc' %}checked{% endif %}> Harga Tertinggi</label>
                 </div>
             </div>
             <div class="filter-group">
                 <label>Kategori:</label>
                 <div class="checkbox-group">
-                    <label class="checkbox-label"><input type="radio" name="category" value="" onchange="this.form.submit()" {% if not request.args.get('category') %}checked{% endif %}> Semua</label>
-                    {% for cat in categories %}<label class="checkbox-label"><input type="radio" name="category" value="{{ cat.id }}" onchange="this.form.submit()" {% if request.args.get('category')|int == cat.id %}checked{% endif %}> {{ cat.name }}</label>{% endfor %}
+                    <label class="checkbox-label"><input type="radio" name="category" value="" {% if not request.args.get('category') %}checked{% endif %}> Semua</label>
+                    {% for cat in categories %}<label class="checkbox-label"><input type="radio" name="category" value="{{ cat.id }}" {% if request.args.get('category')|int == cat.id %}checked{% endif %}> {{ cat.name }}</label>{% endfor %}
                 </div>
             </div>
             <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary reset-filter-btn">Reset</a>
@@ -70,19 +70,21 @@
     </div>
 
     <main class="products-main-grid">
-        {% if products %}
-            <div class="products-grid">
+        <div class="products-grid" id="product-grid-container">
+            {% if products %}
                 {% for product in products %}
                 <div class="product-card animated-element {% if product.stock == 0 %}out-of-stock{% endif %}" data-animation-delay="{{ (loop.index0 % 8) * 75 }}">
                     <a href="{{ url_for('product.product_detail', id=product.id) }}" class="product-card-link"></a>
                     <div class="product-image">
-                        <img src="{{ url_for('static', filename='uploads/' + product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + product.name }}" alt="{{ product.name }}">
+                        {% if product.discount_price and product.discount_price > 0 %}
+                            <span class="discount-badge">Hemat {{ product.discount_price|percentage(product.price) }}%</span>
+                        {% endif %}
+                        <img loading="lazy" src="{{ url_for('static', filename='uploads/' + product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + product.name }}" alt="{{ product.name }}">
                         {% if product.stock == 0 %}<div class="stock-overlay">Stok Habis</div>{% endif %}
                     </div>
                     <div class="product-info">
                         <h3 class="product-name">{{ product.name }}</h3>
                         <p class="product-category">{{ product.category_name or 'N/A' }}</p>
-                        <!-- Tampilkan harga diskon -->
                         <div class="product-price-container">
                             {% if product.discount_price and product.discount_price > 0 %}
                                 <span class="product-price discount-price">{{ product.discount_price|rupiah }}</span>
@@ -91,16 +93,22 @@
                                 <span class="product-price">{{ product.price|rupiah }}</span>
                             {% endif %}
                         </div>
-                        <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" {% if product.stock == 0 %}disabled{% endif %}>
-                            {% if product.stock > 0 %}Tambah ke Keranjang{% else %}Stok Habis{% endif %}
+                        <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}" {% if product.stock == 0 %}disabled{% endif %}>
+                            <span>{% if product.stock > 0 %}Tambah ke Keranjang{% else %}Stok Habis{% endif %}</span>
                         </button>
                     </div>
                 </div>
                 {% endfor %}
-            </div>
-        {% else %}
-            <p class="no-products-found animated-element">Tidak ada produk yang cocok dengan pencarian atau filter Anda.</p>
-        {% endif %}
+            {% else %}
+                <p class="no-products-found animated-element">Tidak ada produk yang cocok dengan pencarian atau filter Anda.</p>
+            {% endif %}
+        </div>
     </main>
 </section>
+{% endblock %}
+
+{% block additional_scripts %}
+<script src="{{ url_for('static', filename='js/product_filter.js') }}"></script>
+<script src="{{ url_for('static', filename='js/checkout_logic.js') }}"></script>
+<script src="{{ url_for('static', filename='js/product_page_logic.js') }}"></script>
 {% endblock %}

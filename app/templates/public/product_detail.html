@@ -28,11 +28,11 @@
         <div class="product-info-details animated-element" data-animation-delay="200">
             <h1 class="product-title">{{ product.name }}</h1>
             <p class="product-category-detail">{{ product.category_name or 'N/A' }}</p>
-            <!-- Tampilkan harga diskon -->
-            <div class="product-price-detail-container">
+            <div class="product-price-detail-container" style="display: flex; align-items: center; gap: 1rem;">
                  {% if product.discount_price and product.discount_price > 0 %}
                     <span class="product-price-detail discount-price">{{ product.discount_price|rupiah }}</span>
                     <del class="original-price-detail">{{ product.price|rupiah }}</del>
+                    <span class="discount-badge" style="position: static;">Hemat {{ product.discount_price|percentage(product.price) }}%</span>
                 {% else %}
                     <span class="product-price-detail">{{ product.price|rupiah }}</span>
                 {% endif %}
@@ -56,11 +56,25 @@
                         </li>
                     </ul>
                 </div>
+                 <!-- [BARU] Input Kuantitas -->
+                {% if product.stock > 0 %}
+                <div class="product-quantity-selector">
+                    <h3 class="details-title">Jumlah</h3>
+                    <div class="quantity-input-wrapper">
+                        <button type="button" class="quantity-btn" id="quantity-minus">-</button>
+                        <input type="number" id="quantity-input" value="1" min="1" max="{{ product.stock }}" class="form-control quantity-input-field">
+                        <button type="button" class="quantity-btn" id="quantity-plus">+</button>
+                    </div>
+                    <div id="stock-warning" class="stock-warning-message"></div>
+                </div>
+                {% endif %}
             </div>
             
             <div class="hide-on-mobile-cta" style="margin-top: 2rem;">
                 {% if product.stock > 0 %}
-                    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}"><i class="fas fa-shopping-cart"></i> Tambah ke Keranjang</button>
+                    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}">
+                        <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
+                    </button>
                 {% else %}
                     <button class="cta-button" disabled>Stok Habis</button>
                 {% endif %}
@@ -90,8 +104,25 @@
                 </form>
             </div>
         {% elif session.user_id %}
-            <div class="admin-card add-review-form" style="text-align: center;">
-                <p style="color: #94a3b8; margin:0;">Anda sudah memberikan ulasan atau harus membeli produk ini terlebih dahulu untuk dapat memberikan ulasan.</p>
+            <div class="admin-card add-review-form form-disabled">
+                <h3>Bagikan Pendapat Anda</h3>
+                <form>
+                    <fieldset disabled>
+                        <div class="form-group">
+                            <label for="rating">Rating Anda</label>
+                            <div class="star-rating">
+                                <input type="radio" id="5-stars-d" name="rating-d" value="5" /><label for="5-stars-d" class="star">&#9733;</label>
+                                <input type="radio" id="4-stars-d" name="rating-d" value="4" /><label for="4-stars-d" class="star">&#9733;</label>
+                                <input type="radio" id="3-stars-d" name="rating-d" value="3" /><label for="3-stars-d" class="star">&#9733;</label>
+                                <input type="radio" id="2-stars-d" name="rating-d" value="2" /><label for="2-stars-d" class="star">&#9733;</label>
+                                <input type="radio" id="1-star-d" name="rating-d" value="1" /><label for="1-star-d" class="star">&#9733;</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label for="comment-d">Komentar</label><textarea id="comment-d" rows="4" placeholder="Tulis ulasan Anda di sini..."></textarea></div>
+                        <button type="submit" class="cta-button form-button">Kirim Ulasan</button>
+                    </fieldset>
+                </form>
+                <p class="form-hint" style="text-align: center; margin-top: 1rem; color: var(--color-text-med);">Fitur ini akan aktif setelah Anda membeli produk ini.</p>
             </div>
         {% else %}
             <div class="admin-card add-review-form" style="text-align: center;">
@@ -118,7 +149,13 @@
 <!-- Floating bar untuk tombol Tambah ke Keranjang di mobile -->
 {% if product.stock > 0 %}
 <div class="mobile-cta-bar">
-    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}"><i class="fas fa-shopping-cart"></i> Tambah ke Keranjang</button>
+    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}">
+        <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
+    </button>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block additional_scripts %}
+<script src="{{ url_for('static', filename='js/product_page_logic.js') }}"></script>
 {% endblock %}

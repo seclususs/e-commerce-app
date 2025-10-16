@@ -140,5 +140,6 @@
     <script src="{{ url_for('static', filename='js/cart_logic.js') }}"></script>
     <script src="{{ url_for('static', filename='js/event_handlers.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block additional_scripts %}{% endblock %}
 </body>
 </html>

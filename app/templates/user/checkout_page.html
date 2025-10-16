@@ -54,9 +54,10 @@
                     <div id="checkout-summary-items"><p>Memuat item...</p></div>
                     <div class="summary-total"><span>Total</span><span id="checkoutTotal">Rp 0</span></div>
                     <input type="hidden" name="cart_data" id="cart_data_input">
-                    <!-- Tombol ini disembunyikan di mobile -->
                     <div class="hide-on-mobile-cta">
-                        <button id="placeOrderBtn" type="submit" class="cta-button" style="width: 100%;" disabled>Buat Pesanan</button>
+                        <button id="placeOrderBtn" type="submit" class="cta-button cta-button-prominent" style="width: 100%;" disabled>
+                            <span>Buat Pesanan</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -64,8 +65,13 @@
     </div>
 </section>
 
-<!-- Floating bar untuk tombol Buat Pesanan di mobile -->
 <div class="mobile-cta-bar">
-    <button id="placeOrderBtnMobile" type="button" class="cta-button" disabled>Buat Pesanan</button>
+    <button id="placeOrderBtnMobile" type="button" class="cta-button cta-button-prominent" disabled>
+        <span>Buat Pesanan</span>
+    </button>
 </div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script src="{{ url_for('static', filename='js/checkout_logic.js') }}"></script>
 {% endblock %}
