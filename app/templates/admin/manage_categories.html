@@ -36,7 +36,7 @@
                                 <input type="text" name="name" value="{{ category.name }}" class="form-control">
                                 <button type="submit" name="action" value="edit" class="cta-button-secondary" style="border-color: var(--color-primary); color: var(--color-primary); white-space: nowrap;">Update</button>
                             </form>
-                            <a href="{{ url_for('admin.delete_category', id=category.id) }}" class="action-link action-link-delete" style="white-space: nowrap;">Hapus</a>
+                            <a href="{{ url_for('admin.delete_category', id=category.id) }}" class="action-link action-link-delete" style="white-space: nowrap;" data-no-transition>Hapus</a>
                         </div>
                     </td>
                 </tr>

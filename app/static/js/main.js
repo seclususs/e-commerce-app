@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     cartModule.init();
     initOrderSuccessPage();
     initActionConfirmations();
-    initQuickCheckout();
     initLogout();
     initProductGallery();
     initAdminImagePreviews();

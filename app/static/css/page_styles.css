@@ -18,7 +18,7 @@
 
 /* Products Section (Umum & Homepage) */
 .products-section { padding: 5rem 5%; max-width: 1400px; margin: 0 auto; }
-/* [MODIFIED] Mengurangi jarak antar kartu untuk grid yang lebih padat */
+/* Jarak antar kartu untuk grid yang lebih padat */
 .products-grid { display: grid; gap: 0.5rem; grid-template-columns: repeat(2, 1fr); }
 .product-card-link { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
 .product-image { width: 100%; height: auto; aspect-ratio: 1 / 1; background: #1e293b; position: relative; }
@@ -227,7 +227,24 @@
 .icons-container i { margin: 0 0.5rem; }
 
 /* Bagian Auth & Profil Pengguna */
-.user-profile-section, .auth-section { display: flex; justify-content: center; align-items: center; padding: 3rem 1rem; min-height: 80vh; }
+.user-profile-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 3rem 1rem;
+    min-height: 80vh;
+}
+
+.auth-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 1.5rem; /* Menghapus padding vertikal untuk mencegah overflow */
+    width: 100%;
+    min-height: 100vh;
+    flex-grow: 1;
+}
+
 .auth-container { width: 100%; max-width: 900px; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 15px; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
 .auth-image { background-color: #0c1222; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem; position: relative; overflow: hidden; }
 .auth-image-overlay { position: relative; z-index: 2; color: #fff; }
@@ -238,7 +255,7 @@
 .auth-image .shape-2 { width: 250px; height: 250px; bottom: -80px; right: -60px; animation-duration: 25s; animation-delay: -10s; }
 .auth-image .shape-3 { width: 150px; height: 150px; bottom: 150px; left: 20px; animation-duration: 18s; animation-delay: 0s; }
 @keyframes float { 0% { transform: translateY(0px) rotate(0deg) translateX(0px); } 25% { transform: translateY(-30px) rotate(45deg) translateX(20px); } 50% { transform: translateY(20px) rotate(90deg) translateX(-20px); } 75% { transform: translateY(-20px) rotate(135deg) translateX(30px); } 100% { transform: translateY(0px) rotate(180deg) translateX(0px); } }
-.form-container { background: none; border: none; padding: 2rem 2.5rem; width: 100%; max-width: none; display: flex; flex-direction: column; justify-content: center; min-height: 530px; }
+.form-container { background: none; border: none; padding: 2rem 2.5rem; width: 100%; max-width: none; display: flex; flex-direction: column; justify-content: center; }
 .form-container .section-title { text-align: left; margin-bottom: 1rem; font-size: 1.8rem; }
 .auth-container .form-group { margin-bottom: 0.8rem; }
 .auth-container .form-switch { margin-top: 1rem; }
@@ -263,38 +280,38 @@
 .guest-checkout-prompt { margin-top: 1rem; padding: 1rem; background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; text-align: center; }
 .guest-checkout-prompt p { margin-bottom: 1rem; color: #94a3b8; }
 
-/* --- [REFINED] Perubahan Interaksi Kartu Produk --- */
+/* Interaksi Kartu Produk */
 
-/* 1. Atur .product-info untuk transisi dan padding awal yang lebih kecil */
+/* Atur .product-info untuk transisi dan padding awal yang lebih kecil */
 .product-info {
-    padding: 1rem; /* [MODIFIED] Padding lebih kecil untuk default state yang padat */
+    padding: 1rem; /* Padding lebih kecil untuk default state yang padat */
     transition: padding 0.3s ease-out;
     flex-grow: 0;
 }
 
-/* 2. Sesuaikan elemen teks agar lebih ringkas */
+/* Sesuaikan elemen teks agar lebih ringkas */
 .product-name {
-    font-size: 1.1rem; /* [MODIFIED] Ukuran font lebih kecil */
+    font-size: 1.1rem; /* Ukuran font lebih kecil */
     font-weight: 600;
-    margin-bottom: 0.25rem; /* [MODIFIED] Margin lebih kecil */
+    margin-bottom: 0.25rem; /* Margin lebih kecil */
     flex-grow: 0;
 }
 .product-category {
-    font-size: 0.8rem; /* [MODIFIED] Ukuran font lebih kecil */
-    margin-bottom: 0.5rem; /* [MODIFIED] Margin lebih kecil */
+    font-size: 0.8rem; /* Ukuran font lebih kecil */
+    margin-bottom: 0.5rem; /* Margin lebih kecil */
 }
 .product-price {
-    font-size: 1.25rem; /* [MODIFIED] Ukuran font lebih kecil */
+    font-size: 1.25rem; /* Ukuran font lebih kecil */
     padding-top: 0;
     margin-bottom: 0;
 }
 .product-price-container {
-    padding-top: 0.5rem; /* [MODIFIED] Mengurangi padding dari container harga */
+    padding-top: 0.5rem; /* Mengurangi padding dari container harga */
     margin-top: auto;
 }
 
 
-/* 3. Sembunyikan elemen tambahan secara default */
+/* Sembunyikan elemen tambahan secara default */
 .product-info .additional-info,
 .product-info .add-to-cart-btn {
     opacity: 0;
@@ -309,9 +326,9 @@
     line-height: 1.5;
 }
 
-/* 4. Tampilkan elemen tambahan dan kembalikan padding saat hover */
+/* Tampilkan elemen tambahan dan kembalikan padding saat hover */
 .product-card:hover .product-info {
-    padding: 1.5rem; /* [MODIFIED] Kembalikan padding yang lebih besar saat hover */
+    padding: 1.5rem; /* Kembalikan padding yang lebih besar saat hover */
 }
 
 .product-card:hover .additional-info,
@@ -323,7 +340,7 @@
     transition-delay: 0.1s;
 }
 
-/* 5. Kembalikan jarak yang sesuai saat elemen muncul */
+/* Kembalikan jarak yang sesuai saat elemen muncul */
 .product-card:hover .additional-info {
     margin-top: 0.75rem !important;
 }

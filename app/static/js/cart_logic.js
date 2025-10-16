@@ -1,11 +1,6 @@
 const cartModule = (() => {
     let cart = JSON.parse(localStorage.getItem('hackthreadCart')) || {};
-    const cartModalEl = document.getElementById('cartModal');
     const cartCountEl = document.getElementById('cartCount');
-    const cartItemsContainer = document.getElementById('cartItemsContainer');
-    const cartTotalEl = document.getElementById('cartTotal');
-    const cartFooter = document.getElementById('cartFooter');
-    let isLoggedIn = false;
 
     const save = () => localStorage.setItem('hackthreadCart', JSON.stringify(cart));
     const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID')}`;
@@ -107,7 +102,7 @@ const cartModule = (() => {
 
         if (productsInCart.length === 0) {
             summaryContainer.innerHTML = '<p>Keranjang Anda kosong.</p>';
-            placeOrderBtn.disabled = true;
+            if (placeOrderBtn) placeOrderBtn.disabled = true;
             return;
         }
 
@@ -122,49 +117,18 @@ const cartModule = (() => {
         
         totalEl.textContent = formatRupiah(total);
         cartDataInput.value = JSON.stringify(cartForCheckout);
-        placeOrderBtn.disabled = false;
+        if (placeOrderBtn) placeOrderBtn.disabled = false;
     };
 
-    const renderModal = async () => {
-        if (!cartItemsContainer || !cartFooter) return;
-        const { products, total } = await fetchProducts();
-        const productsInCart = products.filter(p => (cart[p.id]?.quantity || 0) > 0);
-
-        if (productsInCart.length === 0) {
-            cartItemsContainer.innerHTML = '<div class="cart-empty">Keranjang masih kosong</div>';
-            cartFooter.classList.add('hidden');
-        } else {
-            cartItemsContainer.innerHTML = productsInCart.map(p => {
-                const quantity = cart[p.id].quantity;
-                const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
-                const hasDiscount = (p.discount_price && p.discount_price > 0);
-                return `
-                <div class="cart-item">
-                    <div class="cart-item-info">
-                        <strong>${p.name}</strong>
-                         <span>
-                           ${hasDiscount ? `<del style="opacity: 0.7;">${formatRupiah(p.price)}</del> ${formatRupiah(effectivePrice)}` : formatRupiah(p.price)}
-                        </span>
-                    </div>
-                    <div class="cart-item-quantity">
-                        <button class="quantity-btn" data-id="${p.id}" data-change="-1" data-stock="${p.stock}">-</button>
-                        <span>${quantity}</span>
-                        <button class="quantity-btn" data-id="${p.id}" data-change="1" data-stock="${p.stock}" ${quantity >= p.stock ? 'disabled' : ''}>+</button>
-                    </div>
-                    <div class="item-price">${formatRupiah(effectivePrice * quantity)}</div>
-                    <button class="remove-item-btn" data-id="${p.id}">✕</button>
-                </div>`
-            }).join('');
-            cartTotalEl.textContent = formatRupiah(total);
-            cartFooter.classList.remove('hidden');
-        }
-    };
-    
     const saveAndRender = () => {
-        save(); updateCount();
-        if (document.getElementById('cartPageItems')) renderCartPage();
-        if (document.getElementById('checkout-summary-items')) renderCheckoutPage();
-        if (isLoggedIn && cartModalEl && cartModalEl.classList.contains('active')) renderModal();
+        save();
+        updateCount();
+        if (document.getElementById('cartPageItems')) {
+            renderCartPage();
+        }
+        if (document.getElementById('checkout-summary-items')) {
+            renderCheckoutPage();
+        }
     };
 
     const handleInteraction = (e) => {
@@ -198,18 +162,15 @@ const cartModule = (() => {
         }
     };
 
-    const toggleModal = () => {
-        if (!isLoggedIn || !cartModalEl) return;
-        const isActive = cartModalEl.classList.toggle('active');
-        if (isActive) renderModal();
-    };
-
     return {
         init: () => {
-            isLoggedIn = !!document.getElementById('closeCartBtn');
             updateCount();
-            if (document.getElementById('cartPageItems')) renderCartPage();
-            if (document.getElementById('checkout-summary-items')) renderCheckoutPage();
+            if (document.getElementById('cartPageItems')) {
+                renderCartPage();
+            }
+            if (document.getElementById('checkout-summary-items')) {
+                renderCheckoutPage();
+            }
 
             document.body.addEventListener('click', (e) => {
                 const btn = e.target.closest('.add-to-cart-btn');
@@ -230,7 +191,6 @@ const cartModule = (() => {
                 const btnTextEl = btn.querySelector('span');
                 const originalText = btnTextEl ? btnTextEl.textContent : '';
 
-                // Add checkmark icon if it doesn't exist
                 if (!btn.querySelector('.checkmark-icon')) {
                     const checkmark = document.createElement('i');
                     checkmark.className = 'fas fa-check checkmark-icon';
@@ -242,13 +202,10 @@ const cartModule = (() => {
                 updateCount();
                 showNotification(`'${name}' x ${quantityToAdd} ditambahkan!`);
                 triggerCartAnimation();
-                if (isLoggedIn && !document.getElementById('quantity-input')) toggleModal();
 
-                // Success state
                 btn.classList.add('is-added');
                 if (btnTextEl) btnTextEl.textContent = 'Ditambahkan!';
                 
-                // Revert back after 2 seconds
                 setTimeout(() => {
                     btn.classList.remove('is-added');
                     if (btnTextEl) btnTextEl.textContent = originalText;
@@ -256,14 +213,10 @@ const cartModule = (() => {
                 }, 2000);
             });
             
-            if (isLoggedIn && cartModalEl) {
-                document.getElementById('closeCartBtn').addEventListener('click', toggleModal);
-                cartModalEl.addEventListener('click', (e) => (e.target === cartModalEl) && toggleModal());
-                if (cartItemsContainer) cartItemsContainer.addEventListener('click', handleInteraction);
-            }
-
             const cartPageItemsEl = document.getElementById('cartPageItems');
-            if (cartPageItemsEl) cartPageItemsEl.addEventListener('click', handleInteraction);
+            if (cartPageItemsEl) {
+                cartPageItemsEl.addEventListener('click', handleInteraction);
+            }
         },
         getCart: () => cart,
         clear: () => { cart = {}; saveAndRender(); },

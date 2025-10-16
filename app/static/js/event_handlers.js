@@ -51,46 +51,6 @@ const initActionConfirmations = () => {
     });
 };
 
-const initQuickCheckout = () => {
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    if (!checkoutBtn) return;
-    
-    checkoutBtn.addEventListener('click', async () => {
-        const paymentMethodEl = document.getElementById('paymentMethodModal');
-        const paymentMethod = paymentMethodEl ? paymentMethodEl.value : null;
-        const cart = cartModule.getCart();
-
-        if (Object.keys(cart).length === 0) return showNotification("Keranjang Anda kosong!", true);
-        if (!paymentMethod) return showNotification("Silakan pilih metode pembayaran.", true);
-
-        checkoutBtn.disabled = true;
-        checkoutBtn.textContent = 'Memproses...';
-
-        try {
-            const response = await fetch('/api/quick_checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cart, payment_method: paymentMethod })
-            });
-            const result = await response.json();
-
-            if (response.ok) {
-                window.location.href = '/order_success';
-            } else {
-                showNotification(result.message || 'Gagal membuat pesanan.', true);
-                if (result.redirect) {
-                     setTimeout(() => { window.location.href = result.redirect; }, 2000);
-                }
-            }
-        } catch (error) {
-            showNotification('Terjadi kesalahan saat checkout.', true);
-        } finally {
-            checkoutBtn.disabled = false;
-            checkoutBtn.textContent = 'Checkout Cepat';
-        }
-    });
-};
-
 const initLogout = () => {
     document.body.addEventListener('click', (e) => {
         const logoutLink = e.target.closest('#logoutLink, #mobileLogoutLink');

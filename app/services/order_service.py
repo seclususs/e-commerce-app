@@ -19,7 +19,6 @@ class OrderService:
                 return {'success': False, 'message': 'Keranjang Anda kosong.'}
                 
             placeholders = ', '.join(['?'] * len(product_ids))
-            # Ambil juga `discount_price` dari database
             query = f'SELECT id, name, price, discount_price, stock FROM products WHERE id IN ({placeholders})'
             products_db = conn.execute(query, product_ids).fetchall()
             products_map = {str(p['id']): p for p in products_db}
@@ -32,7 +31,6 @@ class OrderService:
                     stock_left = products_map[pid]['stock']
                     return {'success': False, 'message': f"Stok untuk '{product_name}' tidak mencukupi. Tersisa {stock_left}, Anda meminta {qty}."}
 
-            # Hitung total_amount menggunakan harga diskon jika ada
             total_amount = 0
             for pid, qty in cart_data.items():
                 product = products_map[pid]
@@ -54,7 +52,6 @@ class OrderService:
 
             for pid, qty in cart_data.items():
                 product = products_map[pid]
-                # [DIPERBAIKI] Simpan harga yang benar (diskon atau normal) ke order_items
                 effective_price = product['discount_price'] if product['discount_price'] and product['discount_price'] > 0 else product['price']
                 cursor.execute(
                     'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
@@ -63,7 +60,9 @@ class OrderService:
                 cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (int(qty), pid))
 
             if save_address and user_id:
-                user_service.update_user_address(user_id, shipping_details)
+                # Menggunakan koneksi database (conn) yang sudah ada
+                # untuk menghindari error 'database is locked'.
+                user_service.update_user_address(user_id, shipping_details, conn=conn)
 
             conn.commit()
             return {'success': True, 'order_id': order_id}

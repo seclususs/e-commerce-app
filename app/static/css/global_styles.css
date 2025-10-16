@@ -200,7 +200,7 @@ body { -ms-overflow-style: none; scrollbar-width: none; }
   80% { transform: scale(1); }
 }
 
-/* [BARU] Kelas untuk menerapkan animasi */
+/* Kelas untuk menerapkan animasi */
 .bottom-nav-item .fa-shopping-cart.is-animating {
     animation: cart-shake 0.6s ease-in-out;
 }

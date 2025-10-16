@@ -39,7 +39,6 @@ with connection:
     """)
     print("- Tabel 'users' berhasil dibuat.")
     
-    # Tabel Kategori
     cursor.execute("""
         CREATE TABLE categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,16 +52,16 @@ with connection:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             price REAL NOT NULL,
-            discount_price REAL, -- [DITAMBAHKAN] Kolom untuk harga diskon
+            discount_price REAL,
             description TEXT NOT NULL,
-            category_id INTEGER, -- [DIUBAH] Menggunakan ID Kategori
+            category_id INTEGER,
             sizes TEXT,
             colors TEXT,
             popularity INTEGER DEFAULT 0,
             image_url TEXT,
             additional_image_urls TEXT,
             stock INTEGER NOT NULL DEFAULT 10,
-            FOREIGN KEY(category_id) REFERENCES categories(id) -- [DITAMBAHKAN] Foreign key
+            FOREIGN KEY(category_id) REFERENCES categories(id)
         );
     """)
     print("- Tabel 'products' berhasil dibuat.")
@@ -78,7 +77,7 @@ with connection:
             payment_method TEXT, shipping_name TEXT, shipping_phone TEXT,
             shipping_address_line_1 TEXT, shipping_address_line_2 TEXT,
             shipping_city TEXT, shipping_province TEXT, shipping_postal_code TEXT,
-            tracking_number TEXT, -- [DITAMBAHKAN] Kolom untuk nomor resi
+            tracking_number TEXT,
             FOREIGN KEY(user_id) REFERENCES users(id)
         );
     """)
@@ -125,16 +124,21 @@ with connection:
     print("- Data 'content' berhasil dimasukkan.")
 
     # 2. Pengguna
+    hashed_password = generate_password_hash('password123')
     users_to_add = [
-        ('admin', 'admin@hackthread.dev', generate_password_hash('admin123'), None, None, None, None, None, None, 1),
-        ('user', 'user@example.com', generate_password_hash('password'), '081298765432', 'Jl. Merdeka No. 10', '', 'Depok', 'Jawa Barat', '16424', 0),
-        ('johndoe', 'john@example.com', generate_password_hash('password123'), None, None, None, None, None, None, 0)
+        ('admin', 'admin@hackthread.dev', generate_password_hash('admin123'), None, None, None, None, None, None, 1)
     ]
+    # Tambah 52 pengguna dummy
+    for i in range(1, 53):
+        users_to_add.append(
+            (f'user{i}', f'user{i}@example.com', hashed_password, None, None, None, None, None, None, 0)
+        )
+    
     cursor.executemany("""
         INSERT INTO users (username, email, password, phone, address_line_1, address_line_2, city, province, postal_code, is_admin) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, users_to_add)
-    print("- Data 'users' (termasuk admin) berhasil dimasukkan.")
+    print(f"- Data untuk {len(users_to_add)} 'users' (termasuk admin) berhasil dimasukkan.")
 
     # 3. Kategori
     categories_to_add = [('T-Shirt',), ('Hoodie',), ('Aksesoris',), ('Sweater',)]
@@ -144,14 +148,10 @@ with connection:
     # 4. Produk
     products_to_add = [
         # name, price, discount_price, description, category_id, sizes, colors, popularity, image_url, additional_images, stock
-        ('Kaos "Hello, World!"', 175000, 150000, 'Kaos katun premium dengan sablon klasik "Hello, World!". Sempurna untuk memulai hari (atau proyek coding). Bahan adem dan nyaman.', 1, 'S, M, L, XL, XXL', 'Hitam, Putih, Biru Navy', 50, 'kaos_hello_world.webp', json.dumps(['kaos_hello_world_2.webp']), 100),
-        ('Hoodie "Binary Tree"', 350000, None, 'Hoodie tebal dengan desain struktur data binary tree yang artistik. Jaga kehangatanmu saat begadang debugging. Fleece 280gsm.', 2, 'M, L, XL', 'Hitam, Abu-abu', 85, 'hoodie_binary.webp', json.dumps([]), 50),
-        ('Topi "Git Commit"', 125000, None, 'Topi baseball dengan bordir command "git commit". Sebuah pengingat untuk selalu menyimpan progresmu.', 3, 'All Size', 'Hitam', 70, 'topi_git.webp', json.dumps(['topi_git_2.webp']), 75),
-        ('Kaos "404 Not Found"', 185000, None, 'Humor programmer dalam selembar kaos. Ketika kamu merasa hilang, setidaknya gayamu tetap ditemukan. Bahan katun 24s.', 1, 'S, M, L, XL', 'Putih', 95, 'kaos_404.webp', json.dumps([]), 4),
-        ('Sweater "Code, Sleep, Repeat"', 295000, 250000, 'Sweater ringan yang cocok untuk kerja di ruangan ber-AC. Slogan yang mewakili gaya hidup setiap developer.', 4, 'M, L, XL, XXL', 'Biru Navy', 80, 'sweater_code.webp', json.dumps(['sweater_code_2.webp']), 60),
-        ('T-Shirt "SQL Injection"', 175000, None, 'Sebuah lelucon keamanan siber yang hanya dimengerti oleh kalangan tertentu. Tunjukkan keahlianmu dengan gaya.', 1, 'L, XL', 'Hitam', 60, 'kaos_sql.webp', json.dumps([]), 2),
-        ('Mug "Syntax Error"', 95000, None, 'Mulai harimu dengan kopi dan pengingat bahwa semua orang bisa membuat kesalahan. Keramik berkualitas tinggi.', 3, 'N/A', 'Putih', 90, 'mug_syntax.webp', json.dumps([]), 120),
-        ('Sticker Pack Developer', 50000, 45000, 'Satu set stiker vinyl tahan air berisi logo bahasa pemrograman dan teknologi populer. Tempel di laptopmu!', 3, 'N/A', 'Multi-warna', 100, 'sticker_pack.webp', json.dumps([]), 200)
+        ('Kaos', 175000, 150000, 'Kaos katun premium dengan sablon klasik "Hello, World!". Sempurna untuk memulai hari (atau proyek coding). Bahan adem dan nyaman.', 1, 'S, M, L, XL, XXL', 'Hitam, Putih, Biru Navy', 55, 'kaos_hello_world.webp', json.dumps(['kaos_hello_world_2.webp']), 100),
+        ('Hoodie', 350000, None, 'Hoodie tebal dengan desain struktur data binary tree yang artistik. Jaga kehangatanmu saat begadang debugging. Fleece 280gsm.', 2, 'M, L, XL', 'Hitam, Abu-abu', 85, 'hoodie_binary.webp', json.dumps([]), 50),
+        ('Topi', 125000, None, 'Topi baseball dengan bordir command "git commit". Sebuah pengingat untuk selalu menyimpan progresmu.', 3, 'All Size', 'Hitam', 70, 'topi_git.webp', json.dumps(['topi_git_2.webp']), 75),
+        ('Sweater', 295000, 250000, 'Sweater ringan yang cocok untuk kerja di ruangan ber-AC. Slogan yang mewakili gaya hidup setiap developer.', 4, 'M, L, XL, XXL', 'Biru Navy', 95, 'sweater_code.webp', json.dumps(['sweater_code_2.webp']), 60)
     ]
     cursor.executemany("""
         INSERT INTO products (name, price, discount_price, description, category_id, sizes, colors, popularity, image_url, additional_image_urls, stock)
@@ -161,9 +161,10 @@ with connection:
 
     # 5. Pesanan
     orders_to_add = [
-        (1, 2, '2025-09-10 14:30:00', 525000, 'Completed', 'Bank Transfer', 'user', '081298765432', 'Jl. Merdeka No. 10', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
-        (2, 2, '2025-10-01 11:00:00', 125000, 'Shipped', 'E-Wallet', 'user', '081298765432', 'Jl. Merdeka No. 10', '', 'Depok', 'Jawa Barat', '16424', 'SC10002'),
-        (3, 3, '2025-10-14 20:00:00', 270000, 'Processing', 'COD', 'John Doe', '085611223344', 'Jl. Koding No. 42', '', 'Jakarta', 'DKI Jakarta', '12345', None)
+        (1, 2, '2025-09-10 14:30:00', 500000, 'Completed', 'Bank Transfer', 'User 1', '081200000001', 'Jl. Dummy No. 1', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
+        (2, 3, '2025-10-01 11:00:00', 125000, 'Shipped', 'E-Wallet', 'User 2', '081200000002', 'Jl. Dummy No. 2', '', 'Jakarta', 'DKI Jakarta', '10220', 'SC10002'),
+        (3, 4, '2025-10-14 20:00:00', 400000, 'Processing', 'COD', 'User 3', '081200000003', 'Jl. Dummy No. 3', '', 'Bandung', 'Jawa Barat', '40111', None),
+        (4, 15, '2025-10-15 09:00:00', 150000, 'Completed', 'E-Wallet', 'User 14', '081200000014', 'Jl. Dummy No. 14', '', 'Surabaya', 'Jawa Timur', '60111', 'JN10002')
     ]
     cursor.executemany("""
         INSERT INTO orders (id, user_id, order_date, total_amount, status, payment_method, shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2, shipping_city, shipping_province, shipping_postal_code, tracking_number)
@@ -171,9 +172,10 @@ with connection:
     """, orders_to_add)
     
     order_items_to_add = [
-        (1, 1, 1, 1, 175000), (2, 1, 2, 1, 350000),
-        (3, 2, 3, 1, 125000),
-        (4, 3, 7, 1, 95000),  (5, 3, 1, 1, 175000)
+        (1, 1, 1, 1, 150000), (2, 1, 2, 1, 350000), # Order 1 by User 1 (id 2)
+        (3, 2, 3, 1, 125000),                     # Order 2 by User 2 (id 3)
+        (4, 3, 4, 1, 250000), (5, 3, 1, 1, 150000), # Order 3 by User 3 (id 4)
+        (6, 4, 1, 1, 150000)                      # Order 4 by User 14 (id 15)
     ]
     cursor.executemany("INSERT INTO order_items (id, order_id, product_id, quantity, price) VALUES (?, ?, ?, ?, ?)", order_items_to_add)
     print("- Data 'orders' dan 'order_items' berhasil dimasukkan.")
@@ -182,8 +184,8 @@ with connection:
     reviews_to_add = [
         (1, 2, 5, 'Bahan kaosnya adem banget, sablonnya juga rapi. Keren!', '2025-09-15 10:00:00'),
         (2, 2, 4, 'Hoodienya tebal dan hangat, pas buat ngoding malem. Desainnya juga subtle, suka!', '2025-09-16 12:00:00'),
-        (1, 3, 5, 'Sama kayak user lain, kaosnya memang top!', '2025-10-20 18:00:00'),
-        (7, 3, 5, 'Mugnya mantap, bikin error jadi keliatan estetik. Recommended.', '2025-10-21 09:00:00')
+        (3, 3, 5, 'Topinya keren, bordirannya rapi banget.', '2025-10-05 18:00:00'),
+        (1, 15, 5, 'Sama kayak user lain, kaosnya memang top!', '2025-10-20 18:00:00')
     ]
     cursor.executemany("INSERT INTO reviews (product_id, user_id, rating, comment, created_at) VALUES (?, ?, ?, ?, ?)", reviews_to_add)
     print("- Data 'reviews' berhasil dimasukkan.")

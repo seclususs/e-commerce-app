@@ -120,10 +120,6 @@
     </nav>
     {% endif %}
 
-    {% if session.user_id and not session.is_admin %}
-        {% include 'partials/cart_popup.html' %}
-    {% endif %}
-
     <div class="confirm-modal" id="confirmModal">
         <div class="confirm-modal-content">
             <h3 id="confirmModalTitle">Konfirmasi Tindakan</h3>

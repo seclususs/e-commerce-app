@@ -55,6 +55,12 @@ function initProductFiltering() {
                  container.innerHTML = noProductsTemplate;
             }
            
+            // Panggil kembali fungsi animasi setelah konten baru dimuat
+            // agar kartu produk yang baru muncul juga memiliki efek animasi.
+            if (typeof initAnimations === 'function') {
+                initAnimations();
+            }
+           
         } catch (error) {
             console.error('Gagal mengambil data produk:', error);
             container.innerHTML = '<p class="no-products-found">Gagal memuat produk. Silakan coba lagi.</p>';

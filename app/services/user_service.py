@@ -39,19 +39,30 @@ class UserService:
         finally:
             conn.close()
 
-    def update_user_address(self, user_id, address_data):
-        conn = get_db_connection()
+    def update_user_address(self, user_id, address_data, conn=None):
+        """Memperbarui alamat pengguna, dapat menggunakan koneksi db yang sudah ada."""
+        # Menentukan apakah fungsi ini harus mengelola koneksi (buka/tutup/commit)
+        is_external_conn = conn is not None
+        if not is_external_conn:
+            conn = get_db_connection()
+
         try:
             conn.execute("""
                 UPDATE users SET phone = ?, address_line_1 = ?, address_line_2 = ?, 
                                  city = ?, province = ?, postal_code = ?
                 WHERE id = ?
-            """, (address_data.get('phone'), address_data.get('address1'), address_data.get('address2'),
+            """, (address_data.get('phone'), address_data.get('address1'), address_data.get('address2', ''),
                   address_data.get('city'), address_data.get('province'), address_data.get('postal_code'),
                   user_id))
-            conn.commit()
+            
+            # Hanya commit jika fungsi ini yang membuat koneksi sendiri
+            if not is_external_conn:
+                conn.commit()
+
             return {'success': True, 'message': 'Alamat berhasil diperbarui.'}
         finally:
-            conn.close()
+            # Hanya tutup koneksi jika fungsi ini yang membuatnya
+            if not is_external_conn:
+                conn.close()
 
 user_service = UserService()

@@ -240,29 +240,24 @@
     color: var(--color-text-med);
 }
 
-/* Proporsi Bar Aksi Massal */
+/* Proporsi Bar Aksi Massal agar konsisten dengan filter lain */
 .bulk-actions-container {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-unit);
-    align-items: center;
-    padding: 1rem;
-    background-color: var(--color-background-dark);
-    border-radius: var(--border-radius-sm);
+    gap: 1rem;
+    align-items: flex-end; /* Membuat elemen (label, input, button) align di bagian bawah */
     margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-background-light);
 }
-.bulk-actions-container > .form-control,
 .bulk-actions-container > .form-group {
     flex-shrink: 1;
     flex-basis: auto;
     margin-bottom: 0;
 }
-.bulk-actions-container > #bulk-category-selector {
+.bulk-actions-container #bulk-category-selector {
     flex-grow: 1;
     min-width: 200px;
-}
-.bulk-actions-container > button {
-    flex-shrink: 0;
 }
 .hidden { display: none; }
 

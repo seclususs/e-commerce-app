@@ -47,20 +47,26 @@
     <!-- Form untuk aksi massal -->
     <form method="POST" action="{{ url_for('admin.admin_products') }}" id="bulk-action-form">
         <div class="bulk-actions-container">
-            <select name="bulk_action" id="bulk-action-select" class="form-control">
-                <option value="">Pilih Aksi Massal...</option>
-                <option value="delete">Hapus yang Dipilih</option>
-                <option value="set_category">Ubah Kategori yang Dipilih</option>
-            </select>
+            <div class="form-group">
+                <label for="bulk-action-select">Aksi Massal</label>
+                <select name="bulk_action" id="bulk-action-select" class="form-control">
+                    <option value="">Pilih Aksi Massal...</option>
+                    <option value="delete">Hapus yang Dipilih</option>
+                    <option value="set_category">Ubah Kategori yang Dipilih</option>
+                </select>
+            </div>
             <div id="bulk-category-selector" class="form-group hidden">
-                 <select name="bulk_category_id" class="form-control">
+                 <label for="bulk-category-id">Kategori Baru</label>
+                 <select name="bulk_category_id" id="bulk-category-id" class="form-control">
                     <option value="">Pilih Kategori...</option>
                     {% for cat in categories %}
                     <option value="{{ cat.id }}">{{ cat.name }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <button type="submit" class="cta-button">Terapkan</button>
+            <div class="form-group">
+                <button type="submit" class="cta-button">Terapkan</button>
+            </div>
         </div>
         <div class="table-wrapper">
             <table class="admin-table">
@@ -100,7 +106,7 @@
                         <td data-label="Aksi:" class="action-buttons">
                             <div class="desktop-actions">
                                <a href="{{ url_for('admin.admin_edit_product', id=product.id) }}" class="action-link action-link-edit">Edit</a>
-                               <a href="{{ url_for('admin.delete_product', id=product.id) }}" class="action-link action-link-delete">Hapus</a>
+                               <a href="{{ url_for('admin.delete_product', id=product.id) }}" class="action-link action-link-delete" data-no-transition>Hapus</a>
                             </div>
                             <button class="mobile-details-toggle">Lihat Detail <i class="fas fa-chevron-down"></i></button>
                         </td>
