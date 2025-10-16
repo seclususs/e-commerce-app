@@ -336,7 +336,7 @@ def admin_order_invoice(id):
     conn.close()
     if not order:
         return "Pesanan tidak ditemukan", 404
-    return render_template('admin/invoice.html', order=order, items=items)
+    return render_template('admin/invoice.html', order=order, items=items, content=get_content())
 
 @admin_bp.route('/update_order_status/<int:id>', methods=['POST'])
 @admin_required

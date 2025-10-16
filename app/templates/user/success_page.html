@@ -1,6 +1,6 @@
 {% extends "layouts/base_layout.html" %}
 
-{% block title %}Pesanan Berhasil - HackThread{% endblock %}
+{% block title %}Pesanan Berhasil - {{ content.app_name }}{% endblock %}
 
 {% block content %}
 <section class="auth-section order-success-page">
@@ -9,7 +9,7 @@
         
         <!-- Pesan dinamis untuk pengguna login dan tamu -->
         {% if guest_order_details %}
-            <p style="color: #94a3b8; margin-bottom: 2rem;">Terima kasih telah berbelanja di HackThread. Pesanan Anda #{{ guest_order_id }} sedang kami proses.</p>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">Terima kasih telah berbelanja di {{ content.app_name }}. Pesanan Anda #{{ guest_order_id }} sedang kami proses.</p>
             <div class="admin-card" style="margin-top: 2rem; text-align: left;">
                 <h3>Buat Akun untuk Lacak Pesanan</h3>
                 <p style="color: #94a3b8; margin-bottom: 1rem;">Buat akun dengan detail di bawah untuk melacak pesanan Anda dan checkout lebih cepat di lain waktu.</p>
@@ -28,7 +28,7 @@
                 </form>
             </div>
         {% else %}
-            <p style="color: #94a3b8; margin-bottom: 2rem;">Terima kasih telah berbelanja di HackThread. Anda dapat melihat detail pesanan Anda di halaman profil.</p>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">Terima kasih telah berbelanja di {{ content.app_name }}. Anda dapat melihat detail pesanan Anda di halaman profil.</p>
             <a href="{{ url_for('user.user_profile') }}" class="cta-button">Lihat Riwayat Pesanan</a>
         {% endif %}
     </div>

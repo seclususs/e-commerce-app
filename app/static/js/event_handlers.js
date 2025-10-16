@@ -100,7 +100,7 @@ const initSwipeableGallery = () => {
     let isDragging = false;
     let animationID = 0;
 
-    const updateGallery = (newIndex, animate = true) => {
+    const updateGallery = (newIndex, animate = true, scrollThumb = true) => {
         if (newIndex < 0 || newIndex >= slides.length) return;
         
         currentIndex = newIndex;
@@ -119,7 +119,7 @@ const initSwipeableGallery = () => {
         if (thumbnails.length > 0) {
             thumbnails.forEach((item, index) => {
                 item.classList.toggle('active', index === currentIndex);
-                if (index === currentIndex) {
+                if (index === currentIndex && scrollThumb) {
                     item.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                 }
             });
@@ -173,9 +173,9 @@ const initSwipeableGallery = () => {
         slide.addEventListener('mousemove', touchMove);
     });
 
-    window.addEventListener('resize', () => updateGallery(currentIndex, false));
+    window.addEventListener('resize', () => updateGallery(currentIndex, false, false));
 
-    updateGallery(0, false); // Initialize without animation
+    updateGallery(0, false, false);
 };
 
 

@@ -112,10 +112,14 @@ with connection:
     
     # 1. Konten Website
     initial_content = [
+        ('app_name', 'HACKTHREAD'),
+        ('short_description', 'Wear The Code'),
         ('about_title', 'Tentang HackThread'), 
         ('about_p1', 'HackThread adalah brand fashion untuk generasi digital yang menghargai kreativitas, inovasi, dan teknologi. Kami percaya bahwa fashion adalah ekspresi identitas, dan bagi para programmer, desainer, dan tech enthusiast, identitas itu terukir dalam baris-baris kode dan algoritma yang elegan.'),
         ('about_p2', 'Setiap desain di HackThread terinspirasi dari dunia digital—mulai dari lelucon "Hello, World!" yang ikonik, struktur data yang kompleks, hingga konsep-konsep AI yang futuristik. Kami menggabungkan estetika modern dengan sentuhan humor geek yang khas, menciptakan pakaian yang tidak hanya nyaman dipakai, tetapi juga memicu percakapan.'),
         ('about_p3', 'Kami berkomitmen untuk menggunakan bahan berkualitas tinggi dan proses produksi yang etis. Karena sama seperti menulis kode yang bersih, kami percaya dalam menciptakan produk yang solid dan tahan lama. Selamat datang di HackThread, di mana Anda bisa "Wear The Code".'),
+        ('about_teaser_title', 'Filosofi Kami'),
+        ('about_teaser_text', 'HackThread adalah brand fashion untuk generasi digital yang menghargai kreativitas, inovasi, dan teknologi. Kami percaya bahwa fashion adalah ekspresi identitas.'),
         ('contact_email', 'kontak@hackthread.dev'), 
         ('contact_phone', '+62 812-3456-7890'),
         ('contact_location', 'Depok, Jawa Barat, Indonesia')

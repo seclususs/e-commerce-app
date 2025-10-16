@@ -3,8 +3,8 @@
 {% block content %}
     <section class="hero animated-element">
         <div class="hero-content">
-            <h1>HACKTHREAD</h1>
-            <p class="tagline">Wear The Code</p>
+            <h1>{{ content.app_name }}</h1>
+            <p class="tagline">{{ content.short_description }}</p>
             <a href="{{ url_for('auth.register') }}" class="cta-button">Buat Akun & Mulai Belanja</a>
         </div>
     </section>
@@ -36,8 +36,8 @@
 
     <section id="about-teaser" class="about-section animated-element">
         <div class="about-content">
-            <h2 class="section-title">Filosofi Kami</h2>
-            <p>HackThread adalah brand fashion untuk generasi digital yang menghargai kreativitas, inovasi, dan teknologi. Kami percaya bahwa fashion adalah ekspresi identitas.</p>
+            <h2 class="section-title">{{ content.about_teaser_title }}</h2>
+            <p>{{ content.about_teaser_text }}</p>
             <a href="{{ url_for('product.about') }}" class="cta-button cta-button-outline">Selengkapnya</a>
         </div>
     </section>

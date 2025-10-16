@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}HackThread - Wear The Code{% endblock %}</title>
+    <title>{% block title %}{{ content.app_name }} - {{ content.short_description }}{% endblock %}</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -12,7 +12,7 @@
 <body>
     {% if not hide_navbar %}
     <nav class="navbar">
-        <a href="{{ url_for('product.index') }}" class="logo">HACKTHREAD</a>
+        <a href="{{ url_for('product.index') }}" class="logo">{{ content.app_name }}</a>
         
         <ul class="nav-menu">
             {% if session.user_id %}
@@ -61,8 +61,8 @@
         {% if is_homepage is defined and is_homepage %}
         <div class="footer-content">
             <div class="footer-section animated-element">
-                <h3>HACKTHREAD</h3>
-                <p>Fashion untuk generasi digital.</p>
+                <h3>{{ content.app_name }}</h3>
+                <p>{{ content.short_description }}</p>
             </div>
             <div class="footer-section animated-element" data-animation-delay="200">
                 <h3>Kontak</h3>

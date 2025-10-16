@@ -1,6 +1,6 @@
 {% extends "layouts/base_layout.html" %}
 
-{% block title %}Keranjang Belanja - HackThread{% endblock %}
+{% block title %}Keranjang Belanja - {{ content.app_name }}{% endblock %}
 
 {% block content %}
 <section class="cart-page-section" data-products-url="{{ url_for('product.products_page') }}">

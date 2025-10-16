@@ -6,7 +6,27 @@
 {% block admincontent %}
 <div class="admin-card animated-element">
     <form method="POST" action="{{ url_for('admin.admin_settings') }}">
-        <h3>Konten Halaman "Tentang Kami"</h3>
+        <h3>Pengaturan Umum Situs</h3>
+        <div class="form-group">
+            <label for="app_name">Nama Aplikasi</label>
+            <input type="text" id="app_name" name="app_name" value="{{ content.app_name }}">
+        </div>
+        <div class="form-group">
+            <label for="short_description">Deskripsi Singkat (Tagline)</label>
+            <input type="text" id="short_description" name="short_description" value="{{ content.short_description }}">
+        </div>
+
+        <h3 style="margin-top:2rem;">Pratinjau "Tentang Kami" (Halaman Utama)</h3>
+        <div class="form-group">
+            <label for="about_teaser_title">Judul Pratinjau</label>
+            <input type="text" id="about_teaser_title" name="about_teaser_title" value="{{ content.about_teaser_title }}">
+        </div>
+        <div class="form-group">
+            <label for="about_teaser_text">Teks Pratinjau</label>
+            <textarea id="about_teaser_text" name="about_teaser_text" rows="3">{{ content.about_teaser_text }}</textarea>
+        </div>
+
+        <h3 style="margin-top:2rem;">Konten Halaman "Tentang Kami"</h3>
         <div class="form-group"><label for="about_title">Judul Halaman</label><input type="text" id="about_title" name="about_title" value="{{ content.about_title }}"></div>
         <div class="form-group"><label for="about_p1">Paragraf 1</label><textarea id="about_p1" name="about_p1" rows="4">{{ content.about_p1 }}</textarea></div>
         <div class="form-group"><label for="about_p2">Paragraf 2</label><textarea id="about_p2" name="about_p2" rows="4">{{ content.about_p2 }}</textarea></div>
