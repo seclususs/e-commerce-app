@@ -1,7 +1,22 @@
-
 @import url("theme.css");
-@import url("global_styles.css");
-@import url("ui_components.css");
-@import url("page_styles.css");
-@import url("admin_styles.css");
+@import url("global/base.css");
+@import url("global/navbar.css");
+@import url("global/footer.css");
+@import url("components/animations.css");
+@import url("components/buttons.css");
+@import url("components/cards.css");
+@import url("components/forms.css");
+@import url("components/modals.css");
+@import url("components/badges_tables.css");
+@import url("page/landing_page.css");
+@import url("page/product_page.css");
+@import url("page/cart_checkout.css");
+@import url("page/user_profile.css");
+@import url("page/auth.css");
+@import url("page/about.css");
+@import url("admin/layout.css");
+@import url("admin/dashboard.css");
+@import url("admin/components.css");
+@import url("admin/tables.css");
+@import url("admin/reports.css");
 @import url("media_queries.css");

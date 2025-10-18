@@ -1,0 +1,86 @@
+/* Forms */
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; margin-bottom: 0.5rem; color: var(--color-text-med); }
+.form-group input, .form-group textarea, .form-group select, .form-control {
+    width: 100%; padding: 0.8rem; background: var(--color-background-dark);
+    border: 1px solid var(--color-background-light); border-radius: var(--border-radius-sm);
+    color: var(--color-text-light); font-size: 1rem; font-family: var(--font-primary);
+    /* Transisi lebih spesifik */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus, .form-control:focus {
+    outline: none; border-color: var(--color-primary); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+.form-group select {
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center; background-repeat: no-repeat;
+    background-size: 1.5em 1.5em; background-color: var(--color-background-dark); padding-right: 2.5rem;
+}
+.form-button { width: 100%; padding: 0.8rem; }
+.form-switch { text-align: center; margin-top: 1rem; color: var(--color-text-med); }
+.form-switch a { color: var(--color-primary); text-decoration: none; font-weight: 600; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+.star-rating { display: flex; flex-direction: row-reverse; justify-content: flex-end; }
+.star-rating input[type="radio"] { display: none; }
+.star-rating > label { font-size: 2rem; color: #4b5563; cursor: pointer; transition: color 0.2s; }
+.star-rating > input:checked ~ label,
+.star-rating:not(:checked) > label:hover,
+.star-rating:not(:checked) > label:hover ~ label { color: var(--color-warning); }
+.custom-file-upload {
+    border: 1px solid var(--color-primary); display: inline-block; padding: 0.6rem 1.2rem;
+    cursor: pointer; background-color: transparent; color: var(--color-primary);
+    border-radius: var(--border-radius-sm); font-weight: 600; transition: all 0.3s ease;
+}
+.custom-file-upload:hover { background-color: var(--color-primary); color: var(--color-white); }
+.form-group input[type="file"] { display: none; }
+.file-name-display { margin-left: 1rem; color: var(--color-text-med); font-style: italic; font-size: 0.9rem; }
+.form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+.form-actions .cta-button, .form-actions .cta-button-secondary { width: auto; }
+
+/* Gaya untuk Form yang Dinonaktifkan */
+.form-disabled { opacity: 0.6; background: rgba(30, 41, 59, 0.2); }
+.form-disabled fieldset { border: none; padding: 0; margin: 0; }
+.form-disabled label, .form-disabled .star, .form-disabled button, .form-disabled input, .form-disabled textarea { cursor: not-allowed; }
+
+/* --- Custom Checkbox --- */
+.custom-checkbox {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    gap: 0.75rem; /* Jarak antara checkbox dan label */
+}
+.custom-checkbox .checkbox-input {
+    display: none; /* Sembunyikan checkbox asli */
+}
+.custom-checkbox .checkbox-box {
+    width: 22px;
+    height: 22px;
+    background-color: var(--color-background-dark);
+    border: 2px solid var(--color-background-light);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    flex-shrink: 0;
+}
+.custom-checkbox .checkbox-box .checkmark {
+    display: block;
+    width: 12px;
+    height: 12px;
+    background-color: var(--color-white);
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    transform: scale(0);
+    transition: transform 0.3s ease;
+}
+.custom-checkbox .checkbox-input:checked + .checkbox-box {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+.custom-checkbox .checkbox-input:checked + .checkbox-box .checkmark {
+    transform: scale(1);
+}
+.custom-checkbox:hover .checkbox-box {
+    border-color: var(--color-primary);
+}

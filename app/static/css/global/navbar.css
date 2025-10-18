@@ -1,61 +1,4 @@
-/* Reset & Basic Styling */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-/* Mengatur body untuk layout flex full-height */
-html, body {
-    height: 100%;
-}
-
-body {
-    font-family: var(--font-primary);
-    background-color: var(--color-background-dark);
-    color: var(--color-text-light);
-    line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Membuat konten utama mengisi ruang yang tersedia */
-main {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Typography */
-.logo {
-    font-family: var(--font-secondary);
-    font-size: 1.8rem;
-    font-weight: 900;
-    background: linear-gradient(135deg, var(--color-primary), #60a5fa);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: 2px;
-    text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-    text-decoration: none;
-}
-
-.section-title {
-    font-family: var(--font-secondary);
-    font-size: 2.5rem;
-    text-align: center;
-    margin-bottom: 3rem;
-    color: var(--color-primary);
-}
-
-.tagline {
-    font-size: 1.5rem;
-    color: var(--color-text-med);
-    margin-bottom: 2.5rem;
-    font-weight: 300;
-}
-
-/* Navbar */
+/* Navbar Desktop */
 .navbar {
     position: sticky;
     top: 0;
@@ -150,43 +93,7 @@ main {
     font-weight: 600;
 }
 
-/* Footer */
-.footer {
-    padding: 3rem 5%;
-    border-top: 1px solid rgba(59, 130, 246, 0.2);
-    flex-shrink: 0;
-}
-.footer-content {
-    max-width: 1400px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-}
-
-.footer-section {
-    text-align: center;
-}
-
-.copyright {
-    text-align: center;
-    padding-top: 2rem;
-    margin-top: 2rem;
-    border-top: 1px solid rgba(59, 130, 246, 0.2);
-    color: var(--color-text-dark);
-}
-
-.copyright:only-child {
-    border-top: none;
-    margin-top: 0;
-    padding-top: 0;
-}
-
-/* Scrollbar hiding */
-body::-webkit-scrollbar { display: none; }
-body { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* Bottom Navbar Base Style (Hidden on Desktop) */
+/* Bottom Navbar Mobile (Base Style, Hidden on Desktop) */
 .bottom-navbar {
     display: none;
 }

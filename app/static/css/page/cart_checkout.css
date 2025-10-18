@@ -1,0 +1,85 @@
+/* --- HALAMAN KERANJANG, CHECKOUT, EDIT ALAMAT, PEMBAYARAN (CENTERED) --- */
+.cart-page-section, .checkout-page-section, .edit-address-section, .payment-page-section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex-grow: 1;
+    padding: 2rem 5%;
+}
+.cart-page-container, .checkout-page-container, .payment-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: auto; /* Kunci untuk memusatkan konten */
+}
+
+/* Layout Keranjang */
+.cart-layout {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    align-items: flex-start;
+}
+.cart-items-list {
+    background: var(--color-background-med);
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--color-background-light);
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+}
+.cart-items-list.is-empty {
+    grid-column: 1 / -1; /* Membuat kontainer memenuhi lebar grid saat kosong */
+}
+.cart-page-item {
+    display: grid; grid-template-columns: 80px 1fr auto auto auto;
+    gap: 1.5rem; align-items: center; padding: 1.5rem;
+    border-bottom: 1px solid #334155;
+}
+.cart-page-item:last-child { border-bottom: none; }
+.cart-page-item-img img { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; }
+.cart-page-item-info strong { display: block; font-size: 1.1rem; }
+.cart-page-item-info span { color: #94a3b8; }
+.cart-page-item-info .stock-warning-message { font-size: 0.8rem; min-height: 0; }
+.cart-summary { position: sticky; top: 100px; }
+.summary-row, .summary-total { display: flex; justify-content: space-between; margin-bottom: 1rem; color: #cbd5e1; }
+.summary-total { font-size: 1.3rem; font-weight: bold; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #334155; }
+.summary-total span:last-child { color: #3b82f6; }
+.cart-empty-container {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+.cart-empty-container h2 { font-family: var(--font-secondary); margin-bottom: 1rem; }
+.cart-empty-container p { color: var(--color-text-med); margin-bottom: 2rem; }
+
+/* Halaman Checkout */
+.address-display-box {
+    padding: 1.5rem; background: var(--color-background-dark);
+    border: 1px solid var(--color-background-light); border-radius: var(--border-radius-sm);
+    margin-bottom: 1rem; position: relative;
+}
+.address-display-box p { margin-bottom: 0.5rem; line-height: 1.5; color: var(--color-text-light); }
+.address-display-box .text-warning { color: var(--color-warning); }
+.edit-address-btn { position: absolute; top: 1rem; right: 1rem; padding: 0.4rem 1rem; }
+
+/* Halaman Edit Alamat */
+.edit-address-section .profile-container { max-width: 600px; }
+
+/* Halaman Pembayaran */
+.payment-container { max-width: 800px; }
+.payment-intro { text-align: center; color: var(--color-text-med); margin-bottom: 2rem; }
+.payment-details { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.payment-method-info h3, .payment-summary h3 {
+    margin-bottom: 1rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-background-light);
+}
+.virtual-account-box {
+    background: var(--color-background-dark); padding: 1rem;
+    border-radius: var(--border-radius-sm); text-align: center; font-size: 1.5rem;
+    font-weight: 700; letter-spacing: 2px; margin: 1rem 0;
+    border: 1px dashed var(--color-primary);
+}
+.payment-note { font-size: 0.9rem; color: var(--color-text-dark); text-align: center; }
+.payment-summary {
+    background: var(--color-background-dark); padding: 1.5rem;
+    border-radius: var(--border-radius-md);
+}
+.summary-items-list { max-height: 200px; overflow-y: auto; margin-bottom: 1rem; }

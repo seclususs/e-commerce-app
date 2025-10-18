@@ -1,0 +1,50 @@
+/* Dashboard Statistic Cards */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    padding: 1.5rem;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+.stat-card h4 {
+    color: #94a3b8;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+/* Grid for charts and tables on the dashboard */
+.dashboard-charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.dashboard-charts-grid canvas {
+    max-height: 350px;
+}
+
+.dashboard-charts-grid .admin-table th, 
+.dashboard-charts-grid .admin-table td {
+    padding: 0.8rem;
+}
+
+/* Responsive adjustments for the dashboard grid */
+@media (max-width: 1024px) {
+    .dashboard-charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
