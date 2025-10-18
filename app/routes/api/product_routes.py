@@ -1,12 +1,9 @@
-from flask import Blueprint, jsonify, request, session, url_for, render_template_string
+from flask import jsonify, request, render_template_string, url_for
 from database.db_config import get_db_connection
-from utils.route_decorators import login_required
-from services.order_service import order_service
-from services.user_service import user_service
-
-api_bp = Blueprint('api', __name__)
+from . import api_bp
 
 # Template untuk kartu produk yang akan dirender di sisi server
+# Ini memastikan konsistensi tampilan dengan yang dirender oleh Jinja di halaman utama.
 PRODUCT_CARD_TEMPLATE = """
 {% for product in products %}
 <div class="product-card animated-element {% if product.stock == 0 %}out-of-stock{% endif %}" data-animation-delay="{{ (loop.index0 % 8) * 75 }}">
@@ -29,7 +26,6 @@ PRODUCT_CARD_TEMPLATE = """
                 <span class="product-price">{{ product.price|rupiah }}</span>
             {% endif %}
         </div>
-        <!-- [BARU] Info tambahan untuk hover -->
         <div class="additional-info">
             {% if product.sizes %}<span>Ukuran: {{ product.sizes }}</span><br>{% endif %}
             <span>Stok: {% if product.stock > 10 %}Tersedia{% elif product.stock > 0 %}Tersisa {{ product.stock }}{% else %}Habis{% endif %}</span>
@@ -43,47 +39,38 @@ PRODUCT_CARD_TEMPLATE = """
 {% endfor %}
 """
 
-@api_bp.route('/cart', methods=['POST'])
-def get_cart_items():
-    data = request.get_json()
-    product_ids = data.get('product_ids')
-    if not product_ids: return jsonify([])
-    conn = get_db_connection()
-    placeholders = ', '.join(['?'] * len(product_ids))
-    # Ambil `discount_price` untuk dikirim ke frontend
-    query = f'SELECT id, name, price, discount_price, image_url, stock FROM products WHERE id IN ({placeholders})'
-    products = conn.execute(query, product_ids).fetchall()
-    conn.close()
-    return jsonify([dict(p) for p in products])
-
 @api_bp.route('/products')
 def filter_products():
-    """Endpoint untuk pemfilteran produk secara asinkron."""
+    """
+    Endpoint untuk pemfilteran produk secara asinkron.
+    Mengembalikan HTML kartu produk yang sudah dirender.
+    """
     conn = get_db_connection()
-    search_term = request.args.get('search')
-    category_id = request.args.get('category')
-    sort_by = request.args.get('sort', 'popularity')
-    
-    query = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1"
-    params = []
-    
-    if search_term:
-        query += " AND p.name LIKE ?"
-        params.append(f'%{search_term}%')
-    if category_id:
-        query += " AND p.category_id = ?"
-        params.append(category_id)
-    
-    if sort_by == 'price_asc':
-        query += " ORDER BY CASE WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 THEN p.discount_price ELSE p.price END ASC"
-    elif sort_by == 'price_desc':
-        query += " ORDER BY CASE WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 THEN p.discount_price ELSE p.price END DESC"
-    else:
-        query += " ORDER BY p.popularity DESC"
+    try:
+        search_term = request.args.get('search')
+        category_id = request.args.get('category')
+        sort_by = request.args.get('sort', 'popularity')
         
-    products = conn.execute(query, params).fetchall()
-    conn.close()
-    
-    html = render_template_string(PRODUCT_CARD_TEMPLATE, products=products)
-    
-    return jsonify({'html': html})
+        query = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1"
+        params = []
+        
+        if search_term:
+            query += " AND p.name LIKE ?"
+            params.append(f'%{search_term}%')
+        if category_id:
+            query += " AND p.category_id = ?"
+            params.append(category_id)
+        
+        if sort_by == 'price_asc':
+            query += " ORDER BY CASE WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 THEN p.discount_price ELSE p.price END ASC"
+        elif sort_by == 'price_desc':
+            query += " ORDER BY CASE WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 THEN p.discount_price ELSE p.price END DESC"
+        else:
+            query += " ORDER BY p.popularity DESC"
+            
+        products = conn.execute(query, params).fetchall()
+        html = render_template_string(PRODUCT_CARD_TEMPLATE, products=products)
+        
+        return jsonify({'html': html})
+    finally:
+        conn.close()

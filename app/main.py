@@ -1,13 +1,12 @@
 import os
 import json
-import random
 from flask import Flask
 
-from routes.main_routes import product_bp
-from routes.auth_routes import auth_bp
-from routes.user_routes import user_bp
-from routes.admin_routes import admin_bp
-from routes.api_routes import api_bp
+from routes.product import product_bp 
+from routes.auth import auth_bp
+from routes.user import user_bp
+from routes.admin import admin_bp
+from routes.api import api_bp
 
 def create_app():
     """Membuat dan mengkonfigurasi instance aplikasi Flask."""
