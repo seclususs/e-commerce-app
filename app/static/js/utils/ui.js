@@ -1,5 +1,9 @@
+/**
+ * Menyediakan fungsi-fungsi pembantu untuk elemen UI umum seperti
+ * notifikasi, pesan flash, dan modal konfirmasi.
+ */
 
-const showNotification = (message, isError = false) => {
+export const showNotification = (message, isError = false) => {
     const notification = document.createElement('div');
     notification.className = `notification ${isError ? 'error' : ''}`;
     notification.textContent = message;
@@ -7,9 +11,8 @@ const showNotification = (message, isError = false) => {
     setTimeout(() => notification.remove(), 4000);
 };
 
-const initFlashMessages = () => {
-    const flashMessages = document.querySelectorAll('.flash-message');
-    flashMessages.forEach((message) => {
+export const initFlashMessages = () => {
+    document.querySelectorAll('.flash-message').forEach((message) => {
         setTimeout(() => {
             message.style.transition = 'opacity 0.5s ease, transform 0.5s ease, margin 0.5s ease, padding 0.5s ease, height 0.5s ease';
             message.style.opacity = '0';
@@ -19,15 +22,12 @@ const initFlashMessages = () => {
             message.style.paddingTop = '0';
             message.style.paddingBottom = '0';
             message.style.height = '0';
-            
-            setTimeout(() => {
-                message.remove();
-            }, 500);
+            setTimeout(() => message.remove(), 500);
         }, 5000);
     });
 };
 
-const initConfirmModal = () => {
+const initConfirmModalSingleton = () => {
     const modal = document.getElementById('confirmModal');
     if (!modal) return { show: () => {}, hide: () => {} };
 
@@ -59,9 +59,4 @@ const initConfirmModal = () => {
     return { show, hide };
 };
 
-const initMobileNav = () => {
-    // Fungsi ini sengaja dikosongkan untuk menjaga kompatibilitas pemanggilan di app.js
-};
-
-// Inisialisasi modal dan buat variabelnya dapat diakses secara global oleh skrip lain
-const confirmModal = initConfirmModal();
+export const confirmModal = initConfirmModalSingleton();

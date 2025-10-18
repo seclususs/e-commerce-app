@@ -1,0 +1,110 @@
+/* --- Tampilan Ponsel (di bawah 768px) --- */
+@media (max-width: 767px) {
+    /* Layout Halaman Umum */
+    .product-detail-container, .cart-layout, 
+    .order-detail-grid, .auth-container { 
+        grid-template-columns: 1fr; 
+    }
+    
+    .cart-summary { 
+        position: static; 
+        margin-top: 2rem; 
+    }
+
+    /* Halaman Auth */
+    .auth-image { 
+        display: none; 
+    }
+    .auth-container { 
+        max-width: 420px; 
+    }
+    .form-container { 
+        padding: 2rem; 
+    }
+    .form-container .section-title { 
+        text-align: center; 
+        font-size: 1.8rem; 
+    }
+    
+    /* Halaman Filter Produk */
+    .filters-bar { 
+        display: none; 
+    }
+    .filter-toggle-btn { 
+        display: flex; 
+        align-items: center; 
+    }
+
+    /* Halaman Keranjang */
+    .cart-page-item {
+        grid-template-columns: 80px 1fr auto;
+        grid-template-rows: auto auto;
+        grid-template-areas: "img info price" "img quantity remove";
+        align-items: center;
+        gap: 1rem 1.5rem;
+    }
+    .cart-page-item-img { grid-area: img; }
+    .cart-page-item-info { grid-area: info; }
+    .cart-page-item .item-price { 
+        grid-area: price; 
+        text-align: right; 
+        font-weight: 600; 
+    }
+    .cart-page-item .cart-item-quantity { grid-area: quantity; }
+    .cart-page-item .remove-item-btn {
+        grid-area: remove;
+        justify-self: end;
+        background-color: rgba(239, 68, 68, 0.1);
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+}
+
+/* --- Tampilan Ponsel (di bawah 640px) --- */
+@media (max-width: 639px) {
+    /* Halaman Landing */
+    .hero { min-height: 80vh; }
+    .hero h1 { font-size: 2.8rem; }
+    .tagline { font-size: 1.2rem; }
+    
+    /* Kartu Produk */
+    .product-name { font-size: 1.1rem; }
+    .product-price { font-size: 1.3rem; }
+    
+    /* Detail Produk */
+    .product-title { font-size: 1.8rem; }
+    .product-price-detail { font-size: 2rem; }
+    .reviews-grid { grid-template-columns: 1fr; }
+}
+
+/* --- Tampilan Ponsel Sangat Kecil (di bawah 420px) --- */
+@media (max-width: 420px) {
+    .products-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Tampilan Tablet (mulai 768px) --- */
+@media (min-width: 768px) {
+    .products-grid {
+        gap: 2rem;
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* --- Tampilan Desktop (mulai 1024px) --- */
+@media (min-width: 1024px) {
+    .products-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .auth-container {
+        max-width: 800px;
+    }
+    .product-detail-container {
+        gap: 2rem;
+    }
+    .product-title {
+        font-size: 2.2rem;
+    }
+}

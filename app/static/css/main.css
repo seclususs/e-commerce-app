@@ -1,22 +1,31 @@
 @import url("theme.css");
+
 @import url("global/base.css");
 @import url("global/navbar.css");
 @import url("global/footer.css");
+
 @import url("components/animations.css");
 @import url("components/buttons.css");
 @import url("components/cards.css");
 @import url("components/forms.css");
 @import url("components/modals.css");
 @import url("components/badges_tables.css");
+
 @import url("page/landing_page.css");
 @import url("page/product_page.css");
 @import url("page/cart_checkout.css");
 @import url("page/user_profile.css");
 @import url("page/auth.css");
 @import url("page/about.css");
+
 @import url("admin/layout.css");
 @import url("admin/dashboard.css");
 @import url("admin/components.css");
 @import url("admin/tables.css");
 @import url("admin/reports.css");
-@import url("media_queries.css");
+
+@import url("responsive/layout.css");
+@import url("responsive/navbar.css");
+@import url("responsive/components.css");
+@import url("responsive/pages.css");
+@import url("responsive/admin.css");

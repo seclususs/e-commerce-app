@@ -1,0 +1,123 @@
+/* --- Tampilan Ponsel (di bawah 768px) --- */
+@media (max-width: 767px) {
+    /* Layout Admin */
+    .admin-wrapper { 
+        display: block; 
+    }
+    .admin-sidebar { 
+        display: none; 
+    }
+    .admin-main-content { 
+        margin-left: 0; 
+    }
+    .admin-main-header { 
+        display: flex; 
+        align-items: center; 
+        gap: 1rem; 
+    }
+
+    /* Transformasi Tabel Admin menjadi Kartu yang Bisa Diciutkan */
+    .admin-table thead {
+        display: none;
+    }
+    .admin-table tr.admin-card-row {
+        display: block;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--color-background-light);
+        border-radius: var(--border-radius-sm);
+        padding: 1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .admin-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0.5rem;
+        border-bottom: 1px solid var(--color-background-dark);
+        text-align: right;
+    }
+    .admin-table td:last-child {
+        border-bottom: none;
+    }
+    .admin-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        text-align: left;
+        margin-right: 1rem;
+        color: var(--color-text-med);
+    }
+    
+    .admin-table .collapsible-detail { 
+        display: none; 
+    }
+    .admin-table tr.is-expanded .collapsible-detail { 
+        display: flex; 
+    }
+    .mobile-details-toggle {
+        display: block; 
+        background: var(--color-background-light); 
+        border: none;
+        color: var(--color-text-light); 
+        padding: 0.6rem 0.8rem;
+        border-radius: 5px; 
+        cursor: pointer; 
+        width: 100%; 
+        margin-top: 1rem;
+        font-size: 0.9rem; 
+        text-align: center;
+    }
+    .mobile-details-toggle i { 
+        transition: transform 0.3s ease; 
+    }
+    .is-expanded .mobile-details-toggle i { 
+        transform: rotate(180deg); 
+    }
+    
+    .admin-table td[data-label="Aksi:"]::before { 
+        display: none; 
+    }
+    .admin-table td[data-label="Aksi:"] { 
+        padding: 0; 
+        border: none; 
+    }
+    .admin-table tr.is-expanded td[data-label="Aksi:"] {
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-background-dark);
+    }
+    .admin-table tr.is-expanded .desktop-actions { 
+        display: flex; 
+        justify-content: space-around; 
+        width: 100%; 
+    }
+    .admin-table tr.is-expanded .mobile-details-toggle { 
+        margin-top: 0; 
+    }
+}
+
+/* --- Tampilan Ponsel (di bawah 640px) --- */
+@media (max-width: 639px) {
+    .admin-main-content { 
+        padding: 1rem; 
+    }
+    .admin-main-header h2 { 
+        font-size: 1.5rem; 
+    }
+    .stat-card p { 
+        font-size: 1.5rem; 
+    }
+    .dashboard-stats { 
+        grid-template-columns: 1fr 1fr; 
+        gap: 1rem; 
+    }
+    .form-grid { 
+        grid-template-columns: 1fr; 
+    }
+}
+
+
+/* --- Tampilan Desktop (mulai 1024px) --- */
+@media (min-width: 1024px) {
+    .dashboard-charts-grid {
+        grid-template-columns: 2fr 1fr;
+    }
+}

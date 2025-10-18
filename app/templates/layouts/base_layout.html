@@ -131,11 +131,7 @@
         </div>
     </div>
 
-    <script src="{{ url_for('static', filename='js/scroll_animations.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/ui_helpers.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/cart_logic.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/event_handlers.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    {% block additional_scripts %}{% endblock %}
+    <!-- Referensi skrip utama -->
+    <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

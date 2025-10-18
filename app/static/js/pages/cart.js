@@ -1,3 +1,9 @@
+/**
+ * Modul untuk mengelola semua fungsionalitas keranjang belanja,
+ * termasuk menyimpan ke localStorage, rendering, dan interaksi pengguna.
+ */
+import { showNotification } from '../utils/ui.js';
+
 const cartModule = (() => {
     let cart = JSON.parse(localStorage.getItem('hackthreadCart')) || {};
     const cartCountEl = document.getElementById('cartCount');
@@ -139,6 +145,11 @@ const cartModule = (() => {
             renderCheckoutPage();
         }
     };
+    
+    const clear = () => {
+        cart = {};
+        saveAndRender();
+    };
 
     const handleInteraction = (e) => {
         const target = e.target;
@@ -170,10 +181,19 @@ const cartModule = (() => {
             saveAndRender();
         }
     };
+    
+    // Hapus keranjang jika berada di halaman sukses pesanan
+    const initOrderSuccessPage = () => {
+        if (document.querySelector('.order-success-page')) {
+            clear();
+        }
+    };
 
     return {
         init: () => {
             updateCount();
+            initOrderSuccessPage();
+
             if (document.getElementById('cartPageItems')) {
                 renderCartPage();
             }
@@ -228,6 +248,8 @@ const cartModule = (() => {
             }
         },
         getCart: () => cart,
-        clear: () => { cart = {}; saveAndRender(); },
+        clear: clear,
     };
 })();
+
+export { cartModule };

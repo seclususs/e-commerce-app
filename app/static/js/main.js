@@ -1,6 +1,15 @@
+import { initAnimations } from './utils/animations.js';
+import { initFlashMessages } from './utils/ui.js';
+import { cartModule } from './pages/cart.js';
+import { initLogout } from './shared/auth.js';
+import { initActionConfirmations } from './shared/confirmations.js';
+import { initProductCatalogPage } from './pages/product-catalog.js';
+import { initProductDetailPage } from './pages/product-detail.js';
+import { initCheckoutPage } from './pages/checkout.js';
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Inisialisasi efek fade-out pada navigasi
-    const pageWrapper = document.querySelector('.page-content-wrapper, .admin-main-content');
+    // Inisialisasi efek transisi halaman
+    const pageWrapper = document.querySelector('.page-content-wrapper');
     if (pageWrapper) {
         document.body.addEventListener('click', (e) => {
             const link = e.target.closest('a');
@@ -10,29 +19,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 !link.hasAttribute('data-no-transition')) {
                 e.preventDefault();
                 pageWrapper.classList.add('page-is-leaving');
-                setTimeout(() => {
-                    window.location.href = link.href;
-                }, 300); // Sesuaikan dengan durasi transisi CSS
+                setTimeout(() => { window.location.href = link.href; }, 300);
             }
         });
     }
 
-    // Inisialisasi komponen lainnya
-    initFlashMessages();
+    // Inisialisasi modul
     initAnimations();
-    cartModule.init();
-    initOrderSuccessPage();
-    initActionConfirmations();
+    initFlashMessages();
     initLogout();
-    initProductGallery();
-    initAdminImagePreviews();
-    initFilterModal();
-    initSwipeableGallery();
-    initMobileCtaHandlers();
-    initAdminCardToggle();
-    initBulkActions();
-    initAdminPriceFormatting();
-    initProductFiltering(); // Untuk katalog produk
-    initProductPage();      // Untuk detail produk
-    initCheckoutForm();     // Untuk halaman checkout
+    initActionConfirmations();
+    cartModule.init();
+
+    // Inisialisasi modul spesifik per halaman
+    if (document.querySelector('.products-page-section')) {
+        initProductCatalogPage();
+    }
+    if (document.querySelector('.product-detail-section')) {
+        initProductDetailPage();
+    }
+    if (document.querySelector('.checkout-page-section')) {
+        initCheckoutPage();
+    }
 });

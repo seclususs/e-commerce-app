@@ -1,0 +1,72 @@
+/* --- Tampilan Ponsel (di bawah 768px) --- */
+@media (max-width: 767px) {
+    /* Sembunyikan Navigasi Desktop */
+    .nav-menu { 
+        display: none; 
+    }
+
+    /* Tampilkan Bottom Navbar */
+    .bottom-navbar {
+        display: flex;
+        justify-content: space-around;
+        align-items: stretch;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 65px;
+        background: var(--color-background-med);
+        border-top: 1px solid var(--color-background-light);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+    }
+
+    .bottom-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex-grow: 1;
+        text-decoration: none;
+        color: var(--color-text-med);
+        font-size: 0.7rem;
+        padding: 4px 0;
+        transition: color 0.3s ease, background-color 0.3s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .bottom-nav-item i {
+        font-size: 1.4rem;
+        margin-bottom: 5px;
+        width: 24px;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .bottom-nav-item:hover {
+        color: var(--color-primary);
+    }
+
+    /* Animasi untuk item navigasi aktif */
+    @keyframes pulse-icon {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+        100% { transform: scale(1); }
+    }
+
+    .bottom-nav-item.active {
+        color: var(--color-primary);
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+
+    .bottom-nav-item.active i {
+        animation: pulse-icon 0.6s ease-in-out;
+    }
+}
+
+/* --- Tampilan Desktop (mulai 1024px) --- */
+@media (min-width: 1024px) {
+    .nav-menu {
+        gap: 1.5rem;
+    }
+}
