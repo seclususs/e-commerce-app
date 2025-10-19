@@ -33,7 +33,7 @@
 
             {% if not session.is_admin %}
             <li class="cart-icon-wrapper">
-                <a href="{{ url_for('user.cart_page') }}" class="cart-icon" id="cartIconLink" aria-label="Lihat Keranjang">
+                <a href="{{ url_for('purchase.cart_page') }}" class="cart-icon" id="cartIconLink" aria-label="Lihat Keranjang">
                     <i class="fas fa-shopping-cart"></i>
                     <span class="cart-count" id="cartCount">0</span>
                 </a>
@@ -93,7 +93,7 @@
                 <i class="fas fa-store"></i> <span>Produk</span>
             </a>
             <!-- Menambahkan ID untuk target animasi -->
-            <a href="{{ url_for('user.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
+            <a href="{{ url_for('purchase.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
                 <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
             </a>
             <a href="{{ url_for('user.user_profile') }}" class="bottom-nav-item {{ 'active' if 'profile' in request.endpoint }}">
@@ -110,7 +110,7 @@
                 <i class="fas fa-store"></i> <span>Produk</span>
             </a>
             <!-- Menambahkan ID untuk target animasi -->
-            <a href="{{ url_for('user.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
+            <a href="{{ url_for('purchase.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
                 <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
             </a>
             <a href="{{ url_for('auth.login') }}" class="bottom-nav-item {{ 'active' if 'login' in request.endpoint or 'register' in request.endpoint }}">

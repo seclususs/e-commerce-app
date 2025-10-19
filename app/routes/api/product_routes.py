@@ -1,5 +1,5 @@
 from flask import jsonify, request, render_template_string, url_for
-from database.db_config import get_db_connection
+from services.product_service import product_service
 from . import api_bp
 
 # Template untuk kartu produk yang akan dirender di sisi server
@@ -45,32 +45,16 @@ def filter_products():
     Endpoint untuk pemfilteran produk secara asinkron.
     Mengembalikan HTML kartu produk yang sudah dirender.
     """
-    conn = get_db_connection()
-    try:
-        search_term = request.args.get('search')
-        category_id = request.args.get('category')
-        sort_by = request.args.get('sort', 'popularity')
-        
-        query = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE 1=1"
-        params = []
-        
-        if search_term:
-            query += " AND p.name LIKE ?"
-            params.append(f'%{search_term}%')
-        if category_id:
-            query += " AND p.category_id = ?"
-            params.append(category_id)
-        
-        if sort_by == 'price_asc':
-            query += " ORDER BY CASE WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 THEN p.discount_price ELSE p.price END ASC"
-        elif sort_by == 'price_desc':
-            query += " ORDER BY CASE WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 THEN p.discount_price ELSE p.price END DESC"
-        else:
-            query += " ORDER BY p.popularity DESC"
-            
-        products = conn.execute(query, params).fetchall()
-        html = render_template_string(PRODUCT_CARD_TEMPLATE, products=products)
-        
-        return jsonify({'html': html})
-    finally:
-        conn.close()
+    # Kumpulkan parameter filter dari URL
+    filters = {
+        'search': request.args.get('search'),
+        'category': request.args.get('category'),
+        'sort': request.args.get('sort', 'popularity')
+    }
+    
+    # Panggil service untuk mendapatkan produk yang sudah difilter
+    products = product_service.get_filtered_products(filters)
+    
+    # Render HTML di sisi server dan kirimkan sebagai JSON
+    html = render_template_string(PRODUCT_CARD_TEMPLATE, products=products)
+    return jsonify({'html': html})

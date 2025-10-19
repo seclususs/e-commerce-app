@@ -47,7 +47,7 @@
                             <td data-label="No. Resi:">{{ order.tracking_number or '-' }}</td>
                             <td data-label="Aksi:">
                                 {% if order.status in ['Pending', 'Processing'] %}
-                                <form method="POST" action="{{ url_for('user.cancel_order', order_id=order.id) }}" class="cancel-order-form">
+                                <form method="POST" action="{{ url_for('purchase.cancel_order', order_id=order.id) }}" class="cancel-order-form">
                                     <button type="submit" class="btn-cancel">Batalkan</button>
                                 </form>
                                 {% else %}

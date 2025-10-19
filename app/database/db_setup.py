@@ -4,10 +4,12 @@ import json
 from werkzeug.security import generate_password_hash
 
 # KONFIGURASI
-db_dir = os.path.dirname(__file__)
-db_file = os.path.join(db_dir, 'database.db')
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+instance_dir = os.path.join(project_root, 'instance')
+os.makedirs(instance_dir, exist_ok=True)  # Pastikan folder instance ada
+db_file = os.path.join(instance_dir, 'database.db')
 
-# HAPUS DATABASE LAMA
+# HAPUS DATABASE LAMA JIKA ADA
 if os.path.exists(db_file):
     os.remove(db_file)
     print(f"File database lama '{db_file}' berhasil dihapus.")

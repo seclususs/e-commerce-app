@@ -2,5 +2,3 @@ from flask import Blueprint
 
 user_bp = Blueprint('user', __name__)
 from . import profile_routes
-from . import checkout_routes
-from . import order_routes

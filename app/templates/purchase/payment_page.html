@@ -35,7 +35,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ url_for('user.confirm_payment', order_id=order.id) }}" style="margin-top: 2rem;">
+            <form method="POST" action="{{ url_for('purchase.confirm_payment', order_id=order.id) }}" style="margin-top: 2rem;">
                  <button type="submit" class="cta-button cta-button-prominent" style="width: 100%;">Saya Sudah Bayar</button>
             </form>
         </div>

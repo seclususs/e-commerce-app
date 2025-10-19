@@ -7,16 +7,21 @@ from routes.auth import auth_bp
 from routes.user import user_bp
 from routes.admin import admin_bp
 from routes.api import api_bp
+from routes.purchase import purchase_bp
 
 def create_app():
-    """Membuat dan mengkonfigurasi instance aplikasi Flask."""
-    app = Flask(__name__)
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    instance_path = os.path.join(project_root, 'instance')
+    
+    app = Flask(__name__, instance_path=instance_path)
 
     # Konfigurasi aplikasi
     app.config.from_mapping(
         SECRET_KEY='2310-1140-1246',
         UPLOAD_FOLDER=os.path.join(app.root_path, 'static', 'uploads'),
-        ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif', 'webp'},
+        # Menentukan path database di dalam folder instance yang sudah benar
+        DATABASE=os.path.join(app.instance_path, 'database.db')
     )
 
     # Filter kustom untuk format Rupiah di Jinja2
@@ -51,10 +56,15 @@ def create_app():
     app.register_blueprint(user_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(purchase_bp)
 
-    # Pastikan folder upload ada saat aplikasi berjalan
-    with app.app_context():
-        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    # Pastikan folder instance dan upload ada saat aplikasi berjalan
+    try:
+        os.makedirs(app.instance_path)
+    except OSError:
+        pass
+    
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
     return app
 

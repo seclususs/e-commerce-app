@@ -3,9 +3,9 @@ from database.db_config import get_db_connection, get_content
 from utils.route_decorators import login_required
 from services.order_service import order_service
 
-from . import user_bp
+from . import purchase_bp
 
-@user_bp.route('/order/pay/<int:order_id>')
+@purchase_bp.route('/order/pay/<int:order_id>')
 def payment_page(order_id):
     """
     Menampilkan halaman pembayaran untuk pesanan tertentu.
@@ -15,7 +15,6 @@ def payment_page(order_id):
     
     conn = get_db_connection()
     
-    # Verifikasi kepemilikan pesanan
     if user_id:
         order = conn.execute('SELECT * FROM orders WHERE id = ? AND user_id = ?', (order_id, user_id)).fetchone()
     elif guest_order_id and guest_order_id == order_id:
@@ -30,9 +29,9 @@ def payment_page(order_id):
     items = conn.execute('SELECT p.name, oi.quantity, oi.price FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?', (order_id,)).fetchall()
     conn.close()
 
-    return render_template('user/payment_page.html', order=order, items=items, content=get_content())
+    return render_template('purchase/payment_page.html', order=order, items=items, content=get_content())
 
-@user_bp.route('/order/confirm_payment/<int:order_id>', methods=['POST'])
+@purchase_bp.route('/order/confirm_payment/<int:order_id>', methods=['POST'])
 def confirm_payment(order_id):
     """
     Memproses konfirmasi pembayaran (simulasi).
@@ -41,7 +40,6 @@ def confirm_payment(order_id):
     guest_order_id = session.get('guest_order_id')
 
     conn = get_db_connection()
-    # Verifikasi kepemilikan pesanan sebelum update
     if user_id:
         order = conn.execute('SELECT id, status FROM orders WHERE id = ? AND user_id = ?', (order_id, user_id)).fetchone()
     elif guest_order_id and guest_order_id == order_id:
@@ -62,20 +60,20 @@ def confirm_payment(order_id):
         flash("Status pesanan ini tidak dapat diubah.", "warning")
 
     conn.close()
-    return redirect(url_for('user.order_success'))
+    return redirect(url_for('purchase.order_success'))
 
-@user_bp.route('/order_success')
+@purchase_bp.route('/order_success')
 def order_success():
     """
     Menampilkan halaman sukses setelah pesanan dibuat atau dibayar.
     """
     guest_order_details = session.pop('guest_order_details', None)
     guest_order_id = session.pop('guest_order_id', None)
-    return render_template('user/success_page.html', content=get_content(), 
+    return render_template('purchase/success_page.html', content=get_content(), 
                            guest_order_details=guest_order_details, 
                            guest_order_id=guest_order_id)
 
-@user_bp.route('/order/cancel/<int:order_id>', methods=['POST'])
+@purchase_bp.route('/order/cancel/<int:order_id>', methods=['POST'])
 @login_required
 def cancel_order(order_id):
     """

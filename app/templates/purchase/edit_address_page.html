@@ -7,7 +7,7 @@
     <div class="profile-container animated-element">
         <h2 class="section-title">Edit Alamat Pengiriman</h2>
         <div class="admin-card animated-element" data-animation-delay="100">
-            <form method="POST" action="{{ url_for('user.edit_address') }}">
+            <form method="POST" action="{{ url_for('purchase.edit_address') }}">
                 <div class="form-group"><label for="phone">Nomor Telepon</label><input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}" required></div>
                 <div class="form-group"><label for="address_line_1">Alamat Lengkap</label><input type="text" id="address_line_1" name="address_line_1" value="{{ user.address_line_1 or '' }}" placeholder="Nama jalan, nomor rumah, RT/RW" required></div>
                 <div class="form-group"><label for="address_line_2">Detail Alamat (Opsional)</label><input type="text" id="address_line_2" name="address_line_2" value="{{ user.address_line_2 or '' }}" placeholder="Contoh: Apartemen, lantai, unit"></div>
@@ -19,7 +19,7 @@
                 
                 <div class="form-actions" style="margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem;">
                     <button type="submit" name="update_address" class="cta-button form-button">Simpan Alamat</button>
-                    <a href="{{ url_for('user.checkout') }}" class="cta-button-secondary" style="width: 100%; text-align: center;">Kembali ke Checkout</a>
+                    <a href="{{ url_for('purchase.checkout') }}" class="cta-button-secondary" style="width: 100%; text-align: center;">Kembali ke Checkout</a>
                 </div>
             </form>
         </div>

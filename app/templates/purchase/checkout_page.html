@@ -6,7 +6,7 @@
 <section class="checkout-page-section">
     <div class="checkout-page-container animated-element">
         <h2 class="section-title">Checkout</h2>
-        <form id="checkout-form" method="POST" action="{{ url_for('user.checkout') }}">
+        <form id="checkout-form" method="POST" action="{{ url_for('purchase.checkout') }}">
             <div class="cart-layout">
                 <div class="admin-card checkout-details-card animated-element" data-animation-delay="200">
                     <!-- Tampilan dinamis untuk pengguna login dan tamu -->
@@ -22,7 +22,7 @@
                             {% else %}
                                 <p class="text-warning">Alamat pengiriman Anda belum lengkap.</p>
                             {% endif %}
-                            <a href="{{ url_for('user.edit_address') }}" class="cta-button-secondary edit-address-btn">Ubah Alamat</a>
+                            <a href="{{ url_for('purchase.edit_address') }}" class="cta-button-secondary edit-address-btn">Ubah Alamat</a>
                         </div>
                     {% else %}
                         <!-- Form untuk tamu -->

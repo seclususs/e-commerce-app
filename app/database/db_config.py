@@ -1,8 +1,9 @@
 import sqlite3
 import os
+from flask import current_app
 
 def get_db_connection():
-    db_path = os.path.join(os.path.dirname(__file__), 'database.db')
+    db_path = current_app.config['DATABASE']
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn

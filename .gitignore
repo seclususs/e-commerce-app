@@ -4,7 +4,6 @@ env/
 pycache/
 *.pyc
 instance/
-app/database/database.db
 app/static/uploads/
 .vscode/
 .DS_Store
