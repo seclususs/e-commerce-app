@@ -1,0 +1,81 @@
+{% extends "layouts/admin_layout.html" %}
+
+{% block admintitle %}Manajemen Voucher{% endblock %}
+{% block adminheader %}Manajemen Voucher Diskon{% endblock %}
+
+{% block admincontent %}
+<div class="admin-card animated-element">
+    <h3>Tambah Voucher Baru</h3>
+    <form method="POST" action="{{ url_for('admin.admin_vouchers') }}">
+        <div class="form-grid" style="gap: 1rem 1.5rem;">
+            <div class="form-group">
+                <label for="code">Kode Voucher (tanpa spasi, huruf besar)</label>
+                <input type="text" id="code" name="code" required style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+                <label for="type">Tipe Diskon</label>
+                <select id="type" name="type" class="form-control" required>
+                    <option value="PERCENTAGE">Persentase (%)</option>
+                    <option value="FIXED_AMOUNT">Jumlah Tetap (Rp)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="value">Nilai (cth: 10 untuk 10% atau 50000 untuk Rp 50rb)</label>
+                <input type="number" id="value" name="value" required placeholder="Contoh: 10 atau 50000">
+            </div>
+            <div class="form-group">
+                <label for="min_purchase_amount">Min. Pembelian (Rp) - Opsional</label>
+                <input type="number" id="min_purchase_amount" name="min_purchase_amount" placeholder="Contoh: 200000">
+            </div>
+            <div class="form-group">
+                <label for="max_uses">Maks. Penggunaan - Opsional</label>
+                <input type="number" id="max_uses" name="max_uses" placeholder="Contoh: 100">
+            </div>
+        </div>
+        <button type="submit" class="cta-button form-button" style="margin-top: 1rem;">Tambah Voucher</button>
+    </form>
+</div>
+
+<div class="admin-card animated-element" data-animation-delay="200">
+    <h3>Daftar Voucher</h3>
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Kode</th><th>Tipe</th><th>Nilai</th><th>Min. Beli</th><th>Digunakan</th><th>Status</th><th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for voucher in vouchers %}
+                <tr class="admin-card-row">
+                    <td data-label="Kode:"><strong>{{ voucher.code }}</strong></td>
+                    <td data-label="Tipe:" class="collapsible-detail">{{ voucher.type }}</td>
+                    <td data-label="Nilai:" class="collapsible-detail">
+                        {% if voucher.type == 'PERCENTAGE' %}{{ voucher.value }}%
+                        {% else %}{{ voucher.value|rupiah }}{% endif %}
+                    </td>
+                    <td data-label="Min. Beli:" class="collapsible-detail">{{ voucher.min_purchase_amount|rupiah if voucher.min_purchase_amount > 0 else '-' }}</td>
+                    <td data-label="Digunakan:" class="collapsible-detail">{{ voucher.use_count }} / {{ voucher.max_uses or '∞' }}</td>
+                    <td data-label="Status:" class="collapsible-detail">
+                        {% if voucher.is_active %}
+                            <span class="status-badge status-completed">Aktif</span>
+                        {% else %}
+                            <span class="status-badge status-cancelled">Nonaktif</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Aksi:" class="action-buttons">
+                         <div class="desktop-actions">
+                            <a href="{{ url_for('admin.toggle_voucher', id=voucher.id) }}" class="action-link action-link-edit">{{ 'Nonaktifkan' if voucher.is_active else 'Aktifkan' }}</a>
+                            <a href="{{ url_for('admin.delete_voucher', id=voucher.id) }}" class="action-link action-link-delete" data-no-transition>Hapus</a>
+                        </div>
+                        <button class="mobile-details-toggle">Lihat Detail <i class="fas fa-chevron-down"></i></button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" style="text-align: center;">Belum ada voucher.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

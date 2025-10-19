@@ -9,33 +9,29 @@ from . import purchase_bp
 
 @purchase_bp.route('/cart')
 def cart_page():
-    """
-    Menampilkan halaman keranjang belanja pengguna.
-    """
     return render_template('purchase/cart.html', content=get_content())
 
 @purchase_bp.route('/checkout', methods=['GET', 'POST'])
 def checkout():
-    """
-    Menangani proses checkout, baik untuk pengguna yang sudah login maupun tamu.
-    """
     user = None
     if 'user_id' in session:
         user = user_service.get_user_by_id(session['user_id'])
 
     if request.method == 'POST':
-        cart_json = request.form.get('cart_data')
-        if not cart_json or cart_json == '{}':
-            flash("Keranjang Anda kosong. Silakan tambahkan produk terlebih dahulu.", 'danger')
-            return redirect(url_for('purchase.cart_page'))
-        
-        cart_data = json.loads(cart_json)
-        
         user_id_for_order = session.get('user_id')
         
         if user_id_for_order:
-            if not user:
-                 user = user_service.get_user_by_id(user_id_for_order)
+            # Jika user login, data keranjang tidak perlu diambil dari form
+            cart_data = None 
+        else: # Untuk tamu, ambil dari form
+            cart_json = request.form.get('cart_data')
+            if not cart_json or cart_json == '{}':
+                flash("Keranjang Anda kosong. Silakan tambahkan produk terlebih dahulu.", 'danger')
+                return redirect(url_for('purchase.cart_page'))
+            cart_data = json.loads(cart_json)
+        
+        if user_id_for_order:
+            if not user: user = user_service.get_user_by_id(user_id_for_order)
             shipping_details = {
                 'name': user.get('username'), 'phone': user.get('phone'),
                 'address1': user.get('address_line_1'), 'address2': user.get('address_line_2', ''),
@@ -52,25 +48,23 @@ def checkout():
                 'city': request.form['city'], 'province': request.form['province'],
                 'postal_code': request.form['postal_code']
             }
-
-        payment_method = request.form['payment_method']
-
-        if not user_id_for_order:
             email_for_order = request.form.get('email')
             if not email_for_order:
                 flash('Email wajib diisi untuk checkout.', 'danger')
                 return redirect(url_for('purchase.checkout'))
             
             conn = get_db_connection()
-            existing_user = conn.execute('SELECT id FROM users WHERE email = ?', (email_for_order,)).fetchone()
-            conn.close()
-            if existing_user:
+            if conn.execute('SELECT id FROM users WHERE email = ?', (email_for_order,)).fetchone():
+                conn.close()
                 flash('Email sudah terdaftar. Silakan login untuk melanjutkan.', 'danger')
                 return redirect(url_for('auth.login', next=url_for('purchase.checkout')))
-            
+            conn.close()
             session['guest_order_details'] = { 'email': email_for_order, **shipping_details }
 
-        result = order_service.create_order(user_id_for_order, cart_data, shipping_details, payment_method)
+        payment_method = request.form['payment_method']
+        voucher_code = request.form.get('voucher_code') or None
+
+        result = order_service.create_order(user_id_for_order, cart_data, shipping_details, payment_method, voucher_code)
 
         if result['success']:
             order_id = result['order_id']
@@ -91,9 +85,6 @@ def checkout():
 @purchase_bp.route('/checkout/edit_address', methods=['GET', 'POST'])
 @login_required
 def edit_address():
-    """
-    Menampilkan dan memproses form edit alamat dari halaman checkout.
-    """
     user_id = session['user_id']
     if request.method == 'POST':
         address_data = {
@@ -101,8 +92,8 @@ def edit_address():
             'address2': request.form.get('address_line_2', ''), 'city': request.form['city'],
             'province': request.form['province'], 'postal_code': request.form['postal_code']
         }
-        result = user_service.update_user_address(user_id, address_data)
-        flash(result['message'], 'success' if result['success'] else 'danger')
+        user_service.update_user_address(user_id, address_data)
+        flash('Alamat berhasil diperbarui.', 'success')
         return redirect(url_for('purchase.checkout'))
 
     user = user_service.get_user_by_id(user_id)

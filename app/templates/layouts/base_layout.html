@@ -10,6 +10,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=1.9">
 </head>
 <body>
+    <!-- Variabel global dan flag untuk JavaScript -->
+    <script>
+        window.IS_USER_LOGGED_IN = {{ 'true' if session.user_id else 'false' }};
+    </script>
+    {% if session.just_logged_in %}
+        <span id="just-logged-in-flag" style="display:none;"></span>
+        {% set _ = session.pop('just_logged_in', None) %}
+    {% endif %}
+
     {% if not hide_navbar %}
     <nav class="navbar">
         <a href="{{ url_for('product.index') }}" class="logo">{{ content.app_name }}</a>
@@ -92,7 +101,6 @@
             <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'product' in request.endpoint and 'admin' not in request.endpoint }}">
                 <i class="fas fa-store"></i> <span>Produk</span>
             </a>
-            <!-- Menambahkan ID untuk target animasi -->
             <a href="{{ url_for('purchase.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
                 <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
             </a>
@@ -109,7 +117,6 @@
             <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'products_page' in request.endpoint }}">
                 <i class="fas fa-store"></i> <span>Produk</span>
             </a>
-            <!-- Menambahkan ID untuk target animasi -->
             <a href="{{ url_for('purchase.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
                 <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
             </a>
@@ -131,7 +138,6 @@
         </div>
     </div>
 
-    <!-- Referensi skrip utama -->
     <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

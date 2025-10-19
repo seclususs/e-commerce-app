@@ -22,6 +22,9 @@ def login():
             session['username'] = user['username']
             session['is_admin'] = bool(user['is_admin'])
             
+            # Tandai sesi ini sebagai "baru login" untuk memicu sinkronisasi keranjang
+            session['just_logged_in'] = True
+            
             if session['is_admin']:
                 flash('Login admin berhasil!', 'success')
                 return redirect(url_for('admin.admin_dashboard'))

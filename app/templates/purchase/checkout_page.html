@@ -53,8 +53,31 @@
                 <div class="cart-summary admin-card animated-element" data-animation-delay="400">
                     <h3>Ringkasan Pesanan</h3>
                     <div id="checkout-summary-items"><p>Memuat item...</p></div>
+                    
+                    <div class="summary-row"><span>Subtotal</span><span id="checkoutSubtotal">Rp 0</span></div>
+
+                    <!-- Form untuk Voucher -->
+                    <div class="voucher-form-container">
+                        <div class="form-group">
+                            <label for="voucher_code" style="font-size: 0.9em;">Punya Kode Voucher?</label>
+                            <div class="voucher-input-group">
+                                <input type="text" id="voucher_code" name="voucher_code" placeholder="Masukkan kode di sini" class="form-control">
+                                <button type="button" id="applyVoucherBtn" class="cta-button-secondary">Terapkan</button>
+                            </div>
+                        </div>
+                        <div id="voucher-message" class="voucher-feedback"></div>
+                    </div>
+                    
+                    <div class="summary-row discount-row" style="display: none;">
+                        <span>Diskon</span>
+                        <span id="checkoutDiscount" style="color: var(--color-success);">- Rp 0</span>
+                    </div>
+
                     <div class="summary-total"><span>Total</span><span id="checkoutTotal">Rp 0</span></div>
+                    
+                    <!-- Input tersembunyi untuk data keranjang tamu -->
                     <input type="hidden" name="cart_data" id="cart_data_input">
+                    
                     <div class="hide-on-mobile-cta">
                         <button id="placeOrderBtn" type="submit" class="cta-button cta-button-prominent" style="width: 100%;" disabled>
                             <span>Buat Pesanan</span>

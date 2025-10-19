@@ -7,7 +7,7 @@ import { initProductCatalogPage } from './pages/product-catalog.js';
 import { initProductDetailPage } from './pages/product-detail.js';
 import { initCheckoutPage } from './pages/checkout.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Inisialisasi efek transisi halaman
     const pageWrapper = document.querySelector('.page-content-wrapper');
     if (pageWrapper) {
@@ -29,7 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initFlashMessages();
     initLogout();
     initActionConfirmations();
+    
+    // Inisialisasi modul keranjang
     cartModule.init();
+
+    // Cek jika pengguna baru saja login untuk sinkronisasi keranjang
+    const justLoggedInFlag = document.getElementById('just-logged-in-flag');
+    if(justLoggedInFlag){
+        await cartModule.syncOnLogin();
+    }
 
     // Inisialisasi modul spesifik per halaman
     if (document.querySelector('.products-page-section')) {

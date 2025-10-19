@@ -60,6 +60,36 @@
 .address-display-box .text-warning { color: var(--color-warning); }
 .edit-address-btn { position: absolute; top: 1rem; right: 1rem; padding: 0.4rem 1rem; }
 
+/* Gaya untuk form voucher */
+.voucher-form-container {
+    padding: 1rem 0;
+    margin: 1rem 0;
+    border-top: 1px solid var(--color-background-light);
+    border-bottom: 1px solid var(--color-background-light);
+}
+.voucher-input-group {
+    display: flex;
+    gap: 0.5rem;
+}
+.voucher-input-group input {
+    flex-grow: 1;
+}
+.voucher-input-group button {
+    white-space: nowrap;
+    padding: 0.8rem 1.2rem;
+}
+.voucher-feedback {
+    font-size: 0.9em;
+    margin-top: 0.75rem;
+    text-align: center;
+    font-weight: 500;
+    min-height: 1.2em;
+}
+.voucher-feedback.success { color: var(--color-success); }
+.voucher-feedback.error { color: var(--color-danger); }
+.discount-row { color: var(--color-success); }
+
+
 /* Halaman Edit Alamat */
 .edit-address-section .profile-container { max-width: 600px; }
 
