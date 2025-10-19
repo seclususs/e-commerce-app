@@ -147,32 +147,37 @@ function initStockHoldTimer(expiresAtIsoString) {
 }
 
 async function initGuestCheckout() {
-    const GUEST_CART_KEY = 'hackthreadCart';
+    const GUEST_CART_KEY = 'hackthreadVariantCart';
     const localCart = JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || {};
-    const productIds = Object.keys(localCart);
     const form = document.getElementById('checkout-form');
     const timerContainer = document.getElementById('stock-hold-timer-container');
 
-    if (productIds.length === 0) {
+    if (Object.keys(localCart).length === 0) {
         window.location.href = '/cart';
         return;
     }
 
     try {
+        // Ambil detail produk lengkap berdasarkan data keranjang dari localStorage
         const productRes = await fetch('/api/cart', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ product_ids: productIds })
+            body: JSON.stringify({ cart_items: localCart }) // KIRIM PAYLOAD YANG BENAR
         });
-        if (!productRes.ok) throw new Error('Gagal memuat detail produk.');
+        if (!productRes.ok) {
+            throw new Error('Gagal memuat detail produk dari keranjang.');
+        }
         
-        const products = await productRes.json();
-        const items = products.map(p => ({ ...p, quantity: localCart[p.id].quantity }));
+        const detailedItems = await productRes.json();
+        if (detailedItems.length === 0) {
+             throw new Error('Keranjang Anda kosong atau item tidak valid.');
+        }
 
+        // Siapkan checkout (tahan stok) menggunakan detail produk yang sudah valid
         const prepareRes = await fetch('/api/checkout/prepare', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: items })
+            body: JSON.stringify({ items: detailedItems }) // Gunakan hasil dari API sebelumnya
         });
         const prepareResult = await prepareRes.json();
         
@@ -189,8 +194,10 @@ async function initGuestCheckout() {
             timerContainer.classList.add('expired');
         }
         if (form) {
-            const formElements = form.querySelectorAll('input, button, select');
-            formElements.forEach(el => el.disabled = true);
+            // Nonaktifkan semua elemen form jika terjadi error
+            form.querySelectorAll('input, button, select').forEach(el => el.disabled = true);
+            const mobileBtn = document.getElementById('placeOrderBtnMobile');
+            if(mobileBtn) mobileBtn.disabled = true;
         }
     }
 }

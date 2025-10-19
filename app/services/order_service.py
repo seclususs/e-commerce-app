@@ -7,8 +7,8 @@ from services.cart_service import cart_service
 from services.product_service import product_service
 
 class OrderService:
+    
     def validate_and_calculate_voucher(self, code, subtotal):
-        """Memvalidasi voucher dan menghitung diskon."""
         conn = get_db_connection()
         voucher = conn.execute("SELECT * FROM vouchers WHERE code = ? AND is_active = 1", (code.upper(),)).fetchone()
         conn.close()
@@ -35,19 +35,20 @@ class OrderService:
         discount_amount = min(discount_amount, subtotal)
         final_total = subtotal - discount_amount
 
-        return {
-            'success': True,
-            'discount_amount': discount_amount,
-            'final_total': final_total,
-            'message': 'Voucher berhasil diterapkan!'
-        }
+        return {'success': True, 'discount_amount': discount_amount, 'final_total': final_total, 'message': 'Voucher berhasil diterapkan!'}
 
     def create_order(self, user_id, session_id, cart_data, shipping_details, payment_method, voucher_code=None):
         conn = get_db_connection()
         try:
             with conn:
-                # Validasi stok yang ditahan, bukan stok asli
-                held_items_query = "SELECT p.id, p.name, sh.quantity, p.stock FROM stock_holds sh JOIN products p ON sh.product_id = p.id WHERE "
+                held_items_query = """
+                    SELECT p.id as product_id, p.name, sh.quantity, sh.variant_id, pv.size,
+                           CASE WHEN sh.variant_id IS NOT NULL THEN pv.stock ELSE p.stock END as stock
+                    FROM stock_holds sh 
+                    JOIN products p ON sh.product_id = p.id
+                    LEFT JOIN product_variants pv ON sh.variant_id = pv.id
+                    WHERE 
+                """
                 if user_id:
                     held_items_query += "sh.user_id = ?"
                     params = (user_id,)
@@ -60,33 +61,36 @@ class OrderService:
                 if not held_items:
                     return {'success': False, 'message': 'Sesi checkout Anda telah berakhir. Silakan kembali ke keranjang.'}
 
-                # Ambil detail harga produk
-                product_ids = [item['id'] for item in held_items]
+                product_ids = [item['product_id'] for item in held_items]
                 placeholders = ', '.join(['?'] * len(product_ids))
-                products_db = conn.execute(f'SELECT id, name, price, discount_price, stock FROM products WHERE id IN ({placeholders})', product_ids).fetchall()
+                products_db = conn.execute(f'SELECT id, name, price, discount_price FROM products WHERE id IN ({placeholders})', product_ids).fetchall()
                 products_map = {p['id']: p for p in products_db}
 
                 subtotal = 0
                 items_for_order = []
                 for item in held_items:
-                    product = products_map.get(item['id'])
+                    product = products_map.get(item['product_id'])
                     if not product: continue
                     
-                    # Cek ulang stok fisik terakhir
-                    if item['quantity'] > product['stock']:
-                        return {'success': False, 'message': f"Stok untuk '{product['name']}' telah habis."}
+                    if item['quantity'] > item['stock']:
+                         size_info = f" (Ukuran: {item['size']})" if item.get('size') else ""
+                         return {'success': False, 'message': f"Stok untuk '{product['name']}'{size_info} telah habis."}
 
                     effective_price = product['discount_price'] if product['discount_price'] and product['discount_price'] > 0 else product['price']
                     subtotal += effective_price * item['quantity']
-                    items_for_order.append({**product, 'quantity': item['quantity'], 'price_at_order': effective_price})
+                    items_for_order.append({
+                        **product, 
+                        'quantity': item['quantity'], 
+                        'price_at_order': effective_price,
+                        'variant_id': item['variant_id'],
+                        'size': item['size']
+                    })
                 
-                discount_amount = 0
-                final_total = subtotal
+                discount_amount, final_total = 0, subtotal
                 if voucher_code:
                     voucher_result = self.validate_and_calculate_voucher(voucher_code, subtotal)
                     if voucher_result['success']:
-                        discount_amount = voucher_result['discount_amount']
-                        final_total = voucher_result['final_total']
+                        discount_amount, final_total = voucher_result['discount_amount'], voucher_result['final_total']
                     else:
                         return {'success': False, 'message': voucher_result['message']}
 
@@ -107,23 +111,29 @@ class OrderService:
                 order_id = cursor.lastrowid
 
                 for item in items_for_order:
-                    price_at_order = item.get('price_at_order')
                     cursor.execute(
-                        'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
-                        (order_id, item['id'], item['quantity'], price_at_order)
+                        'INSERT INTO order_items (order_id, product_id, variant_id, quantity, price, size_at_order) VALUES (?, ?, ?, ?, ?, ?)',
+                        (order_id, item['id'], item['variant_id'], item['quantity'], item['price_at_order'], item['size'])
                     )
-                    # Kurangi stok HANYA jika pembayaran langsung (COD)
                     if payment_method == 'COD':
-                        cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (item['quantity'], item['id']))
+                        if item['variant_id']:
+                            cursor.execute('UPDATE product_variants SET stock = stock - ? WHERE id = ?', (item['quantity'], item['variant_id']))
+                        else:
+                            cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (item['quantity'], item['id']))
                 
                 if voucher_code:
                     cursor.execute("UPDATE vouchers SET use_count = use_count + 1 WHERE code = ?", (voucher_code.upper(),))
                 
-                # Hapus keranjang dan stok yang ditahan
                 if user_id:
                     cursor.execute("DELETE FROM user_carts WHERE user_id = ?", (user_id,))
                 
                 product_service.release_stock_holds(user_id, session_id, conn)
+
+                # Update total stok produk jika memiliki varian
+                product_ids_with_variants = {item['id'] for item in items_for_order if item['variant_id']}
+                for pid in product_ids_with_variants:
+                    total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (pid,)).fetchone()[0]
+                    conn.execute("UPDATE products SET stock = ? WHERE id = ?", (total_stock or 0, pid))
 
             return {'success': True, 'order_id': order_id}
         except Exception as e:
@@ -131,7 +141,6 @@ class OrderService:
             return {'success': False, 'message': 'Terjadi kesalahan internal saat memproses pesanan.'}
 
     def process_successful_payment(self, transaction_id):
-        """Memproses pesanan setelah pembayaran berhasil via webhook."""
         conn = get_db_connection()
         try:
             with conn:
@@ -142,21 +151,27 @@ class OrderService:
                 order_id = order['id']
                 items = conn.execute("SELECT * FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
                 
-                # Validasi stok terakhir sebelum mengurangi
                 for item in items:
-                    stock = conn.execute("SELECT stock FROM products WHERE id = ?", (item['product_id'],)).fetchone()['stock']
+                    stock_query = "SELECT stock FROM {} WHERE id = ?".format("product_variants" if item['variant_id'] else "products")
+                    stock_id = item['variant_id'] if item['variant_id'] else item['product_id']
+                    stock = conn.execute(stock_query, (stock_id,)).fetchone()['stock']
+                    
                     if item['quantity'] > stock:
-                        # Kasus langka: stok habis saat pembayaran diproses
                         conn.execute("UPDATE orders SET status = 'Cancelled' WHERE id = ?", (order_id,))
-                        # TODO: Log kejadian ini dan proses refund
                         return {'success': False, 'message': f"Stok habis untuk produk ID {item['product_id']}."}
 
-                # Kurangi stok
                 for item in items:
-                    conn.execute("UPDATE products SET stock = stock - ? WHERE id = ?", (item['quantity'], item['product_id']))
+                    update_query = "UPDATE {} SET stock = stock - ? WHERE id = ?".format("product_variants" if item['variant_id'] else "products")
+                    update_id = item['variant_id'] if item['variant_id'] else item['product_id']
+                    conn.execute(update_query, (item['quantity'], update_id))
                 
-                # Update status pesanan
                 conn.execute("UPDATE orders SET status = 'Processing' WHERE id = ?", (order_id,))
+                
+                # Update total stok produk jika memiliki varian
+                product_ids_with_variants = {item['product_id'] for item in items if item['variant_id']}
+                for pid in product_ids_with_variants:
+                    total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (pid,)).fetchone()[0]
+                    conn.execute("UPDATE products SET stock = ? WHERE id = ?", (total_stock or 0, pid))
 
             return {'success': True, 'message': f'Pesanan #{order_id} berhasil diproses.'}
         except Exception as e:
@@ -175,11 +190,18 @@ class OrderService:
                 if order['status'] not in ['Pending', 'Processing']:
                     return {'success': False, 'message': f'Pesanan tidak dapat dibatalkan karena statusnya "{order["status"]}".'}
                 
-                # Kembalikan stok HANYA jika pesanan sudah mengurangi stok (Processing/COD atau Pending yang sudah dibayar)
+                # Kembalikan stok HANYA jika pesanan sudah mengurangi stok
                 if order['status'] == 'Processing' or (order['status'] == 'Pending' and order['payment_transaction_id']):
                     order_items = conn.execute('SELECT * FROM order_items WHERE order_id = ?', (order_id,)).fetchall()
                     for item in order_items:
-                        conn.execute('UPDATE products SET stock = stock + ? WHERE id = ?', (item['quantity'], item['product_id']))
+                        update_query = "UPDATE {} SET stock = stock + ? WHERE id = ?".format("product_variants" if item['variant_id'] else "products")
+                        update_id = item['variant_id'] if item['variant_id'] else item['product_id']
+                        conn.execute(update_query, (item['quantity'], update_id))
+                    
+                    product_ids_with_variants = {item['product_id'] for item in order_items if item['variant_id']}
+                    for pid in product_ids_with_variants:
+                        total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (pid,)).fetchone()[0]
+                        conn.execute("UPDATE products SET stock = ? WHERE id = ?", (total_stock or 0, pid))
 
                 conn.execute('UPDATE orders SET status = ? WHERE id = ?', ('Cancelled', order_id))
 

@@ -3,16 +3,19 @@
 {% block title %}Pesanan Berhasil - {{ content.app_name }}{% endblock %}
 
 {% block content %}
-<section class="auth-section order-success-page">
-    <div class="form-container animated-element" style="max-width: 500px; text-align: center; background: none; border: none; padding: 2rem;">
+<section class="order-success-page">
+    <div class="success-container animated-element">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
         <h2 class="section-title">Pesanan Berhasil!</h2>
         
         <!-- Pesan dinamis untuk pengguna login dan tamu -->
         {% if guest_order_details %}
-            <p style="color: #94a3b8; margin-bottom: 2rem;">Terima kasih telah berbelanja di {{ content.app_name }}. Pesanan Anda #{{ guest_order_id }} sedang kami proses.</p>
-            <div class="admin-card" style="margin-top: 2rem; text-align: left;">
+            <p class="success-message">Terima kasih telah berbelanja di {{ content.app_name }}. Pesanan Anda <strong>#{{ guest_order_id }}</strong> sedang kami proses.</p>
+            <div class="admin-card create-account-prompt">
                 <h3>Buat Akun untuk Lacak Pesanan</h3>
-                <p style="color: #94a3b8; margin-bottom: 1rem;">Buat akun dengan detail di bawah untuk melacak pesanan Anda dan checkout lebih cepat di lain waktu.</p>
+                <p>Buat akun dengan detail di bawah untuk melacak pesanan Anda dan checkout lebih cepat di lain waktu.</p>
                 <form method="POST" action="{{ url_for('auth.register_from_order') }}">
                     <input type="hidden" name="order_details" value='{{ guest_order_details | tojson | safe }}'>
                     <input type="hidden" name="order_id" value="{{ guest_order_id }}">
@@ -28,9 +31,10 @@
                 </form>
             </div>
         {% else %}
-            <p style="color: #94a3b8; margin-bottom: 2rem;">Terima kasih telah berbelanja di {{ content.app_name }}. Anda dapat melihat detail pesanan Anda di halaman profil.</p>
+            <p class="success-message">Terima kasih telah berbelanja di {{ content.app_name }}. Anda dapat melihat detail pesanan Anda di halaman profil.</p>
             <a href="{{ url_for('user.user_profile') }}" class="cta-button">Lihat Riwayat Pesanan</a>
         {% endif %}
+        <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary" style="margin-top: 1.5rem;">Lanjutkan Belanja</a>
     </div>
 </section>
 {% endblock %}

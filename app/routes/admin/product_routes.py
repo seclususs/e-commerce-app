@@ -8,7 +8,6 @@ from services.product_service import product_service
 @admin_required
 def admin_products():
     if request.method == 'POST':
-        # Cek apakah ini aksi massal
         if 'bulk_action' in request.form and request.form.get('bulk_action'):
             action = request.form.get('bulk_action')
             selected_ids = request.form.getlist('product_ids')
@@ -16,13 +15,11 @@ def admin_products():
             result = product_service.handle_bulk_product_action(action, selected_ids, category_id)
             flash(result['message'], 'success' if result['success'] else 'danger')
         else:
-            # Jika bukan, ini adalah form tambah produk baru
             result = product_service.create_product(request.form, request.files)
             flash(result['message'], 'success' if result['success'] else 'danger')
         
         return redirect(url_for('admin.admin_products'))
     
-    # Untuk method GET
     products = product_service.get_all_products_with_category()
     categories = product_service.get_all_categories()
     return render_template('admin/manage_products.html', products=products, categories=categories, content=get_content())
@@ -35,7 +32,6 @@ def admin_edit_product(id):
         flash(result['message'], 'success' if result['success'] else 'danger')
         if result['success']:
             return redirect(url_for('admin.admin_products'))
-        # Jika gagal, kembali ke halaman edit
         return redirect(url_for('admin.admin_edit_product', id=id))
 
     product = product_service.get_product_by_id(id)
@@ -44,7 +40,6 @@ def admin_edit_product(id):
         return redirect(url_for('admin.admin_products'))
     
     categories = product_service.get_all_categories()
-    # 'all_images' sudah diproses di dalam service
     additional_images = product.get('additional_image_urls', [])
     
     return render_template('admin/product_editor.html', 
@@ -56,10 +51,51 @@ def admin_edit_product(id):
 @admin_bp.route('/delete_product/<int:id>')
 @admin_required
 def delete_product(id):
-    product_service.delete_product(id)
-    flash('Produk berhasil dihapus!', 'success')
+    result = product_service.delete_product(id)
+    flash(result['message'], 'success' if result['success'] else 'danger')
     return redirect(url_for('admin.admin_products'))
 
+# Rute untuk Varian
+@admin_bp.route('/product/<int:product_id>/variants', methods=['GET', 'POST'])
+@admin_required
+def manage_variants(product_id):
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'add':
+            size = request.form.get('size')
+            stock = request.form.get('stock')
+            result = product_service.add_variant(product_id, size, stock)
+            flash(result['message'], 'success' if result['success'] else 'danger')
+        elif action == 'update':
+            variant_id = request.form.get('variant_id')
+            size = request.form.get('size')
+            stock = request.form.get('stock')
+            result = product_service.update_variant(variant_id, size, stock)
+            flash(result['message'], 'success' if result['success'] else 'danger')
+        
+        # Perbarui total stok di tabel produk setelah ada perubahan
+        product_service.update_total_stock_from_variants(product_id)
+        return redirect(url_for('admin.manage_variants', product_id=product_id))
+
+    product = product_service.get_product_by_id(product_id)
+    if not product:
+        flash('Produk tidak ditemukan.', 'danger')
+        return redirect(url_for('admin.admin_products'))
+    
+    variants = product_service.get_variants_for_product(product_id)
+    return render_template('admin/manage_variants.html', product=product, variants=variants, content=get_content())
+
+@admin_bp.route('/product/<int:product_id>/variant/delete/<int:variant_id>')
+@admin_required
+def delete_variant(product_id, variant_id):
+    result = product_service.delete_variant(variant_id)
+    flash(result['message'], 'success')
+    # Perbarui total stok di tabel produk
+    product_service.update_total_stock_from_variants(product_id)
+    return redirect(url_for('admin.manage_variants', product_id=product_id))
+
+
+# Rute untuk Kategori
 @admin_bp.route('/categories', methods=['GET', 'POST'])
 @admin_required
 def admin_categories():

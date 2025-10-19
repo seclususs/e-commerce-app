@@ -1,19 +1,19 @@
-from flask import jsonify, request, abort
+from flask import jsonify, request, abort, current_app
 from . import api_bp
 from services.order_service import order_service
 from services.scheduler_service import scheduler_service
-
-# Kunci API untuk "mengamankan" webhook dan scheduler
-SECRET_API_KEY = "2310-1140-1246"
 
 @api_bp.route('/payment-webhook', methods=['POST'])
 def payment_webhook():
     """
     Endpoint untuk menerima notifikasi dari payment gateway (simulasi).
     """
+    # Ambil SECRET_KEY dari konfigurasi aplikasi Flask
+    secret_key = current_app.config['SECRET_KEY']
+
     # Verifikasi header otentikasi sederhana
     auth_header = request.headers.get('X-API-Key')
-    if auth_header != SECRET_API_KEY:
+    if auth_header != secret_key:
         abort(401, description="Unauthorized")
 
     data = request.get_json()
@@ -40,8 +40,9 @@ def run_scheduler_jobs():
     """
     Endpoint untuk memicu tugas terjadwal secara manual (simulasi cron job).
     """
+    secret_key = current_app.config['SECRET_KEY']
     auth_header = request.headers.get('X-API-Key')
-    if auth_header != SECRET_API_KEY:
+    if auth_header != secret_key:
         abort(401, description="Unauthorized")
 
     # Jalankan tugas pembatalan pesanan kedaluwarsa

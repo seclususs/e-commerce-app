@@ -1,5 +1,16 @@
 /* Forms */
 .form-group { margin-bottom: 1rem; }
+.form-group-inline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1rem; 
+    margin-bottom: 0.5rem;
+}
+.form-group-inline label {
+    margin-bottom: 0;
+}
 .form-group label { display: block; margin-bottom: 0.5rem; color: var(--color-text-med); }
 .form-group input, .form-group textarea, .form-group select, .form-control {
     width: 100%; padding: 0.8rem; background: var(--color-background-dark);

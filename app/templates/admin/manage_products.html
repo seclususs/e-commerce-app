@@ -10,22 +10,25 @@
         <div class="form-grid">
             <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" required></div>
             <div class="form-group"><label for="price">Harga Asli</label><input type="text" inputmode="numeric" id="price" name="price" required></div>
-            <div class="form-group">
-                <label for="discount_price">Harga Setelah Diskon</label>
-                <input type="text" inputmode="numeric" id="discount_price" name="discount_price">
-            </div>
-            <div class="form-group"><label for="stock">Stok</label><input type="number" id="stock" name="stock" value="10" required></div>
-            <div class="form-group">
-                <label for="category_id">Kategori</label>
+            <div class="form-group"><label for="discount_price">Harga Diskon (Opsional)</label><input type="text" inputmode="numeric" id="discount_price" name="discount_price"></div>
+            <div class="form-group"><label for="category_id">Kategori</label>
                 <select id="category_id" name="category_id" class="form-control" required>
                     <option value="" disabled selected>Pilih Kategori</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat.id }}">{{ cat.name }}</option>
-                    {% endfor %}
+                    {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="form-group"><label for="sizes">Ukuran (dengan koma)</label><input type="text" id="sizes" name="sizes" placeholder="cth: S, M, L, XL"></div>
-            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" placeholder="cth: Hitam"></div>
+            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" placeholder="cth: Hitam, Putih"></div>
+        </div>
+        <div class="form-group form-group-inline">
+            <label class="custom-checkbox">
+                <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input">
+                <span class="checkbox-box"><span class="checkmark"></span></span>
+                <span>Produk ini memiliki varian ukuran</span>
+            </label>
+        </div>
+        <div class="form-group" id="stock-input-container">
+            <label for="stock">Stok (jika tidak ada varian)</label>
+            <input type="number" id="stock" name="stock" value="10" required>
         </div>
         <div class="form-group"><label for="description">Deskripsi</label><textarea id="description" name="description" rows="4" required></textarea></div>
         <div class="form-group">
@@ -44,37 +47,29 @@
 
 <div class="admin-card animated-element" data-animation-delay="200">
     <h3>Daftar Produk</h3>
-    <!-- Form untuk aksi massal -->
     <form method="POST" action="{{ url_for('admin.admin_products') }}" id="bulk-action-form">
         <div class="bulk-actions-container">
-            <div class="form-group">
-                <label for="bulk-action-select">Aksi Massal</label>
+            <div class="form-group"><label for="bulk-action-select">Aksi Massal</label>
                 <select name="bulk_action" id="bulk-action-select" class="form-control">
-                    <option value="">Pilih Aksi Massal...</option>
-                    <option value="delete">Hapus yang Dipilih</option>
-                    <option value="set_category">Ubah Kategori yang Dipilih</option>
+                    <option value="">Pilih Aksi...</option>
+                    <option value="delete">Hapus</option>
+                    <option value="set_category">Ubah Kategori</option>
                 </select>
             </div>
-            <div id="bulk-category-selector" class="form-group hidden">
-                 <label for="bulk-category-id">Kategori Baru</label>
+            <div id="bulk-category-selector" class="form-group hidden"><label for="bulk-category-id">Kategori Baru</label>
                  <select name="bulk_category_id" id="bulk-category-id" class="form-control">
-                    <option value="">Pilih Kategori...</option>
-                    {% for cat in categories %}
-                    <option value="{{ cat.id }}">{{ cat.name }}</option>
-                    {% endfor %}
+                    {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="form-group">
-                <button type="submit" class="cta-button">Terapkan</button>
-            </div>
+            <div class="form-group"><button type="submit" class="cta-button">Terapkan</button></div>
         </div>
         <div class="table-wrapper">
             <table class="admin-table">
                 <thead>
                     <tr>
                         <th>
-                            <label class="custom-checkbox">
-                                <input type="checkbox" class="checkbox-input" id="select-all-products">
+                            <label class="custom-checkbox" title="Pilih semua">
+                                <input type="checkbox" id="select-all-products" class="checkbox-input">
                                 <span class="checkbox-box"><span class="checkmark"></span></span>
                             </label>
                         </th>
@@ -85,8 +80,8 @@
                     {% for product in products %}
                     <tr class="animated-element admin-card-row">
                         <td data-label="Pilih:">
-                             <label class="custom-checkbox">
-                                <input type="checkbox" name="product_ids" value="{{ product.id }}" class="checkbox-input product-checkbox">
+                            <label class="custom-checkbox">
+                                <input type="checkbox" name="product_ids" value="{{ product.id }}" class="product-checkbox checkbox-input">
                                 <span class="checkbox-box"><span class="checkmark"></span></span>
                             </label>
                         </td>
@@ -95,16 +90,20 @@
                         <td data-label="Nama:">{{ product.name }}</td>
                         <td data-label="Kategori:" class="collapsible-detail">{{ product.category_name or 'N/A' }}</td>
                         <td data-label="Harga:" class="collapsible-detail price-cell">
-                            {% if product.discount_price and product.discount_price > 0 %}
-                                <span class="discount-price">{{ product.discount_price|rupiah }}</span>
-                                <del>{{ product.price|rupiah }}</del>
+                            {% if product.discount_price and product.discount_price > 0 %}<span class="discount-price">{{ product.discount_price|rupiah }}</span><del>{{ product.price|rupiah }}</del>{% else %}<span>{{ product.price|rupiah }}</span>{% endif %}
+                        </td>
+                        <td data-label="Stok:" class="collapsible-detail">
+                            {% if product.has_variants %}
+                                <span style="color: var(--color-info);">Bervariasi</span> (Total: {{ product.stock }})
                             {% else %}
-                                <span>{{ product.price|rupiah }}</span>
+                                {{ product.stock }}
                             {% endif %}
                         </td>
-                        <td data-label="Stok:" class="collapsible-detail">{{ product.stock }}</td>
                         <td data-label="Aksi:" class="action-buttons">
                             <div class="desktop-actions">
+                               {% if product.has_variants %}
+                               <a href="{{ url_for('admin.manage_variants', product_id=product.id) }}" class="action-link" style="color: #22c55e;">Varian</a>
+                               {% endif %}
                                <a href="{{ url_for('admin.admin_edit_product', id=product.id) }}" class="action-link action-link-edit">Edit</a>
                                <a href="{{ url_for('admin.delete_product', id=product.id) }}" class="action-link action-link-delete" data-no-transition>Hapus</a>
                             </div>

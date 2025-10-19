@@ -9,7 +9,6 @@
     </div>
 
     <div class="product-detail-container">
-        <!-- Struktur Galeri Gambar untuk Swipe -->
         <div class="product-image-gallery animated-element">
             <div class="gallery-slider-container">
                 <div class="gallery-slider" id="gallerySlider">
@@ -46,7 +45,6 @@
             </div>
             
             <div class="product-details-static">
-                <!-- Kelas untuk Hierarki Visual -->
                 <h3 class="details-title description-title">Deskripsi</h3>
                 <div class="details-content description-content">
                     <p>{{ product.description | safe }}</p>
@@ -55,22 +53,35 @@
                 <h3 class="details-title">Spesifikasi</h3>
                 <div class="details-content">
                     <ul>
-                        {% if product.sizes %}<li><strong>Ukuran Tersedia:</strong> {{ product.sizes }}</li>{% endif %}
                         {% if product.colors %}<li><strong>Warna Tersedia:</strong> {{ product.colors }}</li>{% endif %}
                         <li><strong>Stok:</strong> 
-                            {% if product.stock > 10 %}<span style="color: #22c55e;">Tersedia</span>
-                            {% elif product.stock > 0 %}<span style="color: #f59e0b;">Tersisa {{ product.stock }}</span>
-                            {% else %}<span style="color: #ef4444;">Habis</span>{% endif %}
+                            <span id="stock-display">
+                                {% if product.stock > 10 %}<span style="color: #22c55e;">Tersedia</span>
+                                {% elif product.stock > 0 %}<span style="color: #f59e0b;">Tersisa {{ product.stock }}</span>
+                                {% else %}<span style="color: #ef4444;">Habis</span>{% endif %}
+                            </span>
                         </li>
                     </ul>
                 </div>
+                
+                {% if product.has_variants and product.variants %}
+                <div class="product-size-selector">
+                    <h3 class="details-title">Pilih Ukuran</h3>
+                    <div class="size-options-wrapper" id="size-selector">
+                        {% for variant in product.variants %}
+                            <button class="size-option-btn" data-variant-id="{{ variant.id }}" data-stock="{{ variant.stock }}" {% if variant.stock == 0 %}disabled{% endif %}>{{ variant.size }}</button>
+                        {% endfor %}
+                    </div>
+                    <div id="size-warning" class="stock-warning-message"></div>
+                </div>
+                {% endif %}
 
                 {% if product.stock > 0 %}
                 <div class="product-quantity-selector">
                     <h3 class="details-title">Jumlah</h3>
                     <div class="quantity-input-wrapper">
                         <button type="button" class="quantity-btn" id="quantity-minus">-</button>
-                        <input type="number" id="quantity-input" value="1" min="1" max="{{ product.stock }}" class="form-control quantity-input-field">
+                        <input type="number" id="quantity-input" value="1" min="1" max="{{ product.stock }}" class="form-control quantity-input-field" readonly>
                         <button type="button" class="quantity-btn" id="quantity-plus">+</button>
                     </div>
                     <div id="stock-warning" class="stock-warning-message"></div>
@@ -79,20 +90,19 @@
             </div>
             
             <div class="hide-on-mobile-cta" style="margin-top: 2rem;">
-                {% if product.stock > 0 %}
-                    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}">
-                        <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
-                    </button>
-                {% else %}
-                    <button class="cta-button" disabled>Stok Habis</button>
-                {% endif %}
+                <button class="cta-button add-to-cart-btn" 
+                        data-id="{{ product.id }}" 
+                        data-name="{{ product.name }}" 
+                        data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
+                        {% if product.stock == 0 %}disabled{% endif %}>
+                    <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
+                </button>
             </div>
         </div>
     </div>
 
     <div class="reviews-section animated-element" data-animation-delay="400">
         <h2 class="section-title">Ulasan Pelanggan</h2>
-
         {% if session.user_id and can_review %}
             <div class="admin-card add-review-form">
                 <h3>Bagikan Pendapat Anda</h3>
@@ -112,32 +122,15 @@
                 </form>
             </div>
         {% elif session.user_id %}
-            <div class="admin-card add-review-form form-disabled">
+             <div class="admin-card add-review-form form-disabled">
                 <h3>Bagikan Pendapat Anda</h3>
-                <form>
-                    <fieldset disabled>
-                        <div class="form-group">
-                            <label for="rating">Rating Anda</label>
-                            <div class="star-rating">
-                                <input type="radio" id="5-stars-d" name="rating-d" value="5" /><label for="5-stars-d" class="star">&#9733;</label>
-                                <input type="radio" id="4-stars-d" name="rating-d" value="4" /><label for="4-stars-d" class="star">&#9733;</label>
-                                <input type="radio" id="3-stars-d" name="rating-d" value="3" /><label for="3-stars-d" class="star">&#9733;</label>
-                                <input type="radio" id="2-stars-d" name="rating-d" value="2" /><label for="2-stars-d" class="star">&#9733;</label>
-                                <input type="radio" id="1-star-d" name="rating-d" value="1" /><label for="1-star-d" class="star">&#9733;</label>
-                            </div>
-                        </div>
-                        <div class="form-group"><label for="comment-d">Komentar</label><textarea id="comment-d" rows="4" placeholder="Tulis ulasan Anda di sini..."></textarea></div>
-                        <button type="submit" class="cta-button form-button">Kirim Ulasan</button>
-                    </fieldset>
-                </form>
-                <p class="form-hint" style="text-align: center; margin-top: 1rem; color: var(--color-text-med);">Fitur ini akan aktif setelah Anda membeli produk ini.</p>
+                <p class="form-hint" style="text-align: center; margin-top: 1rem; color: var(--color-text-med);">Anda bisa memberi ulasan setelah membeli produk ini.</p>
             </div>
         {% else %}
             <div class="admin-card add-review-form" style="text-align: center;">
                 <p style="color: #94a3b8; margin:0;"><a href="{{ url_for('auth.login', next=request.url) }}" style="color: var(--color-primary);">Login</a> untuk memberikan ulasan.</p>
             </div>
         {% endif %}
-
         <div class="reviews-grid">
             {% if reviews %}
                 {% for review in reviews %}
@@ -154,12 +147,13 @@
     </div>
 </section>
 
-<!-- Floating bar untuk tombol Tambah ke Keranjang di mobile -->
-{% if product.stock > 0 %}
 <div class="mobile-cta-bar">
-    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}">
+    <button class="cta-button add-to-cart-btn" 
+            data-id="{{ product.id }}" 
+            data-name="{{ product.name }}" 
+            data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
+            {% if product.stock == 0 %}disabled{% endif %}>
         <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
     </button>
 </div>
-{% endif %}
 {% endblock %}

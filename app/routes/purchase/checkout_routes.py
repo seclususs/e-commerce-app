@@ -87,7 +87,7 @@ def checkout():
     # Logika untuk metode GET (menampilkan halaman checkout)
     if user_id:
         # Untuk pengguna yang login, validasi keranjang dan tahan stok di backend
-        cart_details = cart_service.get_cart_details(user_id, None)
+        cart_details = cart_service.get_cart_details(user_id)
         if not cart_details['items']:
             flash("Keranjang Anda kosong.", "warning")
             return redirect(url_for('purchase.cart_page'))

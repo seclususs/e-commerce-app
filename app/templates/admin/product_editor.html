@@ -9,22 +9,28 @@
         <div class="form-grid">
             <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" value="{{ product.name }}" required></div>
             <div class="form-group"><label for="price">Harga Asli</label><input type="text" inputmode="numeric" id="price" name="price" value="{{ product.price }}" required></div>
-            <div class="form-group">
-                <label for="discount_price">Harga Setelah Diskon</label>
-                <input type="text" inputmode="numeric" id="discount_price" name="discount_price" value="{{ product.discount_price or '' }}">
-            </div>
-            <div class="form-group"><label for="stock">Stok</label><input type="number" id="stock" name="stock" value="{{ product.stock }}" required></div>
-            <div class="form-group">
-                <label for="category_id">Kategori</label>
+            <div class="form-group"><label for="discount_price">Harga Diskon</label><input type="text" inputmode="numeric" id="discount_price" name="discount_price" value="{{ product.discount_price or '' }}"></div>
+            <div class="form-group"><label for="category_id">Kategori</label>
                 <select id="category_id" name="category_id" class="form-control" required>
-                    {% for cat in categories %}
-                    <option value="{{ cat.id }}" {% if cat.id == product.category_id %}selected{% endif %}>{{ cat.name }}</option>
-                    {% endfor %}
+                    {% for cat in categories %}<option value="{{ cat.id }}" {% if cat.id == product.category_id %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="form-group"><label for="sizes">Ukuran</label><input type="text" id="sizes" name="sizes" value="{{ product.sizes }}" placeholder="cth: S, M, L, XL"></div>
-            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" value="{{ product.colors }}" placeholder="cth: Hitam, Putih"></div>
+            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" value="{{ product.colors or '' }}" placeholder="cth: Hitam, Putih"></div>
         </div>
+        
+        <div class="form-group form-group-inline">
+            <label class="custom-checkbox">
+                <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input" {% if product.has_variants %}checked{% endif %}>
+                <span class="checkbox-box"><span class="checkmark"></span></span>
+                <span>Produk ini memiliki varian ukuran</span>
+            </label>
+        </div>
+
+        <div class="form-group" id="stock-input-container" style="display: {{ 'none' if product.has_variants else 'block' }};">
+            <label for="stock">Stok (jika tidak ada varian)</label>
+            <input type="number" id="stock" name="stock" value="{{ product.stock }}">
+        </div>
+         <p class="form-hint" style="margin-top: -0.5rem;">Jika produk memiliki varian, stok total akan dihitung otomatis. <a href="{{ url_for('admin.manage_variants', product_id=product.id) }}" style="color: var(--color-primary);">Kelola varian di sini.</a></p>
         
         <div class="form-group">
             <label>Gambar Saat Ini</label>
@@ -35,10 +41,7 @@
                     <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
                     <input type="radio" name="main_image" value="{{ product.image_url }}" class="main-image-radio" checked>
                     <div class="delete-checkbox-overlay">
-                        <label class="custom-checkbox" title="Tandai untuk hapus">
-                            <input type="checkbox" name="delete_image" value="{{ product.image_url }}" class="checkbox-input delete-image-checkbox">
-                            <span class="checkbox-box"><span class="checkmark"></span></span>
-                        </label>
+                        <label class="custom-checkbox" title="Tandai untuk hapus"><input type="checkbox" name="delete_image" value="{{ product.image_url }}" class="checkbox-input delete-image-checkbox"><span class="checkbox-box"><span class="checkmark"></span></span></label>
                     </div>
                 </div>
                 {% for image in additional_images %}
@@ -47,10 +50,7 @@
                     <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
                     <input type="radio" name="main_image" value="{{ image }}" class="main-image-radio">
                      <div class="delete-checkbox-overlay">
-                        <label class="custom-checkbox" title="Tandai untuk hapus">
-                            <input type="checkbox" name="delete_image" value="{{ image }}" class="checkbox-input delete-image-checkbox">
-                            <span class="checkbox-box"><span class="checkmark"></span></span>
-                        </label>
+                        <label class="custom-checkbox" title="Tandai untuk hapus"><input type="checkbox" name="delete_image" value="{{ image }}" class="checkbox-input delete-image-checkbox"><span class="checkbox-box"><span class="checkmark"></span></span></label>
                     </div>
                 </div>
                 {% endfor %}

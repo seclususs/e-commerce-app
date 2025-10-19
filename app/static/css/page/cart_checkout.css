@@ -1,5 +1,5 @@
 /* --- HALAMAN KERANJANG, CHECKOUT, EDIT ALAMAT, PEMBAYARAN (CENTERED) --- */
-.cart-page-section, .checkout-page-section, .edit-address-section, .payment-page-section {
+.cart-page-section, .checkout-page-section, .edit-address-section, .payment-page-section, .order-success-page {
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -93,7 +93,8 @@
 .stock-hold-timer {
     text-align: center;
     padding: 0.8rem;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
     background-color: rgba(59, 130, 246, 0.1);
     border: 1px solid var(--color-primary);
     border-radius: var(--border-radius-sm);
@@ -105,7 +106,6 @@
     border-color: var(--color-danger);
     color: var(--color-warning);
 }
-
 
 /* Halaman Edit Alamat */
 .edit-address-section .profile-container { max-width: 600px; }
@@ -130,3 +130,45 @@
     border-radius: var(--border-radius-md);
 }
 .summary-items-list { max-height: 200px; overflow-y: auto; margin-bottom: 1rem; }
+
+/* Halaman Sukses Pesanan */
+.order-success-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    text-align: center;
+    padding: 2rem 1rem;
+}
+.success-container {
+    max-width: 550px;
+    width: 100%;
+}
+.success-icon {
+    font-size: 5rem;
+    color: var(--color-success);
+    margin-bottom: 1rem;
+    animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+}
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.order-success-page .section-title {
+    margin-bottom: 1rem;
+}
+.success-message {
+    color: var(--color-text-med);
+    margin-bottom: 2.5rem;
+    font-size: 1.1rem;
+}
+.create-account-prompt {
+    margin-top: 2rem;
+    text-align: left;
+    background: rgba(30, 41, 59, 0.8);
+}
+.create-account-prompt p {
+    color: var(--color-text-med);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}

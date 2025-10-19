@@ -1,4 +1,4 @@
-from flask import render_template, request, session, redirect, url_for, flash
+from flask import render_template, request, session, redirect, url_for, flash, current_app
 from database.db_config import get_db_connection, get_content
 from utils.route_decorators import login_required
 from services.order_service import order_service
@@ -29,7 +29,10 @@ def payment_page(order_id):
     items = conn.execute('SELECT p.name, oi.quantity, oi.price FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?', (order_id,)).fetchall()
     conn.close()
 
-    return render_template('purchase/payment_page.html', order=order, items=items, content=get_content())
+    # Mengirim secret key ke template untuk digunakan oleh JavaScript
+    api_key = current_app.config['SECRET_KEY']
+
+    return render_template('purchase/payment_page.html', order=order, items=items, content=get_content(), api_key=api_key)
 
 @purchase_bp.route('/order_success')
 def order_success():

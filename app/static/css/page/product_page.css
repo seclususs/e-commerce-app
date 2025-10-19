@@ -150,6 +150,45 @@
     margin-top: 0.5rem;
 }
 
+/* Gaya untuk Pilihan Ukuran di Halaman Detail Produk */
+.product-size-selector {
+    margin-top: 1.5rem;
+}
+.size-options-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+.size-option-btn {
+    background-color: transparent;
+    border: 1px solid var(--color-background-light);
+    color: var(--color-text-light);
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+.size-option-btn:hover:not(:disabled) {
+    background-color: var(--color-background-light);
+    border-color: var(--color-primary);
+    color: var(--color-white);
+}
+.size-option-btn.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-white);
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+.size-option-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.05) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.05) 50%, rgba(255, 255, 255, 0.05) 75%, transparent 75%, transparent);
+    background-size: 20px 20px;
+}
+
 /* Input Kuantitas */
 .product-quantity-selector { margin-top: 1rem; }
 .quantity-input-wrapper { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; max-width: 150px; }

@@ -57,21 +57,32 @@ with connection:
             discount_price REAL,
             description TEXT NOT NULL,
             category_id INTEGER,
-            sizes TEXT,
             colors TEXT,
             popularity INTEGER DEFAULT 0,
             image_url TEXT,
             additional_image_urls TEXT,
             stock INTEGER NOT NULL DEFAULT 10,
+            has_variants BOOLEAN DEFAULT 0,
             FOREIGN KEY(category_id) REFERENCES categories(id)
         );
     """)
     print("- Tabel 'products' berhasil dibuat.")
     
+    # Tabel baru untuk varian produk
+    cursor.execute("""
+        CREATE TABLE product_variants (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            size TEXT NOT NULL,
+            stock INTEGER NOT NULL,
+            FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
+        );
+    """)
+    print("- Tabel 'product_variants' berhasil dibuat.")
+
     cursor.execute("CREATE TABLE content (key TEXT PRIMARY KEY, value TEXT NOT NULL);")
     print("- Tabel 'content' berhasil dibuat.")
 
-    # Menambahkan kolom subtotal, discount_amount, dan voucher_code
     cursor.execute("""
         CREATE TABLE orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER,
@@ -82,7 +93,7 @@ with connection:
             voucher_code TEXT,
             status TEXT NOT NULL CHECK(status IN ('Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled')),
             payment_method TEXT, 
-            payment_transaction_id TEXT, -- Ditambahkan untuk referensi gateway
+            payment_transaction_id TEXT,
             shipping_name TEXT, shipping_phone TEXT,
             shipping_address_line_1 TEXT, shipping_address_line_2 TEXT,
             shipping_city TEXT, shipping_province TEXT, shipping_postal_code TEXT,
@@ -95,9 +106,14 @@ with connection:
     cursor.execute("""
         CREATE TABLE order_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL,
-            product_id INTEGER NOT NULL, quantity INTEGER NOT NULL, price REAL NOT NULL,
+            product_id INTEGER NOT NULL, 
+            variant_id INTEGER,
+            quantity INTEGER NOT NULL, 
+            price REAL NOT NULL,
+            size_at_order TEXT,
             FOREIGN KEY (order_id) REFERENCES orders (id),
-            FOREIGN KEY (product_id) REFERENCES products (id)
+            FOREIGN KEY (product_id) REFERENCES products (id),
+            FOREIGN KEY (variant_id) REFERENCES product_variants(id)
         );
     """)
     print("- Tabel 'order_items' berhasil dibuat.")
@@ -116,21 +132,21 @@ with connection:
     """)
     print("- Tabel 'reviews' berhasil dibuat.")
 
-    # Tabel untuk menyimpan keranjang user yang login
     cursor.execute("""
         CREATE TABLE user_carts (
             user_id INTEGER NOT NULL,
             product_id INTEGER NOT NULL,
+            variant_id INTEGER,
             quantity INTEGER NOT NULL,
             added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (user_id, product_id),
+            PRIMARY KEY (user_id, product_id, variant_id),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+            FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE
         );
     """)
     print("- Tabel 'user_carts' berhasil dibuat.")
 
-    # Tabel untuk voucher diskon
     cursor.execute("""
         CREATE TABLE vouchers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -147,17 +163,18 @@ with connection:
     """)
     print("- Tabel 'vouchers' berhasil dibuat.")
 
-    # Tabel untuk menahan stok sementara
     cursor.execute("""
         CREATE TABLE stock_holds (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
-            session_id TEXT, -- Untuk guest
+            session_id TEXT,
             product_id INTEGER NOT NULL,
+            variant_id INTEGER,
             quantity INTEGER NOT NULL,
             expires_at TIMESTAMP NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+            FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE
         );
     """)
     print("- Tabel 'stock_holds' berhasil dibuat.")
@@ -202,16 +219,28 @@ with connection:
     print("- Data 'categories' berhasil dimasukkan.")
 
     products_to_add = [
-        ('Kaos "Hello, World!"', 175000, 150000, 'Kaos katun premium dengan sablon klasik "Hello, World!". Sempurna untuk memulai hari (atau proyek coding). Bahan adem dan nyaman.', 1, 'S, M, L, XL, XXL', 'Hitam, Putih, Biru Navy', 55, 'kaos_hello_world.webp', json.dumps(['kaos_hello_world_2.webp']), 100),
-        ('Hoodie "Binary Tree"', 350000, None, 'Hoodie tebal dengan desain struktur data binary tree yang artistik. Jaga kehangatanmu saat begadang debugging. Fleece 280gsm.', 2, 'M, L, XL', 'Hitam, Abu-abu', 85, 'hoodie_binary.webp', json.dumps([]), 50),
-        ('Topi "Git Commit"', 125000, None, 'Topi baseball dengan bordir command "git commit". Sebuah pengingat untuk selalu menyimpan progresmu.', 3, 'All Size', 'Hitam', 70, 'topi_git.webp', json.dumps(['topi_git_2.webp']), 75),
-        ('Sweater "Eat, Sleep, Code, Repeat"', 295000, 250000, 'Sweater ringan yang cocok untuk kerja di ruangan ber-AC. Slogan yang mewakili gaya hidup setiap developer.', 4, 'M, L, XL, XXL', 'Biru Navy', 95, 'sweater_code.webp', json.dumps(['sweater_code_2.webp']), 60)
+        ('Kaos "Hello, World!"', 175000, 150000, 'Kaos katun premium dengan sablon klasik "Hello, World!". Sempurna untuk memulai hari (atau proyek coding). Bahan adem dan nyaman.', 1, 'Hitam, Putih, Biru Navy', 55, 'kaos_hello_world.webp', json.dumps(['kaos_hello_world_2.webp']), 0, 1),
+        ('Hoodie "Binary Tree"', 350000, None, 'Hoodie tebal dengan desain struktur data binary tree yang artistik. Jaga kehangatanmu saat begadang debugging. Fleece 280gsm.', 2, 'Hitam, Abu-abu', 85, 'hoodie_binary.webp', json.dumps([]), 0, 1),
+        ('Topi "Git Commit"', 125000, None, 'Topi baseball dengan bordir command "git commit". Sebuah pengingat untuk selalu menyimpan progresmu.', 3, 'Hitam', 70, 'topi_git.webp', json.dumps(['topi_git_2.webp']), 75, 0),
+        ('Sweater "Eat, Sleep, Code, Repeat"', 295000, 250000, 'Sweater ringan yang cocok untuk kerja di ruangan ber-AC. Slogan yang mewakili gaya hidup setiap developer.', 4, 'Biru Navy', 95, 'sweater_code.webp', json.dumps(['sweater_code_2.webp']), 60, 0)
     ]
     cursor.executemany("""
-        INSERT INTO products (name, price, discount_price, description, category_id, sizes, colors, popularity, image_url, additional_image_urls, stock)
+        INSERT INTO products (name, price, discount_price, description, category_id, colors, popularity, image_url, additional_image_urls, stock, has_variants)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, products_to_add)
     print("- Data 'products' berhasil dimasukkan.")
+    
+    variants_to_add = [
+        (1, 'S', 20), (1, 'M', 30), (1, 'L', 30), (1, 'XL', 20),
+        (2, 'M', 15), (2, 'L', 20), (2, 'XL', 15)
+    ]
+    cursor.executemany("INSERT INTO product_variants (product_id, size, stock) VALUES (?, ?, ?)", variants_to_add)
+    print("- Data 'product_variants' berhasil dimasukkan.")
+    
+    # Update total stock for products with variants
+    cursor.execute("UPDATE products SET stock = (SELECT SUM(stock) FROM product_variants WHERE product_id = 1) WHERE id = 1")
+    cursor.execute("UPDATE products SET stock = (SELECT SUM(stock) FROM product_variants WHERE product_id = 2) WHERE id = 2")
+    print("- Stok total produk bervarian berhasil dimasukkan.")
 
     # Seeding data orders
     orders_to_add = [
@@ -227,13 +256,13 @@ with connection:
     """, orders_to_add)
     
     order_items_to_add = [
-        (1, 1, 1, 1, 150000), (2, 1, 2, 1, 350000), 
-        (3, 2, 3, 1, 125000),                     
-        (4, 3, 4, 1, 250000), (5, 3, 1, 1, 150000), 
-        (6, 4, 1, 1, 150000),
-        (7, 5, 1, 1, 175000)
+        (1, 1, 1, 2, 1, 150000, 'M'), (2, 1, 2, 6, 1, 350000, 'L'), 
+        (3, 2, 3, None, 1, 125000, None),                     
+        (4, 3, 4, None, 1, 250000, None), (5, 3, 1, 3, 1, 150000, 'L'), 
+        (6, 4, 1, 1, 1, 150000, 'S'),
+        (7, 5, 1, 4, 1, 175000, 'XL')
     ]
-    cursor.executemany("INSERT INTO order_items (id, order_id, product_id, quantity, price) VALUES (?, ?, ?, ?, ?)", order_items_to_add)
+    cursor.executemany("INSERT INTO order_items (id, order_id, product_id, variant_id, quantity, price, size_at_order) VALUES (?, ?, ?, ?, ?, ?, ?)", order_items_to_add)
     print("- Data 'orders' dan 'order_items' berhasil dimasukkan.")
 
     reviews_to_add = [
@@ -245,7 +274,6 @@ with connection:
     cursor.executemany("INSERT INTO reviews (product_id, user_id, rating, comment, created_at) VALUES (?, ?, ?, ?, ?)", reviews_to_add)
     print("- Data 'reviews' berhasil dimasukkan.")
     
-    # Seeding data voucher
     vouchers_to_add = [
         ('HEMAT10', 'PERCENTAGE', 10, 100, 1, None, None, 50000, 1),
         ('POTONGAN50K', 'FIXED_AMOUNT', 50000, 50, 0, None, None, 250000, 1),

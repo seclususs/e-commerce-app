@@ -1,7 +1,3 @@
-/**
- * Mengelola fungsionalitas khusus untuk formulir produk di area admin,
- * seperti pratinjau gambar dan pemformatan harga.
- */
 export function initAdminImagePreviews() {
     const setupImagePreview = (inputId, previewContainerId, fileNameDisplayId, mainImageInputId) => {
         const imageInput = document.getElementById(inputId);
@@ -9,19 +5,19 @@ export function initAdminImagePreviews() {
         const fileDisplay = document.getElementById(fileNameDisplayId);
         const mainImageInput = mainImageInputId ? document.getElementById(mainImageInputId) : null;
 
-        if (!imageInput || !previewContainer || !fileDisplay) return;
+        if (!imageInput || !previewContainer) return;
 
         imageInput.addEventListener('change', function(event) {
             previewContainer.innerHTML = '';
             const files = Array.from(event.target.files);
 
             if (files.length === 0) {
-                fileDisplay.textContent = 'Belum ada file dipilih';
+                if(fileDisplay) fileDisplay.textContent = 'Belum ada file dipilih';
                 if (mainImageInput) mainImageInput.value = '';
                 return;
             }
             
-            fileDisplay.textContent = `${files.length} file dipilih`;
+            if(fileDisplay) fileDisplay.textContent = `${files.length} file dipilih`;
 
             files.forEach((file, index) => {
                 const reader = new FileReader();
@@ -59,13 +55,9 @@ export function initAdminImagePreviews() {
         });
     };
 
-    // Untuk form tambah produk
     setupImagePreview('images', 'image-previews', 'file-name', 'main_image_input');
-    
-    // Untuk form edit produk (gambar baru)
     setupImagePreview('new_images', 'new-image-previews', 'new-file-name', null);
 
-    // Event listener untuk gambar yang sudah ada di form edit
     const existingPreviews = document.getElementById('existing-image-previews');
     if (existingPreviews) {
         existingPreviews.addEventListener('change', function(e) {
@@ -107,7 +99,28 @@ export function initAdminPriceFormatting() {
     });
 }
 
+function initVariantCheckbox() {
+    const checkbox = document.getElementById('has-variants-checkbox');
+    const stockContainer = document.getElementById('stock-input-container');
+    const stockInput = document.getElementById('stock');
+    if (!checkbox || !stockContainer || !stockInput) return;
+
+    const toggleStockInput = () => {
+        if (checkbox.checked) {
+            stockContainer.style.display = 'none';
+            stockInput.required = false;
+        } else {
+            stockContainer.style.display = 'block';
+            stockInput.required = true;
+        }
+    };
+
+    checkbox.addEventListener('change', toggleStockInput);
+    toggleStockInput();
+}
+
 export function initProductForms() {
     initAdminImagePreviews();
     initAdminPriceFormatting();
+    initVariantCheckbox();
 }
