@@ -1,4 +1,5 @@
 import random
+import uuid # Import uuid untuk token
 from werkzeug.security import generate_password_hash, check_password_hash
 from database.db_config import get_db_connection
 
@@ -77,6 +78,23 @@ class AuthService:
             new_user = conn.execute('SELECT * FROM users WHERE id = ?', (new_user_id,)).fetchone()
             return dict(new_user) if new_user else None
         finally:
+            conn.close()
+
+    def handle_password_reset_request(self, email):
+        """
+        Menangani permintaan reset password. Dalam aplikasi nyata, ini akan
+        menghasilkan token dan mengirim email. Di sini, kita hanya melakukan simulasi.
+        """
+        conn = get_db_connection()
+        try:
+            user = conn.execute('SELECT id, username FROM users WHERE email = ?', (email,)).fetchone()
+            if user:
+                # Simulasi: Cetak ke konsol server bahwa permintaan diterima
+                reset_token = str(uuid.uuid4())
+                print(f"PASSWORD RESET: Diminta untuk user '{user['username']}' (ID: {user['id']}).")
+                print(f"SIMULASI EMAIL: Kirim email ke {email} dengan token: {reset_token}")
+        finally:
+            # Fungsi ini sengaja tidak mengembalikan apa pun untuk keamanan
             conn.close()
 
 auth_service = AuthService()
