@@ -81,14 +81,16 @@ with connection:
             total_amount REAL NOT NULL,
             voucher_code TEXT,
             status TEXT NOT NULL CHECK(status IN ('Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled')),
-            payment_method TEXT, shipping_name TEXT, shipping_phone TEXT,
+            payment_method TEXT, 
+            payment_transaction_id TEXT, -- Ditambahkan untuk referensi gateway
+            shipping_name TEXT, shipping_phone TEXT,
             shipping_address_line_1 TEXT, shipping_address_line_2 TEXT,
             shipping_city TEXT, shipping_province TEXT, shipping_postal_code TEXT,
             tracking_number TEXT,
             FOREIGN KEY(user_id) REFERENCES users(id)
         );
     """)
-    print("- Tabel 'orders' dimodifikasi.")
+    print("- Tabel 'orders' berhasil dibuat.")
 
     cursor.execute("""
         CREATE TABLE order_items (
@@ -145,6 +147,21 @@ with connection:
     """)
     print("- Tabel 'vouchers' berhasil dibuat.")
 
+    # Tabel untuk menahan stok sementara
+    cursor.execute("""
+        CREATE TABLE stock_holds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            session_id TEXT, -- Untuk guest
+            product_id INTEGER NOT NULL,
+            quantity INTEGER NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+        );
+    """)
+    print("- Tabel 'stock_holds' berhasil dibuat.")
+
 
     # MASUKKAN DATA AWAL (SEEDING)
     print("\nMemasukkan data awal...")
@@ -198,21 +215,23 @@ with connection:
 
     # Seeding data orders
     orders_to_add = [
-        (1, 2, '2025-09-10 14:30:00', 500000, 0, 500000, None, 'Completed', 'Bank Transfer', 'User 1', '081200000001', 'Jl. Dummy No. 1', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
-        (2, 3, '2025-10-01 11:00:00', 125000, 0, 125000, None, 'Shipped', 'E-Wallet', 'User 2', '081200000002', 'Jl. Dummy No. 2', '', 'Jakarta', 'DKI Jakarta', '10220', 'SC10002'),
-        (3, 4, '2025-10-14 20:00:00', 400000, 0, 400000, None, 'Processing', 'COD', 'User 3', '081200000003', 'Jl. Dummy No. 3', '', 'Bandung', 'Jawa Barat', '40111', None),
-        (4, 15, '2025-10-15 09:00:00', 150000, 15000, 135000, 'HEMAT10PERSEN', 'Completed', 'E-Wallet', 'User 14', '081200000014', 'Jl. Dummy No. 14', '', 'Surabaya', 'Jawa Timur', '60111', 'JN10002')
+        (1, 2, '2025-09-10 14:30:00', 500000, 0, 500000, None, 'Completed', 'Bank Transfer', 'TX1001', 'User 1', '081200000001', 'Jl. Dummy No. 1', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
+        (2, 3, '2025-10-01 11:00:00', 125000, 0, 125000, None, 'Shipped', 'E-Wallet', 'TX1002', 'User 2', '081200000002', 'Jl. Dummy No. 2', '', 'Jakarta', 'DKI Jakarta', '10220', 'SC10002'),
+        (3, 4, '2025-10-14 20:00:00', 400000, 0, 400000, None, 'Processing', 'COD', None, 'User 3', '081200000003', 'Jl. Dummy No. 3', '', 'Bandung', 'Jawa Barat', '40111', None),
+        (4, 15, '2025-10-15 09:00:00', 150000, 15000, 135000, 'HEMAT10', 'Completed', 'E-Wallet', 'TX1003', 'User 14', '081200000014', 'Jl. Dummy No. 14', '', 'Surabaya', 'Jawa Timur', '60111', 'JN10002'),
+        (5, 5, '2025-10-18 10:00:00', 175000, 0, 175000, None, 'Pending', 'Virtual Account', None, 'User 5', '081200000005', 'Jl. Dummy No. 5', '', 'Yogyakarta', 'DIY', '55222', None),
     ]
     cursor.executemany("""
-        INSERT INTO orders (id, user_id, order_date, subtotal, discount_amount, total_amount, voucher_code, status, payment_method, shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2, shipping_city, shipping_province, shipping_postal_code, tracking_number)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO orders (id, user_id, order_date, subtotal, discount_amount, total_amount, voucher_code, status, payment_method, payment_transaction_id, shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2, shipping_city, shipping_province, shipping_postal_code, tracking_number)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, orders_to_add)
     
     order_items_to_add = [
         (1, 1, 1, 1, 150000), (2, 1, 2, 1, 350000), 
         (3, 2, 3, 1, 125000),                     
         (4, 3, 4, 1, 250000), (5, 3, 1, 1, 150000), 
-        (6, 4, 1, 1, 150000)                      
+        (6, 4, 1, 1, 150000),
+        (7, 5, 1, 1, 175000)
     ]
     cursor.executemany("INSERT INTO order_items (id, order_id, product_id, quantity, price) VALUES (?, ?, ?, ?, ?)", order_items_to_add)
     print("- Data 'orders' dan 'order_items' berhasil dimasukkan.")

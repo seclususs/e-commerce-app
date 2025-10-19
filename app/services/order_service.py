@@ -1,8 +1,10 @@
 import json
+import uuid
 from datetime import datetime
 from database.db_config import get_db_connection
 from services.user_service import user_service
 from services.cart_service import cart_service
+from services.product_service import product_service
 
 class OrderService:
     def validate_and_calculate_voucher(self, code, subtotal):
@@ -40,38 +42,43 @@ class OrderService:
             'message': 'Voucher berhasil diterapkan!'
         }
 
-    def create_order(self, user_id, cart_data, shipping_details, payment_method, voucher_code=None):
+    def create_order(self, user_id, session_id, cart_data, shipping_details, payment_method, voucher_code=None):
         conn = get_db_connection()
         try:
             with conn:
+                # Validasi stok yang ditahan, bukan stok asli
+                held_items_query = "SELECT p.id, p.name, sh.quantity, p.stock FROM stock_holds sh JOIN products p ON sh.product_id = p.id WHERE "
                 if user_id:
-                    cart_details = cart_service.get_cart_details(user_id)
-                    items_in_cart = cart_details['items']
-                    subtotal = cart_details['subtotal']
-                    if not items_in_cart:
-                        return {'success': False, 'message': 'Keranjang Anda kosong.'}
+                    held_items_query += "sh.user_id = ?"
+                    params = (user_id,)
                 else:
-                    product_ids = list(cart_data.keys())
-                    if not product_ids: return {'success': False, 'message': 'Keranjang Anda kosong.'}
-                    placeholders = ', '.join(['?'] * len(product_ids))
-                    products_db = conn.execute(f'SELECT id, name, price, discount_price, stock FROM products WHERE id IN ({placeholders})', product_ids).fetchall()
-                    products_map = {str(p['id']): p for p in products_db}
-                    
-                    subtotal = 0
-                    items_in_cart = []
-                    for pid_str, data in cart_data.items():
-                        pid = int(pid_str)
-                        qty = data.get('quantity', 0)
-                        if pid_str not in products_map:
-                             return {'success': False, 'message': f'Produk dengan ID {pid} tidak ditemukan.'}
-                        product = products_map[pid_str]
-                        effective_price = product['discount_price'] if product['discount_price'] and product['discount_price'] > 0 else product['price']
-                        subtotal += effective_price * qty
-                        items_in_cart.append({**product, 'quantity': qty, 'price_at_order': effective_price})
+                    held_items_query += "sh.session_id = ?"
+                    params = (session_id,)
+                
+                held_items = conn.execute(held_items_query, params).fetchall()
 
-                for item in items_in_cart:
-                    if item['quantity'] > item['stock']:
-                        return {'success': False, 'message': f"Stok untuk '{item['name']}' tidak mencukupi (tersisa {item['stock']})."}
+                if not held_items:
+                    return {'success': False, 'message': 'Sesi checkout Anda telah berakhir. Silakan kembali ke keranjang.'}
+
+                # Ambil detail harga produk
+                product_ids = [item['id'] for item in held_items]
+                placeholders = ', '.join(['?'] * len(product_ids))
+                products_db = conn.execute(f'SELECT id, name, price, discount_price, stock FROM products WHERE id IN ({placeholders})', product_ids).fetchall()
+                products_map = {p['id']: p for p in products_db}
+
+                subtotal = 0
+                items_for_order = []
+                for item in held_items:
+                    product = products_map.get(item['id'])
+                    if not product: continue
+                    
+                    # Cek ulang stok fisik terakhir
+                    if item['quantity'] > product['stock']:
+                        return {'success': False, 'message': f"Stok untuk '{product['name']}' telah habis."}
+
+                    effective_price = product['discount_price'] if product['discount_price'] and product['discount_price'] > 0 else product['price']
+                    subtotal += effective_price * item['quantity']
+                    items_for_order.append({**product, 'quantity': item['quantity'], 'price_at_order': effective_price})
                 
                 discount_amount = 0
                 final_total = subtotal
@@ -84,58 +91,100 @@ class OrderService:
                         return {'success': False, 'message': voucher_result['message']}
 
                 initial_status = 'Processing' if payment_method == 'COD' else 'Pending'
+                transaction_id = f"TX-{uuid.uuid4().hex[:8].upper()}" if initial_status == 'Pending' else None
+
                 cursor = conn.cursor()
                 cursor.execute("""
-                    INSERT INTO orders (user_id, subtotal, discount_amount, total_amount, voucher_code, status, payment_method, 
+                    INSERT INTO orders (user_id, subtotal, discount_amount, total_amount, voucher_code, status, payment_method, payment_transaction_id,
                                         shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2,
                                         shipping_city, shipping_province, shipping_postal_code)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (user_id, subtotal, discount_amount, final_total, voucher_code.upper() if voucher_code else None, initial_status, payment_method, 
-                      shipping_details['name'], shipping_details['phone'], 
+                      transaction_id, shipping_details['name'], shipping_details['phone'], 
                       shipping_details['address1'], shipping_details.get('address2', ''),
                       shipping_details['city'], shipping_details['province'], 
                       shipping_details['postal_code']))
                 order_id = cursor.lastrowid
 
-                for item in items_in_cart:
+                for item in items_for_order:
                     price_at_order = item.get('price_at_order')
                     cursor.execute(
                         'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)',
                         (order_id, item['id'], item['quantity'], price_at_order)
                     )
-                    cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (item['quantity'], item['id']))
+                    # Kurangi stok HANYA jika pembayaran langsung (COD)
+                    if payment_method == 'COD':
+                        cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (item['quantity'], item['id']))
                 
                 if voucher_code:
                     cursor.execute("UPDATE vouchers SET use_count = use_count + 1 WHERE code = ?", (voucher_code.upper(),))
                 
+                # Hapus keranjang dan stok yang ditahan
                 if user_id:
                     cursor.execute("DELETE FROM user_carts WHERE user_id = ?", (user_id,))
                 
+                product_service.release_stock_holds(user_id, session_id, conn)
+
             return {'success': True, 'order_id': order_id}
         except Exception as e:
             print(f"ERROR saat membuat pesanan: {e}")
             return {'success': False, 'message': 'Terjadi kesalahan internal saat memproses pesanan.'}
 
+    def process_successful_payment(self, transaction_id):
+        """Memproses pesanan setelah pembayaran berhasil via webhook."""
+        conn = get_db_connection()
+        try:
+            with conn:
+                order = conn.execute("SELECT * FROM orders WHERE payment_transaction_id = ? AND status = 'Pending'", (transaction_id,)).fetchone()
+                if not order:
+                    return {'success': False, 'message': 'Pesanan tidak ditemukan atau sudah diproses.'}
+                
+                order_id = order['id']
+                items = conn.execute("SELECT * FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
+                
+                # Validasi stok terakhir sebelum mengurangi
+                for item in items:
+                    stock = conn.execute("SELECT stock FROM products WHERE id = ?", (item['product_id'],)).fetchone()['stock']
+                    if item['quantity'] > stock:
+                        # Kasus langka: stok habis saat pembayaran diproses
+                        conn.execute("UPDATE orders SET status = 'Cancelled' WHERE id = ?", (order_id,))
+                        # TODO: Log kejadian ini dan proses refund
+                        return {'success': False, 'message': f"Stok habis untuk produk ID {item['product_id']}."}
+
+                # Kurangi stok
+                for item in items:
+                    conn.execute("UPDATE products SET stock = stock - ? WHERE id = ?", (item['quantity'], item['product_id']))
+                
+                # Update status pesanan
+                conn.execute("UPDATE orders SET status = 'Processing' WHERE id = ?", (order_id,))
+
+            return {'success': True, 'message': f'Pesanan #{order_id} berhasil diproses.'}
+        except Exception as e:
+            print(f"Error processing payment: {e}")
+            return {'success': False, 'message': 'Gagal memproses pembayaran.'}
+
+
     def cancel_user_order(self, order_id, user_id):
         conn = get_db_connection()
         try:
-            order = conn.execute('SELECT * FROM orders WHERE id = ? AND user_id = ?', (order_id, user_id)).fetchone()
-            if not order:
-                return {'success': False, 'message': 'Pesanan tidak ditemukan atau Anda tidak memiliki akses.'}
-            
-            if order['status'] not in ['Pending', 'Processing']:
-                return {'success': False, 'message': f'Pesanan tidak dapat dibatalkan karena statusnya "{order["status"]}".'}
-            
-            order_items = conn.execute('SELECT * FROM order_items WHERE order_id = ?', (order_id,)).fetchall()
-            for item in order_items:
-                conn.execute('UPDATE products SET stock = stock + ? WHERE id = ?', (item['quantity'], item['product_id']))
+            with conn:
+                order = conn.execute('SELECT * FROM orders WHERE id = ? AND user_id = ?', (order_id, user_id)).fetchone()
+                if not order:
+                    return {'success': False, 'message': 'Pesanan tidak ditemukan atau Anda tidak memiliki akses.'}
+                
+                if order['status'] not in ['Pending', 'Processing']:
+                    return {'success': False, 'message': f'Pesanan tidak dapat dibatalkan karena statusnya "{order["status"]}".'}
+                
+                # Kembalikan stok HANYA jika pesanan sudah mengurangi stok (Processing/COD atau Pending yang sudah dibayar)
+                if order['status'] == 'Processing' or (order['status'] == 'Pending' and order['payment_transaction_id']):
+                    order_items = conn.execute('SELECT * FROM order_items WHERE order_id = ?', (order_id,)).fetchall()
+                    for item in order_items:
+                        conn.execute('UPDATE products SET stock = stock + ? WHERE id = ?', (item['quantity'], item['product_id']))
 
-            conn.execute('UPDATE orders SET status = ? WHERE id = ?', ('Cancelled', order_id))
-            conn.commit()
+                conn.execute('UPDATE orders SET status = ? WHERE id = ?', ('Cancelled', order_id))
 
             return {'success': True, 'message': f'Pesanan #{order_id} berhasil dibatalkan.'}
         except Exception as e:
-            conn.rollback()
             print(f"ERROR saat membatalkan pesanan: {e}")
             return {'success': False, 'message': 'Terjadi kesalahan internal.'}
         finally:

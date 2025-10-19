@@ -45,7 +45,6 @@ function initMobileCtaHandlers() {
     }
 }
 
-// Fungsi untuk menangani logika voucher
 function initVoucherHandler() {
     const applyBtn = document.getElementById('applyVoucherBtn');
     const voucherInput = document.getElementById('voucher_code');
@@ -117,8 +116,93 @@ function initVoucherHandler() {
     voucherInput.addEventListener('input', resetDiscount);
 }
 
+function initStockHoldTimer(expiresAtIsoString) {
+    const expiresAtInput = document.getElementById('stock_hold_expires_at');
+    const timerEl = document.getElementById('timer');
+    const container = document.getElementById('stock-hold-timer-container');
+    const expiryTime = expiresAtIsoString || (expiresAtInput ? expiresAtInput.value : null);
+
+    if (!expiryTime || !timerEl || !container) return;
+
+    const expiresAt = new Date(expiryTime).getTime();
+    
+    const interval = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = expiresAt - now;
+
+        if (distance < 0) {
+            clearInterval(interval);
+            container.innerHTML = 'Waktu penahanan stok habis! <a href="/cart" style="color: white; text-decoration: underline;">Kembali ke keranjang</a> untuk validasi ulang.';
+            container.classList.add('expired');
+            document.getElementById('placeOrderBtn').disabled = true;
+            const mobileBtn = document.getElementById('placeOrderBtnMobile');
+            if(mobileBtn) mobileBtn.disabled = true;
+            return;
+        }
+
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }, 1000);
+}
+
+async function initGuestCheckout() {
+    const GUEST_CART_KEY = 'hackthreadCart';
+    const localCart = JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || {};
+    const productIds = Object.keys(localCart);
+    const form = document.getElementById('checkout-form');
+    const timerContainer = document.getElementById('stock-hold-timer-container');
+
+    if (productIds.length === 0) {
+        window.location.href = '/cart';
+        return;
+    }
+
+    try {
+        const productRes = await fetch('/api/cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_ids: productIds })
+        });
+        if (!productRes.ok) throw new Error('Gagal memuat detail produk.');
+        
+        const products = await productRes.json();
+        const items = products.map(p => ({ ...p, quantity: localCart[p.id].quantity }));
+
+        const prepareRes = await fetch('/api/checkout/prepare', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: items })
+        });
+        const prepareResult = await prepareRes.json();
+        
+        if (prepareResult.success) {
+            initStockHoldTimer(prepareResult.expires_at);
+            document.getElementById('placeOrderBtn')?.removeAttribute('disabled');
+            document.getElementById('placeOrderBtnMobile')?.removeAttribute('disabled');
+        } else {
+            throw new Error(prepareResult.message || 'Gagal memvalidasi stok.');
+        }
+    } catch (error) {
+        if (timerContainer) {
+            timerContainer.innerHTML = `${error.message} <a href="/cart" style="color: white; text-decoration: underline;">Kembali ke keranjang</a>.`;
+            timerContainer.classList.add('expired');
+        }
+        if (form) {
+            const formElements = form.querySelectorAll('input, button, select');
+            formElements.forEach(el => el.disabled = true);
+        }
+    }
+}
+
 export function initCheckoutPage() {
     initCheckoutForm();
     initMobileCtaHandlers();
     initVoucherHandler();
+    
+    if (window.IS_USER_LOGGED_IN) {
+        initStockHoldTimer(); 
+    } else {
+        initGuestCheckout();
+    }
 }

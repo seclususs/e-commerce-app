@@ -75,8 +75,13 @@
 
                     <div class="summary-total"><span>Total</span><span id="checkoutTotal">Rp 0</span></div>
                     
+                    <div id="stock-hold-timer-container" class="stock-hold-timer">
+                        Stok Anda ditahan selama: <strong id="timer">10:00</strong>
+                    </div>
+
                     <!-- Input tersembunyi untuk data keranjang tamu -->
                     <input type="hidden" name="cart_data" id="cart_data_input">
+                    <input type="hidden" id="stock_hold_expires_at" value="{{ stock_hold_expires }}">
                     
                     <div class="hide-on-mobile-cta">
                         <button id="placeOrderBtn" type="submit" class="cta-button cta-button-prominent" style="width: 100%;" disabled>

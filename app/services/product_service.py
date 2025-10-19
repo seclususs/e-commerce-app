@@ -4,11 +4,76 @@ import uuid
 from flask import current_app
 from database.db_config import get_db_connection
 from utils.image_utils import save_compressed_image
+from datetime import datetime, timedelta
 
 class ProductService:
     """
     Layanan untuk mengelola semua logika bisnis terkait produk, kategori, dan ulasan.
     """
+
+    def get_available_stock(self, product_id, conn=None):
+        """Menghitung stok yang tersedia (stok asli - stok ditahan)."""
+        close_conn = False
+        if conn is None:
+            conn = get_db_connection()
+            close_conn = True
+        
+        try:
+            # Hapus dulu stok ditahan yang sudah kedaluwarsa
+            conn.execute("DELETE FROM stock_holds WHERE expires_at < CURRENT_TIMESTAMP")
+            conn.commit()
+
+            product = conn.execute("SELECT stock FROM products WHERE id = ?", (product_id,)).fetchone()
+            if not product:
+                return 0
+            
+            held_stock_row = conn.execute(
+                "SELECT SUM(quantity) as held FROM stock_holds WHERE product_id = ?", (product_id,)
+            ).fetchone()
+            
+            held_stock = held_stock_row['held'] if held_stock_row and held_stock_row['held'] else 0
+            return product['stock'] - held_stock
+        finally:
+            if close_conn:
+                conn.close()
+
+    def hold_stock_for_checkout(self, user_id, session_id, cart_items):
+        """Membuat catatan penahanan stok selama 10 menit untuk item di keranjang."""
+        conn = get_db_connection()
+        try:
+            with conn:
+                # Hapus hold lama untuk user/session ini
+                if user_id:
+                    conn.execute("DELETE FROM stock_holds WHERE user_id = ?", (user_id,))
+                else:
+                    conn.execute("DELETE FROM stock_holds WHERE session_id = ?", (session_id,))
+
+                # Validasi dan buat hold baru
+                for item in cart_items:
+                    available_stock = self.get_available_stock(item['id'], conn)
+                    if item['quantity'] > available_stock:
+                        return {'success': False, 'message': f"Stok untuk '{item['name']}' tidak mencukupi (tersisa {available_stock}). Silakan kurangi jumlahnya."}
+
+                expires_at = datetime.now() + timedelta(minutes=10)
+                for item in cart_items:
+                    conn.execute(
+                        "INSERT INTO stock_holds (user_id, session_id, product_id, quantity, expires_at) VALUES (?, ?, ?, ?, ?)",
+                        (user_id, session_id, item['id'], item['quantity'], expires_at)
+                    )
+            return {'success': True, 'expires_at': expires_at.isoformat()}
+        except Exception as e:
+            print(f"Error holding stock: {e}")
+            return {'success': False, 'message': 'Terjadi kesalahan saat validasi stok.'}
+        finally:
+            conn.close()
+
+    def release_stock_holds(self, user_id, session_id, conn):
+        """Melepas penahanan stok untuk user/sesi tertentu."""
+        if user_id:
+            conn.execute("DELETE FROM stock_holds WHERE user_id = ?", (user_id,))
+        elif session_id:
+            conn.execute("DELETE FROM stock_holds WHERE session_id = ?", (session_id,))
+
 
     def get_filtered_products(self, filters):
         """
@@ -67,6 +132,10 @@ class ProductService:
                 except (json.JSONDecodeError, TypeError):
                     product['additional_image_urls'] = []
                 product['all_images'] = [product['image_url']] + product['additional_image_urls']
+                
+                # Tambahkan info stok yang tersedia
+                product['available_stock'] = self.get_available_stock(product_id, conn)
+
                 return product
             return None
         finally:

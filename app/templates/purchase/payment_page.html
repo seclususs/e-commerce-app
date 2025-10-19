@@ -16,7 +16,7 @@
                     <div class="virtual-account-box">
                         <span>123-456-7890</span>
                     </div>
-                    <p class="payment-note">Ini hanya simulasi untuk keperluan prototipe. Tidak ada transfer nyata yang diperlukan.</p>
+                    <p class="payment-note">Setelah pembayaran berhasil, status pesanan akan diperbarui secara otomatis. Anda tidak perlu melakukan konfirmasi manual.</p>
                 </div>
                 <div class="payment-summary">
                     <h3>Ringkasan Pesanan</h3>
@@ -28,6 +28,13 @@
                         </div>
                         {% endfor %}
                     </div>
+                     <div class="summary-row"><span>Subtotal</span><span>{{ order.subtotal|rupiah }}</span></div>
+                    {% if order.discount_amount > 0 %}
+                    <div class="summary-row discount-row" style="color: var(--color-success);">
+                        <span>Diskon ({{ order.voucher_code }})</span>
+                        <span>- {{ order.discount_amount|rupiah }}</span>
+                    </div>
+                    {% endif %}
                     <div class="summary-total">
                         <span>Total</span>
                         <span>{{ order.total_amount|rupiah }}</span>
@@ -35,10 +42,56 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ url_for('purchase.confirm_payment', order_id=order.id) }}" style="margin-top: 2rem;">
-                 <button type="submit" class="cta-button cta-button-prominent" style="width: 100%;">Saya Sudah Bayar</button>
-            </form>
+            <div style="text-align: center; margin-top: 2rem;">
+                <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
+                    Ini adalah simulasi. Untuk melanjutkan, Anda bisa menekan tombol di bawah untuk men-trigger webhook pembayaran yang berhasil.
+                </p>
+                <button id="simulate-payment-btn" class="cta-button-secondary">Simulasikan Pembayaran Berhasil</button>
+            </div>
         </div>
     </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const simulateBtn = document.getElementById('simulate-payment-btn');
+    if (simulateBtn) {
+        simulateBtn.addEventListener('click', async () => {
+            simulateBtn.disabled = true;
+            simulateBtn.textContent = 'Memproses...';
+
+            try {
+                // Panggil endpoint webhook dengan "kunci rahasia"
+                const response = await fetch("{{ url_for('api.payment_webhook') }}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'SECRET_KEY_PROTOTYPE_123' 
+                    },
+                    body: JSON.stringify({
+                        event: 'payment_status_update',
+                        transaction_id: '{{ order.payment_transaction_id }}',
+                        status: 'success'
+                    })
+                });
+
+                if (response.ok) {
+                    // Redirect ke halaman sukses jika webhook berhasil diproses
+                    window.location.href = "{{ url_for('purchase.order_success') }}";
+                } else {
+                    alert('Simulasi gagal. Cek konsol untuk detail.');
+                    simulateBtn.disabled = false;
+                    simulateBtn.textContent = 'Simulasikan Pembayaran Berhasil';
+                }
+            } catch (error) {
+                console.error('Error simulating payment:', error);
+                alert('Terjadi kesalahan saat simulasi.');
+                simulateBtn.disabled = false;
+                simulateBtn.textContent = 'Simulasikan Pembayaran Berhasil';
+            }
+        });
+    }
+});
+</script>
+
 {% endblock %}

@@ -1,6 +1,8 @@
+import uuid
 from flask import jsonify, request, session
 from . import api_bp
 from services.cart_service import cart_service
+from services.product_service import product_service
 from utils.route_decorators import login_required
 
 @api_bp.route('/cart', methods=['POST'])
@@ -73,3 +75,22 @@ def merge_cart():
     user_id = session['user_id']
     result = cart_service.merge_local_cart_to_db(user_id, local_cart)
     return jsonify(result)
+
+@api_bp.route('/checkout/prepare', methods=['POST'])
+def prepare_guest_checkout():
+    """
+    Menahan stok untuk sesi guest dan mengembalikan waktu kedaluwarsa.
+    """
+    if 'user_id' in session:
+        return jsonify({'success': False, 'message': 'Endpoint ini hanya untuk tamu.'}), 403
+
+    session_id = session.get('session_id', str(uuid.uuid4()))
+    session['session_id'] = session_id
+
+    items_to_hold = request.get_json().get('items')
+    if not items_to_hold or not isinstance(items_to_hold, list):
+        return jsonify({'success': False, 'message': 'Data keranjang tidak valid.'}), 400
+
+    hold_result = product_service.hold_stock_for_checkout(None, session_id, items_to_hold)
+    
+    return jsonify(hold_result)

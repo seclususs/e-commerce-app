@@ -5,3 +5,4 @@ api_bp = Blueprint('api', __name__)
 from . import cart_routes
 from . import product_routes
 from . import voucher_routes
+from . import payment_routes

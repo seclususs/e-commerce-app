@@ -1,18 +1,31 @@
+import json
 from database.db_config import get_db_connection
 
 class CartService:
-    def get_cart_details(self, user_id):
-        """Mengambil detail item di keranjang untuk user tertentu."""
+    def get_cart_details(self, user_id, session_id=None):
+        """
+        Mengambil detail item di keranjang untuk user atau session tertentu.
+        Memprioritaskan user_id jika ada.
+        """
         conn = get_db_connection()
         try:
-            cart_items = conn.execute("""
-                SELECT
-                    p.id, p.name, p.price, p.discount_price, p.stock, p.image_url,
-                    uc.quantity
-                FROM user_carts uc
-                JOIN products p ON uc.product_id = p.id
-                WHERE uc.user_id = ?
-            """, (user_id,)).fetchall()
+            if user_id:
+                cart_items = conn.execute("""
+                    SELECT
+                        p.id, p.name, p.price, p.discount_price, p.stock, p.image_url,
+                        uc.quantity
+                    FROM user_carts uc
+                    JOIN products p ON uc.product_id = p.id
+                    WHERE uc.user_id = ?
+                """, (user_id,)).fetchall()
+            elif session_id:
+                # Untuk tamu, kita asumsikan data keranjang ada di frontend (localStorage)
+                # Fungsi ini akan dipanggil dari checkout dengan data keranjang eksplisit
+                # Jadi, jika hanya session_id, kita kembalikan keranjang kosong
+                return {'items': [], 'subtotal': 0}
+            else:
+                 return {'items': [], 'subtotal': 0}
+
 
             subtotal = 0
             items = []
@@ -31,9 +44,9 @@ class CartService:
         """Menambah atau mengupdate item di keranjang database."""
         conn = get_db_connection()
         try:
-            product = conn.execute("SELECT stock, name FROM products WHERE id = ?", (product_id,)).fetchone()
-            if not product:
-                return {'success': False, 'message': 'Produk tidak ditemukan.'}
+            from services.product_service import product_service
+            available_stock = product_service.get_available_stock(product_id, conn)
+            product_name = conn.execute("SELECT name FROM products WHERE id = ?", (product_id,)).fetchone()['name']
 
             existing_item = conn.execute(
                 "SELECT quantity FROM user_carts WHERE user_id = ? AND product_id = ?",
@@ -43,8 +56,8 @@ class CartService:
             current_in_cart = existing_item['quantity'] if existing_item else 0
             total_requested = current_in_cart + quantity
 
-            if total_requested > product['stock']:
-                return {'success': False, 'message': f"Stok untuk '{product['name']}' tidak mencukupi (tersisa {product['stock']})."}
+            if total_requested > available_stock:
+                return {'success': False, 'message': f"Stok untuk '{product_name}' tidak mencukupi (tersisa {available_stock})."}
 
             if existing_item:
                 conn.execute(
@@ -68,9 +81,11 @@ class CartService:
             if quantity <= 0:
                 conn.execute("DELETE FROM user_carts WHERE user_id = ? AND product_id = ?", (user_id, product_id))
             else:
-                stock = conn.execute("SELECT stock FROM products WHERE id = ?", (product_id,)).fetchone()['stock']
-                if quantity > stock:
-                    return {'success': False, 'message': f'Stok tidak mencukupi. Sisa stok: {stock}.'}
+                from services.product_service import product_service
+                available_stock = product_service.get_available_stock(product_id, conn)
+
+                if quantity > available_stock:
+                    return {'success': False, 'message': f'Stok tidak mencukupi. Sisa stok tersedia: {available_stock}.'}
                 
                 conn.execute(
                     "UPDATE user_carts SET quantity = ? WHERE user_id = ? AND product_id = ?",
@@ -88,17 +103,18 @@ class CartService:
         
         conn = get_db_connection()
         try:
+            from services.product_service import product_service
             for product_id_str, data in local_cart.items():
                 product_id = int(product_id_str)
                 quantity = data.get('quantity', 0)
                 if quantity > 0:
-                    product = conn.execute("SELECT stock FROM products WHERE id = ?", (product_id,)).fetchone()
-                    if not product: continue
+                    available_stock = product_service.get_available_stock(product_id, conn)
+                    if available_stock <= 0: continue
 
                     existing_item = conn.execute("SELECT quantity FROM user_carts WHERE user_id = ? AND product_id = ?", (user_id, product_id)).fetchone()
                     
                     new_quantity = (existing_item['quantity'] if existing_item else 0) + quantity
-                    if new_quantity > product['stock']: new_quantity = product['stock']
+                    if new_quantity > available_stock: new_quantity = available_stock
 
                     if existing_item:
                         conn.execute("UPDATE user_carts SET quantity = ? WHERE user_id = ? AND product_id = ?", (new_quantity, user_id, product_id))

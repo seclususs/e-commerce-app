@@ -31,44 +31,16 @@ def payment_page(order_id):
 
     return render_template('purchase/payment_page.html', order=order, items=items, content=get_content())
 
-@purchase_bp.route('/order/confirm_payment/<int:order_id>', methods=['POST'])
-def confirm_payment(order_id):
-    """
-    Memproses konfirmasi pembayaran (simulasi).
-    """
-    user_id = session.get('user_id')
-    guest_order_id = session.get('guest_order_id')
-
-    conn = get_db_connection()
-    if user_id:
-        order = conn.execute('SELECT id, status FROM orders WHERE id = ? AND user_id = ?', (order_id, user_id)).fetchone()
-    elif guest_order_id and guest_order_id == order_id:
-        order = conn.execute('SELECT id, status FROM orders WHERE id = ? AND user_id IS NULL', (order_id,)).fetchone()
-    else:
-        order = None
-    
-    if not order:
-        flash("Pesanan tidak ditemukan.", "danger")
-        conn.close()
-        return redirect(url_for('product.index'))
-    
-    if order['status'] == 'Pending':
-        conn.execute("UPDATE orders SET status = 'Processing' WHERE id = ?", (order_id,))
-        conn.commit()
-        flash("Pembayaran Anda telah dikonfirmasi dan pesanan sedang diproses.", "success")
-    else:
-        flash("Status pesanan ini tidak dapat diubah.", "warning")
-
-    conn.close()
-    return redirect(url_for('purchase.order_success'))
-
 @purchase_bp.route('/order_success')
 def order_success():
     """
     Menampilkan halaman sukses setelah pesanan dibuat atau dibayar.
     """
+    # Hapus data guest setelah sukses untuk mencegah reuse
     guest_order_details = session.pop('guest_order_details', None)
     guest_order_id = session.pop('guest_order_id', None)
+    session.pop('session_id', None) # Hapus session_id juga
+
     return render_template('purchase/success_page.html', content=get_content(), 
                            guest_order_details=guest_order_details, 
                            guest_order_id=guest_order_id)

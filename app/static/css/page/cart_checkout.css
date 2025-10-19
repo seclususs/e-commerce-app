@@ -89,6 +89,23 @@
 .voucher-feedback.error { color: var(--color-danger); }
 .discount-row { color: var(--color-success); }
 
+/* Gaya untuk Timer Penahan Stok */
+.stock-hold-timer {
+    text-align: center;
+    padding: 0.8rem;
+    margin-top: 1rem;
+    background-color: rgba(59, 130, 246, 0.1);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--border-radius-sm);
+    color: var(--color-text-light);
+    font-size: 0.9rem;
+}
+.stock-hold-timer.expired {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: var(--color-danger);
+    color: var(--color-warning);
+}
+
 
 /* Halaman Edit Alamat */
 .edit-address-section .profile-container { max-width: 600px; }
