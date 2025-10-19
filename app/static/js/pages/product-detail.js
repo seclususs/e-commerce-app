@@ -127,6 +127,8 @@ function initSwipeableGallery() {
     let currentIndex = 0, startX = 0, currentTranslate = 0, prevTranslate = 0;
     let isDragging = false, animationID = 0;
 
+    const getPositionX = (e) => e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+
     const updateGallery = (newIndex, animate = true, scrollThumb = true) => {
         if (newIndex < 0 || newIndex >= slides.length) return;
         
@@ -147,51 +149,69 @@ function initSwipeableGallery() {
         }
     };
     
-    const touchStart = (e) => {
-        isDragging = true;
-        startX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-        animationID = requestAnimationFrame(animation);
-        slider.style.transition = 'none';
+    const animation = () => {
+        slider.style.transform = `translateX(${currentTranslate}px)`;
+        if (isDragging) requestAnimationFrame(animation);
     };
 
-    const touchMove = (e) => {
-        if (isDragging) {
-            const currentPosition = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
-            currentTranslate = prevTranslate + currentPosition - startX;
+    const dragStart = (e) => {
+        isDragging = true;
+        startX = getPositionX(e);
+        slider.style.transition = 'none';
+        animationID = requestAnimationFrame(animation);
+        
+        // Add listeners for mouse drag
+        if (e.type.includes('mouse')) {
+            e.preventDefault(); // Mencegah perilaku drag gambar bawaan
+            window.addEventListener('mousemove', dragMove);
+            window.addEventListener('mouseup', dragEnd);
         }
     };
 
-    const touchEnd = () => {
+    const dragMove = (e) => {
+        if (isDragging) {
+            currentTranslate = prevTranslate + getPositionX(e) - startX;
+        }
+    };
+
+    const dragEnd = (e) => {
+        if (!isDragging) return;
         isDragging = false;
         cancelAnimationFrame(animationID);
+        
         const movedBy = currentTranslate - prevTranslate;
 
+        // Logika untuk snap ke slide berikutnya/sebelumnya
         if (movedBy < -100 && currentIndex < slides.length - 1) currentIndex++;
         if (movedBy > 100 && currentIndex > 0) currentIndex--;
         
         updateGallery(currentIndex);
+        
+        // Hapus listener dari window setelah mouse dilepas
+        if (e.type.includes('mouse')) {
+            window.removeEventListener('mousemove', dragMove);
+            window.removeEventListener('mouseup', dragEnd);
+        }
     };
 
-    function animation() {
-        slider.style.transform = `translateX(${currentTranslate}px)`;
-        if (isDragging) requestAnimationFrame(animation);
-    }
-    
-    container.addEventListener('touchstart', touchStart, { passive: true });
-    container.addEventListener('touchend', touchEnd);
-    container.addEventListener('touchmove', touchMove, { passive: true });
-    container.addEventListener('mousedown', touchStart);
-    container.addEventListener('mouseup', touchEnd);
-    container.addEventListener('mouseleave', touchEnd);
-    container.addEventListener('mousemove', touchMove);
+    // Event listener untuk sentuhan (touch)
+    container.addEventListener('touchstart', dragStart, { passive: true });
+    container.addEventListener('touchmove', dragMove, { passive: true });
+    container.addEventListener('touchend', dragEnd);
 
+    // Event listener untuk mouse
+    container.addEventListener('mousedown', dragStart);
+
+    // Event listener untuk klik pada thumbnail
     thumbnails.forEach((thumb, index) => {
         thumb.addEventListener('click', () => updateGallery(index));
     });
 
+    // Menangani perubahan ukuran window
     window.addEventListener('resize', () => updateGallery(currentIndex, false, false));
     updateGallery(0, false, false);
 }
+
 
 export function initProductDetailPage() {
     initSizeSelector();
@@ -200,7 +220,7 @@ export function initProductDetailPage() {
 
     const addToCartBtn = document.querySelector('.add-to-cart-btn');
     if (addToCartBtn && addToCartBtn.dataset.hasVariants === 'true') {
-        addToCartBtn.disabled = true; // Disable by default if variants exist
+        addToCartBtn.disabled = true; // Nonaktifkan secara default jika ada varian
         const sizeWarning = document.getElementById('size-warning');
         if (sizeWarning) {
             sizeWarning.textContent = 'Silakan pilih ukuran terlebih dahulu.';

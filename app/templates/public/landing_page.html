@@ -21,8 +21,15 @@
                 <div class="product-info">
                     <h3 class="product-name">{{ product.name }}</h3>
                     <p class="product-category">{{ product.category }}</p>
-                    <p class="product-price">{{ product.price|rupiah }}</p>
-                    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}" style="z-index: 2; position: relative;">
+                    <div class="product-price-container" style="padding-top: 0.5rem;">
+                        {% if product.discount_price and product.discount_price > 0 %}
+                            <span class="product-price discount-price" style="font-size: 1.25rem;">{{ product.discount_price|rupiah }}</span>
+                            <del class="original-price" style="font-size: 0.9rem;">{{ product.price|rupiah }}</del>
+                        {% else %}
+                            <span class="product-price" style="font-size: 1.25rem;">{{ product.price|rupiah }}</span>
+                        {% endif %}
+                    </div>
+                    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}" style="z-index: 2; position: relative; margin-top: 1rem;">
                         <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
                     </button>
                 </div>

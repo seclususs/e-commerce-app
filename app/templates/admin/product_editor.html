@@ -18,7 +18,7 @@
             <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" value="{{ product.colors or '' }}" placeholder="cth: Hitam, Putih"></div>
         </div>
         
-        <div class="form-group form-group-inline">
+        <div class="form-group" style="margin-top: 1.5rem;">
             <label class="custom-checkbox">
                 <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input" {% if product.has_variants %}checked{% endif %}>
                 <span class="checkbox-box"><span class="checkmark"></span></span>
@@ -30,9 +30,13 @@
             <label for="stock">Stok (jika tidak ada varian)</label>
             <input type="number" id="stock" name="stock" value="{{ product.stock }}">
         </div>
-         <p class="form-hint" style="margin-top: -0.5rem;">Jika produk memiliki varian, stok total akan dihitung otomatis. <a href="{{ url_for('admin.manage_variants', product_id=product.id) }}" style="color: var(--color-primary);">Kelola varian di sini.</a></p>
+
+        <div class="form-hint" style="margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <span>Jika produk memiliki varian, stok total akan dihitung otomatis.</span>
+            <a href="{{ url_for('admin.manage_variants', product_id=product.id) }}" class="cta-button-secondary" style="padding: 0.4rem 1rem; font-size: 0.9rem;">Kelola Varian</a>
+        </div>
         
-        <div class="form-group">
+        <div class="form-group" style="margin-top: 1.5rem;">
             <label>Gambar Saat Ini</label>
             <p class="form-hint">Pilih satu gambar sebagai gambar utama. Centang untuk menghapus.</p>
             <div id="existing-image-previews" class="image-preview-container">
