@@ -65,14 +65,16 @@ def manage_variants(product_id):
             size = request.form.get('size')
             stock = request.form.get('stock')
             weight_grams = request.form.get('weight_grams')
-            result = product_service.add_variant(product_id, size, stock, weight_grams)
+            sku = request.form.get('sku')
+            result = product_service.add_variant(product_id, size, stock, weight_grams, sku)
             flash(result['message'], 'success' if result['success'] else 'danger')
         elif action == 'update':
             variant_id = request.form.get('variant_id')
             size = request.form.get('size')
             stock = request.form.get('stock')
             weight_grams = request.form.get('weight_grams')
-            result = product_service.update_variant(variant_id, size, stock, weight_grams)
+            sku = request.form.get('sku')
+            result = product_service.update_variant(variant_id, size, stock, weight_grams, sku)
             flash(result['message'], 'success' if result['success'] else 'danger')
         
         # Perbarui total stok di tabel produk setelah ada perubahan

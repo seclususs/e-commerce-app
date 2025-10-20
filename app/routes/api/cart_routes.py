@@ -11,46 +11,61 @@ def get_guest_cart_items():
     Mengambil detail produk berdasarkan item di keranjang belanja (untuk tamu).
     """
     data = request.get_json()
-    cart_items = data.get('cart_items') # { "productId-variantId": { quantity: 1, ... } }
-    
+    cart_items = data.get('cart_items')  # { "productId-variantId": { quantity: 1, ... } }
+
     if not cart_items:
         return jsonify([])
 
-    # Pisahkan product_id dan variant_id dari keys
-    product_ids = list(set([int(key.split('-')[0]) for key in cart_items.keys()]))
-        
+    # Parsing product and variant IDs safely from keys
+    product_ids = set()
+    variant_ids = set()
+    for key in cart_items.keys():
+        parts = key.split('-')
+        if parts[0].isdigit():
+            product_ids.add(int(parts[0]))
+        if len(parts) > 1 and parts[1].isdigit():
+            variant_ids.add(int(parts[1]))
+
+    if not product_ids:
+        return jsonify([])
+
     from database.db_config import get_db_connection
     conn = get_db_connection()
     try:
+        # Fetch product details
         placeholders = ', '.join(['?'] * len(product_ids))
         query = f'SELECT id, name, price, discount_price, image_url, stock, has_variants FROM products WHERE id IN ({placeholders})'
-        products_db = conn.execute(query, product_ids).fetchall()
+        products_db = conn.execute(query, list(product_ids)).fetchall()
         products_map = {p['id']: dict(p) for p in products_db}
 
-        # Jika ada varian, ambil detailnya
-        variant_ids = [int(key.split('-')[1]) for key in cart_items.keys() if '-' in key]
+        # Fetch variant details if any
         variants_map = {}
         if variant_ids:
             placeholders_v = ', '.join(['?'] * len(variant_ids))
-            variants_db = conn.execute(f'SELECT id, size, stock FROM product_variants WHERE id IN ({placeholders_v})', variant_ids).fetchall()
+            variants_db = conn.execute(f'SELECT id, size, stock FROM product_variants WHERE id IN ({placeholders_v})', list(variant_ids)).fetchall()
             variants_map = {v['id']: dict(v) for v in variants_db}
-        
-        # Gabungkan data
+
+        # Combine data
         detailed_items = []
         for key, item_data in cart_items.items():
             parts = key.split('-')
+            
+            if not parts[0].isdigit():
+                continue
+                
             product_id = int(parts[0])
-            variant_id = int(parts[1]) if len(parts) > 1 else None
+            variant_id = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
 
             product_info = products_map.get(product_id)
-            if not product_info: continue
+            if not product_info:
+                continue
 
             final_item = {**product_info}
             if variant_id and variant_id in variants_map:
                 variant_info = variants_map[variant_id]
                 final_item['variant_id'] = variant_id
                 final_item['size'] = variant_info['size']
-                final_item['stock'] = variant_info['stock'] # Gunakan stok varian
+                final_item['stock'] = variant_info['stock']  # Use variant stock
             
             final_item['quantity'] = item_data['quantity']
             detailed_items.append(final_item)

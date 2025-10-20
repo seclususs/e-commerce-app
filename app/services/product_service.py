@@ -191,63 +191,73 @@ class ProductService:
         has_variants = 'has_variants' in form_data
         stock = 0 if has_variants else form_data.get('stock', 10)
         weight_grams = 0 if has_variants else form_data.get('weight_grams', 0)
+        sku = form_data.get('sku') or None
 
         conn = get_db_connection()
         try:
-            conn.execute(
-                'INSERT INTO products (name, price, discount_price, description, category_id, colors, image_url, additional_image_urls, stock, has_variants, weight_grams) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-                (form_data['name'], form_data['price'], form_data.get('discount_price') or None, form_data['description'], 
-                 form_data['category_id'], form_data.get('colors'), main_image_url, json.dumps(additional_image_urls), stock, has_variants, weight_grams)
-            )
-            conn.commit()
+            with conn:
+                conn.execute(
+                    'INSERT INTO products (name, price, discount_price, description, category_id, colors, image_url, additional_image_urls, stock, has_variants, weight_grams, sku) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                    (form_data['name'], form_data['price'], form_data.get('discount_price') or None, form_data['description'], 
+                     form_data['category_id'], form_data.get('colors'), main_image_url, json.dumps(additional_image_urls), stock, has_variants, weight_grams, sku)
+                )
             return {'success': True, 'message': 'Produk berhasil ditambahkan!'}
+        except conn.IntegrityError as e:
+            if 'UNIQUE constraint failed: products.sku' in str(e):
+                return {'success': False, 'message': f'SKU "{sku}" sudah ada. Harap gunakan SKU yang unik.'}
+            return {'success': False, 'message': 'Terjadi kesalahan database.'}
         finally:
             conn.close()
     
     def update_product(self, product_id, form_data, files):
         conn = get_db_connection()
         try:
-            product = conn.execute('SELECT image_url, additional_image_urls, has_variants FROM products WHERE id = ?', (product_id,)).fetchone()
-            if not product:
-                return {'success': False, 'message': 'Produk tidak ditemukan.'}
+            with conn:
+                product = conn.execute('SELECT image_url, additional_image_urls, has_variants FROM products WHERE id = ?', (product_id,)).fetchone()
+                if not product:
+                    return {'success': False, 'message': 'Produk tidak ditemukan.'}
 
-            existing_additional = json.loads(product['additional_image_urls']) if product['additional_image_urls'] else []
-            all_current_images = [product['image_url']] + existing_additional
-            
-            images_to_delete = form_data.getlist('delete_image')
-            remaining_images = [img for img in all_current_images if img not in images_to_delete]
+                existing_additional = json.loads(product['additional_image_urls']) if product['additional_image_urls'] else []
+                all_current_images = [product['image_url']] + existing_additional
+                
+                images_to_delete = form_data.getlist('delete_image')
+                remaining_images = [img for img in all_current_images if img not in images_to_delete]
 
-            new_images = files.getlist("new_images")
-            newly_saved = [save_compressed_image(img) for img in new_images if img]
-            newly_saved = [name for name in newly_saved if name]
+                new_images = files.getlist("new_images")
+                newly_saved = [save_compressed_image(img) for img in new_images if img]
+                newly_saved = [name for name in newly_saved if name]
 
-            final_pool = remaining_images + newly_saved
-            if not final_pool:
-                return {'success': False, 'message': 'Produk harus memiliki setidaknya satu gambar.'}
+                final_pool = remaining_images + newly_saved
+                if not final_pool:
+                    return {'success': False, 'message': 'Produk harus memiliki setidaknya satu gambar.'}
 
-            new_main_image = form_data.get('main_image')
-            final_main = new_main_image if new_main_image in final_pool else final_pool[0]
-            final_additional = [img for img in final_pool if img != final_main]
-            
-            has_variants = 'has_variants' in form_data
-            stock = form_data.get('stock', 0) if not has_variants else product['stock']
-            weight_grams = form_data.get('weight_grams', 0) if not has_variants else 0
+                new_main_image = form_data.get('main_image')
+                final_main = new_main_image if new_main_image in final_pool else final_pool[0]
+                final_additional = [img for img in final_pool if img != final_main]
+                
+                has_variants = 'has_variants' in form_data
+                stock = form_data.get('stock', 0) if not has_variants else product['stock']
+                weight_grams = form_data.get('weight_grams', 0) if not has_variants else 0
+                sku = form_data.get('sku') or None
 
-            if product['has_variants'] and not has_variants:
-                self.delete_all_variants_for_product(product_id, conn)
+                if product['has_variants'] and not has_variants:
+                    self.delete_all_variants_for_product(product_id, conn)
 
-            conn.execute(
-                'UPDATE products SET name=?, price=?, discount_price=?, description=?, category_id=?, colors=?, stock=?, image_url=?, additional_image_urls=?, has_variants=?, weight_grams=? WHERE id=?', 
-                (form_data['name'], form_data['price'], form_data.get('discount_price') or None, form_data['description'], form_data['category_id'], 
-                 form_data.get('colors'), stock, final_main, json.dumps(final_additional), has_variants, weight_grams, product_id)
-            )
-            conn.commit()
+                conn.execute(
+                    'UPDATE products SET name=?, price=?, discount_price=?, description=?, category_id=?, colors=?, stock=?, image_url=?, additional_image_urls=?, has_variants=?, weight_grams=?, sku=? WHERE id=?', 
+                    (form_data['name'], form_data['price'], form_data.get('discount_price') or None, form_data['description'], form_data['category_id'], 
+                     form_data.get('colors'), stock, final_main, json.dumps(final_additional), has_variants, weight_grams, sku, product_id)
+                )
 
             for img_file in images_to_delete:
                 try: os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], img_file))
                 except OSError as e: print(f"Error saat menghapus file {img_file}: {e}")
             
             return {'success': True, 'message': 'Produk berhasil diperbarui!'}
+        except conn.IntegrityError as e:
+            if 'UNIQUE constraint failed: products.sku' in str(e):
+                return {'success': False, 'message': f'SKU "{sku}" sudah ada. Harap gunakan SKU yang unik.'}
+            return {'success': False, 'message': 'Terjadi kesalahan database.'}
         finally:
             conn.close()
 
@@ -291,25 +301,33 @@ class ProductService:
             if close_conn:
                 conn.close()
     
-    def add_variant(self, product_id, size, stock, weight_grams):
+    def add_variant(self, product_id, size, stock, weight_grams, sku):
         if not size or not stock or int(stock) < 0 or not weight_grams or int(weight_grams) < 0:
             return {'success': False, 'message': 'Ukuran, stok, dan berat harus diisi dengan benar.'}
         conn = get_db_connection()
         try:
-            conn.execute("INSERT INTO product_variants (product_id, size, stock, weight_grams) VALUES (?, ?, ?, ?)", (product_id, size.upper(), stock, weight_grams))
-            conn.commit()
+            with conn:
+                conn.execute("INSERT INTO product_variants (product_id, size, stock, weight_grams, sku) VALUES (?, ?, ?, ?, ?)", (product_id, size.upper(), stock, weight_grams, sku.upper() if sku else None))
             return {'success': True, 'message': f'Varian {size.upper()} berhasil ditambahkan.'}
+        except conn.IntegrityError as e:
+            if 'UNIQUE constraint failed: product_variants.sku' in str(e):
+                return {'success': False, 'message': f'SKU "{sku}" sudah ada. Harap gunakan SKU yang unik.'}
+            return {'success': False, 'message': 'Terjadi kesalahan database.'}
         finally:
             conn.close()
 
-    def update_variant(self, variant_id, size, stock, weight_grams):
+    def update_variant(self, variant_id, size, stock, weight_grams, sku):
         if not size or not stock or int(stock) < 0 or not weight_grams or int(weight_grams) < 0:
             return {'success': False, 'message': 'Ukuran, stok, dan berat harus diisi dengan benar.'}
         conn = get_db_connection()
         try:
-            conn.execute("UPDATE product_variants SET size = ?, stock = ?, weight_grams = ? WHERE id = ?", (size.upper(), stock, weight_grams, variant_id))
-            conn.commit()
+            with conn:
+                conn.execute("UPDATE product_variants SET size = ?, stock = ?, weight_grams = ?, sku = ? WHERE id = ?", (size.upper(), stock, weight_grams, sku.upper() if sku else None, variant_id))
             return {'success': True, 'message': 'Varian berhasil diperbarui.'}
+        except conn.IntegrityError as e:
+            if 'UNIQUE constraint failed: product_variants.sku' in str(e):
+                return {'success': False, 'message': f'SKU "{sku}" sudah ada. Harap gunakan SKU yang unik.'}
+            return {'success': False, 'message': 'Terjadi kesalahan database.'}
         finally:
             conn.close()
 
@@ -331,6 +349,22 @@ class ProductService:
             total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (product_id,)).fetchone()[0]
             conn.execute("UPDATE products SET stock = ? WHERE id = ?", (total_stock or 0, product_id))
             conn.commit()
+        finally:
+            conn.close()
+            
+    def get_related_products(self, product_id, category_id):
+        conn = get_db_connection()
+        try:
+            query = """
+                SELECT p.*, c.name as category_name 
+                FROM products p 
+                LEFT JOIN categories c ON p.category_id = c.id 
+                WHERE p.category_id = ? AND p.id != ?
+                ORDER BY p.popularity DESC 
+                LIMIT 4
+            """
+            related_products = conn.execute(query, (category_id, product_id)).fetchall()
+            return [dict(p) for p in related_products]
         finally:
             conn.close()
 

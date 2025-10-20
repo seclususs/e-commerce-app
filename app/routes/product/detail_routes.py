@@ -15,6 +15,11 @@ def product_detail(id):
         
     reviews = product_service.get_reviews_for_product(id)
     
+    # Ambil produk terkait
+    related_products = []
+    if product.get('category_id'):
+        related_products = product_service.get_related_products(id, product['category_id'])
+    
     can_review = False
     if 'user_id' in session:
         can_review = product_service.check_user_can_review(session['user_id'], id)
@@ -22,6 +27,7 @@ def product_detail(id):
     return render_template('public/product_detail.html', 
                            product=product, 
                            reviews=reviews, 
+                           related_products=related_products,
                            content=get_content(), 
                            can_review=can_review)
 

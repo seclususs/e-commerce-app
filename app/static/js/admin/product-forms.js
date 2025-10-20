@@ -101,30 +101,25 @@ export function initAdminPriceFormatting() {
 
 function initVariantCheckbox() {
     const checkbox = document.getElementById('has-variants-checkbox');
-    const stockContainer = document.getElementById('stock-input-container');
+    const nonVariantFields = document.getElementById('non-variant-fields');
     const stockInput = document.getElementById('stock');
-    const weightContainer = document.querySelector('#weight-input-container-main, #weight-input-container-edit');
     const weightInput = document.getElementById('weight_grams');
+    const skuInput = document.getElementById('sku');
     
-    if (!checkbox) return;
+    if (!checkbox || !nonVariantFields) return;
 
     const toggleInputs = () => {
-        if (checkbox.checked) {
-            if (stockContainer) stockContainer.style.display = 'none';
-            if (stockInput) stockInput.required = false;
-            if (weightContainer) weightContainer.style.display = 'none';
-            if (weightInput) weightInput.required = false;
-        } else {
-            if (stockContainer) stockContainer.style.display = 'block';
-            if (stockInput) stockInput.required = true;
-            if (weightContainer) weightContainer.style.display = 'block';
-            if (weightInput) weightInput.required = true;
-        }
+        const isChecked = checkbox.checked;
+        nonVariantFields.style.display = isChecked ? 'none' : 'block';
+        
+        if (stockInput) stockInput.required = !isChecked;
+        if (weightInput) weightInput.required = !isChecked;
     };
 
     checkbox.addEventListener('change', toggleInputs);
     toggleInputs();
 }
+
 
 export function initProductForms() {
     initAdminImagePreviews();

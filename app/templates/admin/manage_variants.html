@@ -24,6 +24,10 @@
             <label for="weight_grams_add" class="sr-only">Berat (gram)</label>
             <input type="number" id="weight_grams_add" name="weight_grams" placeholder="Berat (gram)" required class="form-control">
         </div>
+        <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+            <label for="sku_add" class="sr-only">SKU</label>
+            <input type="text" id="sku_add" name="sku" placeholder="SKU Varian (cth: KAOS-HW-XL)" class="form-control">
+        </div>
         <button type="submit" class="cta-button">Tambah Varian</button>
     </form>
 </div>
@@ -39,6 +43,7 @@
                     <th>Ukuran</th>
                     <th>Stok</th>
                     <th>Berat (gram)</th>
+                    <th>SKU</th>
                     <th>Aksi</th>
                 </tr>
             </thead>
@@ -58,6 +63,9 @@
                         <td data-label="Berat (gram):">
                              <input type="number" name="weight_grams" value="{{ variant.weight_grams }}" class="form-control" required>
                         </td>
+                         <td data-label="SKU:">
+                             <input type="text" name="sku" value="{{ variant.sku or '' }}" class="form-control">
+                        </td>
                         <td data-label="Aksi:" class="action-buttons">
                             <div class="desktop-actions">
                                 <button type="submit" class="cta-button-secondary" style="border-color: var(--color-primary); color: var(--color-primary); white-space: nowrap;">Update</button>
@@ -69,7 +77,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" style="text-align: center;">Belum ada varian untuk produk ini.</td>
+                    <td colspan="6" style="text-align: center;">Belum ada varian untuk produk ini.</td>
                 </tr>
                 {% endfor %}
             </tbody>

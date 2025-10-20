@@ -64,6 +64,7 @@ with connection:
             stock INTEGER NOT NULL DEFAULT 10,
             has_variants BOOLEAN DEFAULT 0,
             weight_grams INTEGER DEFAULT 0,
+            sku TEXT UNIQUE,
             FOREIGN KEY(category_id) REFERENCES categories(id)
         );
     """)
@@ -77,6 +78,7 @@ with connection:
             size TEXT NOT NULL,
             stock INTEGER NOT NULL,
             weight_grams INTEGER DEFAULT 0,
+            sku TEXT UNIQUE,
             FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
         );
     """)
@@ -222,22 +224,22 @@ with connection:
     print("- Data 'categories' berhasil dimasukkan.")
 
     products_to_add = [
-        ('Kaos "Hello, World!"', 175000, 150000, 'Kaos katun premium dengan sablon klasik "Hello, World!". Sempurna untuk memulai hari (atau proyek coding). Bahan adem dan nyaman.', 1, 'Hitam, Putih, Biru Navy', 55, 'kaos_hello_world.webp', json.dumps(['kaos_hello_world_2.webp']), 0, 1, 150),
-        ('Hoodie "Binary Tree"', 350000, None, 'Hoodie tebal dengan desain struktur data binary tree yang artistik. Jaga kehangatanmu saat begadang debugging. Fleece 280gsm.', 2, 'Hitam, Abu-abu', 85, 'hoodie_binary.webp', json.dumps([]), 0, 1, 500),
-        ('Topi "Git Commit"', 125000, None, 'Topi baseball dengan bordir command "git commit". Sebuah pengingat untuk selalu menyimpan progresmu.', 3, 'Hitam', 70, 'topi_git.webp', json.dumps(['topi_git_2.webp']), 75, 0, 100),
-        ('Sweater "Eat, Sleep, Code, Repeat"', 295000, 250000, 'Sweater ringan yang cocok untuk kerja di ruangan ber-AC. Slogan yang mewakili gaya hidup setiap developer.', 4, 'Biru Navy', 95, 'sweater_code.webp', json.dumps(['sweater_code_2.webp']), 60, 0, 400)
+        ('Kaos "Hello, World!"', 175000, 150000, 'Kaos katun premium dengan sablon klasik "Hello, World!". Sempurna untuk memulai hari (atau proyek coding). Bahan adem dan nyaman.', 1, 'Hitam, Putih, Biru Navy', 55, 'kaos_hello_world.webp', json.dumps(['kaos_hello_world_2.webp']), 0, 1, 150, None),
+        ('Hoodie "Binary Tree"', 350000, None, 'Hoodie tebal dengan desain struktur data binary tree yang artistik. Jaga kehangatanmu saat begadang debugging. Fleece 280gsm.', 2, 'Hitam, Abu-abu', 85, 'hoodie_binary.webp', json.dumps([]), 0, 1, 500, None),
+        ('Topi "Git Commit"', 125000, None, 'Topi baseball dengan bordir command "git commit". Sebuah pengingat untuk selalu menyimpan progresmu.', 3, 'Hitam', 70, 'topi_git.webp', json.dumps(['topi_git_2.webp']), 75, 0, 100, 'TOPI-GIT-HITAM'),
+        ('Sweater "Eat, Sleep, Code, Repeat"', 295000, 250000, 'Sweater ringan yang cocok untuk kerja di ruangan ber-AC. Slogan yang mewakili gaya hidup setiap developer.', 4, 'Biru Navy', 95, 'sweater_code.webp', json.dumps(['sweater_code_2.webp']), 60, 0, 400, 'SWTR-ESCR-NAVY')
     ]
     cursor.executemany("""
-        INSERT INTO products (name, price, discount_price, description, category_id, colors, popularity, image_url, additional_image_urls, stock, has_variants, weight_grams)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO products (name, price, discount_price, description, category_id, colors, popularity, image_url, additional_image_urls, stock, has_variants, weight_grams, sku)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, products_to_add)
     print("- Data 'products' berhasil dimasukkan.")
     
     variants_to_add = [
-        (1, 'S', 20, 150), (1, 'M', 30, 160), (1, 'L', 30, 170), (1, 'XL', 20, 180),
-        (2, 'M', 15, 500), (2, 'L', 20, 520), (2, 'XL', 15, 540)
+        (1, 'S', 20, 150, 'KAOS-HW-S'), (1, 'M', 30, 160, 'KAOS-HW-M'), (1, 'L', 30, 170, 'KAOS-HW-L'), (1, 'XL', 20, 180, 'KAOS-HW-XL'),
+        (2, 'M', 15, 500, 'HOOD-BIN-M'), (2, 'L', 20, 520, 'HOOD-BIN-L'), (2, 'XL', 15, 540, 'HOOD-BIN-XL')
     ]
-    cursor.executemany("INSERT INTO product_variants (product_id, size, stock, weight_grams) VALUES (?, ?, ?, ?)", variants_to_add)
+    cursor.executemany("INSERT INTO product_variants (product_id, size, stock, weight_grams, sku) VALUES (?, ?, ?, ?, ?)", variants_to_add)
     print("- Data 'product_variants' berhasil dimasukkan.")
     
     # Update total stock for products with variants
@@ -247,16 +249,17 @@ with connection:
 
     # Seeding data orders
     orders_to_add = [
-        (1, 2, '2025-09-10 14:30:00', 500000, 0, 15000, 515000, None, 'Completed', 'Bank Transfer', 'TX1001', 'User 1', '081200000001', 'Jl. Dummy No. 1', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
-        (2, 3, '2025-10-01 11:00:00', 125000, 0, 10000, 135000, None, 'Shipped', 'E-Wallet', 'TX1002', 'User 2', '081200000002', 'Jl. Dummy No. 2', '', 'Jakarta', 'DKI Jakarta', '10220', 'SC10002'),
-        (3, 4, '2025-10-14 20:00:00', 400000, 0, 20000, 420000, None, 'Processing', 'COD', None, 'User 3', '081200000003', 'Jl. Dummy No. 3', '', 'Bandung', 'Jawa Barat', '40111', None),
-        (4, 15, '2025-10-15 09:00:00', 150000, 15000, 15000, 150000, 'HEMAT10', 'Completed', 'E-Wallet', 'TX1003', 'User 14', '081200000014', 'Jl. Dummy No. 14', '', 'Surabaya', 'Jawa Timur', '60111', 'JN10002'),
-        (5, 5, '2025-10-18 10:00:00', 175000, 0, 15000, 190000, None, 'Pending', 'Virtual Account', None, 'User 5', '081200000005', 'Jl. Dummy No. 5', '', 'Yogyakarta', 'DIY', '55222', None),
+        (1, 2, '2024-09-10 14:30:00', 500000, 0, 15000, 515000, None, 'Completed', 'Bank Transfer', 'TX1001', 'User 1', '081200000001', 'Jl. Dummy No. 1', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
+        (2, 3, '2024-10-01 11:00:00', 125000, 0, 10000, 135000, None, 'Shipped', 'E-Wallet', 'TX1002', 'User 2', '081200000002', 'Jl. Dummy No. 2', '', 'Jakarta', 'DKI Jakarta', '10220', 'SC10002'),
+        (3, 4, '2024-10-14 20:00:00', 400000, 0, 20000, 420000, None, 'Processing', 'COD', None, 'User 3', '081200000003', 'Jl. Dummy No. 3', '', 'Bandung', 'Jawa Barat', '40111', None),
+        (4, 15, '2024-10-15 09:00:00', 150000, 15000, 15000, 150000, 'HEMAT10', 'Completed', 'E-Wallet', 'TX1003', 'User 14', '081200000014', 'Jl. Dummy No. 14', '', 'Surabaya', 'Jawa Timur', '60111', 'JN10002'),
+        (5, 5, '2024-10-18 10:00:00', 175000, 0, 15000, 190000, None, 'Pending', 'Virtual Account', None, 'User 5', '081200000005', 'Jl. Dummy No. 5', '', 'Yogyakarta', 'DIY', '55222', None),
     ]
     cursor.executemany("""
         INSERT INTO orders (id, user_id, order_date, subtotal, discount_amount, shipping_cost, total_amount, voucher_code, status, payment_method, payment_transaction_id, shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2, shipping_city, shipping_province, shipping_postal_code, tracking_number)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, orders_to_add)
+    print("- Data 'orders' berhasil dimasukkan.")
     
     order_items_to_add = [
         (1, 1, 1, 2, 1, 150000, 'M'), (2, 1, 2, 6, 1, 350000, 'L'), 
@@ -266,13 +269,13 @@ with connection:
         (7, 5, 1, 4, 1, 175000, 'XL')
     ]
     cursor.executemany("INSERT INTO order_items (id, order_id, product_id, variant_id, quantity, price, size_at_order) VALUES (?, ?, ?, ?, ?, ?, ?)", order_items_to_add)
-    print("- Data 'orders' dan 'order_items' berhasil dimasukkan.")
+    print("- Data 'order_items' berhasil dimasukkan.")
 
     reviews_to_add = [
-        (1, 2, 5, 'Bahan kaosnya adem banget, sablonnya juga rapi. Keren!', '2025-09-15 10:00:00'),
-        (2, 2, 4, 'Hoodienya tebal dan hangat, pas buat ngoding malem. Desainnya juga subtle, suka!', '2025-09-16 12:00:00'),
-        (3, 3, 5, 'Topinya keren, bordirannya rapi banget.', '2025-10-05 18:00:00'),
-        (1, 15, 5, 'Sama kayak user lain, kaosnya memang top!', '2025-10-20 18:00:00')
+        (1, 2, 5, 'Bahan kaosnya adem banget, sablonnya juga rapi. Keren!', '2024-09-15 10:00:00'),
+        (2, 2, 4, 'Hoodienya tebal dan hangat, pas buat ngoding malem. Desainnya juga subtle, suka!', '2024-09-16 12:00:00'),
+        (3, 3, 5, 'Topinya keren, bordirannya rapi banget.', '2024-10-05 18:00:00'),
+        (1, 15, 5, 'Sama kayak user lain, kaosnya memang top!', '2024-10-20 18:00:00')
     ]
     cursor.executemany("INSERT INTO reviews (product_id, user_id, rating, comment, created_at) VALUES (?, ?, ?, ?, ?)", reviews_to_add)
     print("- Data 'reviews' berhasil dimasukkan.")
@@ -280,7 +283,7 @@ with connection:
     vouchers_to_add = [
         ('HEMAT10', 'PERCENTAGE', 10, 100, 1, None, None, 50000, 1),
         ('POTONGAN50K', 'FIXED_AMOUNT', 50000, 50, 0, None, None, 250000, 1),
-        ('KADALUWARSA', 'FIXED_AMOUNT', 100000, 10, 0, '2024-01-01', '2024-12-31', 0, 1)
+        ('KADALUWARSA', 'FIXED_AMOUNT', 100000, 10, 0, '2023-01-01', '2023-12-31', 0, 1)
     ]
     cursor.executemany("INSERT INTO vouchers (code, type, value, max_uses, use_count, start_date, end_date, min_purchase_amount, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", vouchers_to_add)
     print("- Data 'vouchers' berhasil dimasukkan.")

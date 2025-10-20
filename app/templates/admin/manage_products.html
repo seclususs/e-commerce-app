@@ -26,13 +26,19 @@
                 <span>Produk ini memiliki varian ukuran</span>
             </label>
         </div>
-        <div class="form-group" id="stock-input-container">
-            <label for="stock">Stok (jika tidak ada varian)</label>
-            <input type="number" id="stock" name="stock" value="10" required>
-        </div>
-        <div class="form-group" id="weight-input-container-main">
-            <label for="weight_grams">Berat (gram) (jika tidak ada varian)</label>
-            <input type="number" id="weight_grams" name="weight_grams" placeholder="cth: 150" value="150" required>
+        <div id="non-variant-fields">
+            <div class="form-group" id="stock-input-container">
+                <label for="stock">Stok (jika tidak ada varian)</label>
+                <input type="number" id="stock" name="stock" value="10" required>
+            </div>
+            <div class="form-group" id="weight-input-container-main">
+                <label for="weight_grams">Berat (gram) (jika tidak ada varian)</label>
+                <input type="number" id="weight_grams" name="weight_grams" placeholder="cth: 150" value="150" required>
+            </div>
+             <div class="form-group" id="sku-input-container">
+                <label for="sku">SKU (jika tidak ada varian)</label>
+                <input type="text" id="sku" name="sku" placeholder="cth: KAOS-HW-HITAM">
+            </div>
         </div>
         <div class="form-group"><label for="description">Deskripsi</label><textarea id="description" name="description" rows="4" required></textarea></div>
         <div class="form-group">
@@ -77,7 +83,7 @@
                                 <span class="checkbox-box"><span class="checkmark"></span></span>
                             </label>
                         </th>
-                        <th>ID</th><th>Gambar</th><th>Nama</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Aksi</th>
+                        <th>ID</th><th>Gambar</th><th>Nama</th><th>SKU</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,6 +98,7 @@
                         <td data-label="ID:">{{ product.id }}</td>
                         <td data-label="Gambar:"><img src="{{ url_for('static', filename='uploads/' + product.image_url) if product.image_url else 'https://placehold.co/60x60/1e293b/f1f5f9?text=Img' }}" alt="{{ product.name }}" width="50" style="border-radius: 5px; object-fit: cover;"></td>
                         <td data-label="Nama:">{{ product.name }}</td>
+                        <td data-label="SKU:" class="collapsible-detail">{{ product.sku or 'N/A' }}</td>
                         <td data-label="Kategori:" class="collapsible-detail">{{ product.category_name or 'N/A' }}</td>
                         <td data-label="Harga:" class="collapsible-detail price-cell">
                             {% if product.discount_price and product.discount_price > 0 %}<span class="discount-price">{{ product.discount_price|rupiah }}</span><del>{{ product.price|rupiah }}</del>{% else %}<span>{{ product.price|rupiah }}</span>{% endif %}

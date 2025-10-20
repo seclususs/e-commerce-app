@@ -26,15 +26,23 @@
             </label>
         </div>
 
-        <div class="form-group" id="stock-input-container" style="display: {{ 'none' if product.has_variants else 'block' }};">
-            <label for="stock">Stok (jika tidak ada varian)</label>
-            <input type="number" id="stock" name="stock" value="{{ product.stock }}">
+        <div id="non-variant-fields">
+            <div class="form-group" id="stock-input-container" style="display: {{ 'none' if product.has_variants else 'block' }};">
+                <label for="stock">Stok (jika tidak ada varian)</label>
+                <input type="number" id="stock" name="stock" value="{{ product.stock }}">
+            </div>
+
+            <div class="form-group" id="weight-input-container-edit" style="display: {{ 'none' if product.has_variants else 'block' }};">
+                <label for="weight_grams">Berat (gram) (jika tidak ada varian)</label>
+                <input type="number" id="weight_grams" name="weight_grams" value="{{ product.weight_grams or 150 }}">
+            </div>
+
+            <div class="form-group" id="sku-input-container" style="display: {{ 'none' if product.has_variants else 'block' }};">
+                <label for="sku">SKU (jika tidak ada varian)</label>
+                <input type="text" id="sku" name="sku" value="{{ product.sku or '' }}">
+            </div>
         </div>
 
-        <div class="form-group" id="weight-input-container-edit" style="display: {{ 'none' if product.has_variants else 'block' }};">
-            <label for="weight_grams">Berat (gram) (jika tidak ada varian)</label>
-            <input type="number" id="weight_grams" name="weight_grams" value="{{ product.weight_grams or 150 }}">
-        </div>
 
         <div class="form-hint" style="margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
             <span>Jika produk memiliki varian, stok dan berat total akan dihitung otomatis.</span>
