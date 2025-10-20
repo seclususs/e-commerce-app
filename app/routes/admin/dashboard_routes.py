@@ -1,9 +1,10 @@
-from flask import render_template, request
+from flask import render_template, request, flash, redirect, url_for
 from datetime import datetime, timedelta
 
 from . import admin_bp
 from database.db_config import get_db_connection, get_content
 from utils.route_decorators import admin_required
+from services.scheduler_service import scheduler_service
 
 def get_date_range(period_str):
     """Mendapatkan rentang tanggal berdasarkan string periode."""
@@ -87,3 +88,13 @@ def admin_dashboard():
         chart_labels=chart_labels, chart_data=chart_data,
         selected_period=period, custom_start=custom_start, custom_end=custom_end
     )
+
+# Rute untuk menjalankan scheduler
+@admin_bp.route('/run-scheduler')
+@admin_required
+def run_scheduler():
+    """Menjalankan tugas scheduler dan mengarahkan kembali dengan pesan."""
+    result = scheduler_service.cancel_expired_pending_orders()
+    count = result.get('cancelled_count', 0)
+    flash(f"Tugas harian selesai. {count} pesanan kedaluwarsa berhasil dibatalkan.", 'success')
+    return redirect(url_for('admin.admin_dashboard'))

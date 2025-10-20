@@ -4,6 +4,13 @@
 {% block adminheader %}Dashboard Ringkasan{% endblock %}
 
 {% block admincontent %}
+<!-- Kartu untuk tombol scheduler -->
+<div class="admin-card animated-element">
+    <h3>Tindakan Cepat</h3>
+    <p class="form-hint">Jalankan tugas manual yang biasanya dijalankan oleh cron job di server.</p>
+    <a href="{{ url_for('admin.run_scheduler') }}" class="cta-button-secondary">Jalankan Tugas Harian (Simulasi Cron)</a>
+</div>
+
 <!-- Form Filter Rentang Waktu -->
 <div class="admin-card animated-element">
     <h3>Filter Tampilan</h3>

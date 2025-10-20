@@ -9,7 +9,7 @@ def forgot_password():
         email = request.form.get('email')
         
         auth_service.handle_password_reset_request(email)
-        flash('Jika email Anda terdaftar, Anda akan menerima link untuk reset password.', 'success')
+        flash('SIMULASI: Jika email terdaftar, email reset password telah dikirim.', 'success')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/forgot_password.html', content=get_content(), hide_navbar=True)

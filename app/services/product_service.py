@@ -90,8 +90,11 @@ class ProductService:
             params = []
             
             if filters.get('search'):
-                query += " AND p.name LIKE ?"
-                params.append(f'%{filters["search"]}%')
+                # Pencarian ke nama, deskripsi, warna, dan nama kategori
+                search_term = f'%{filters["search"]}%'
+                query += " AND (p.name LIKE ? OR p.description LIKE ? OR p.colors LIKE ? OR c.name LIKE ?)"
+                params.extend([search_term, search_term, search_term, search_term])
+            
             if filters.get('category'):
                 query += " AND p.category_id = ?"
                 params.append(filters['category'])
