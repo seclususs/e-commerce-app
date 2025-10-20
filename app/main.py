@@ -49,6 +49,23 @@ def create_app():
     @app.template_filter('tojson_safe')
     def tojson_safe_filter(obj):
         return json.dumps(obj)
+    
+    # Filter kustom untuk mem-parsing JSON di template
+    @app.template_filter('fromjson_safe')
+    def fromjson_safe_filter(json_str):
+        try:
+            if not json_str:
+                return []
+            return json.loads(json_str)
+        except (json.JSONDecodeError, TypeError):
+            return [] # Mengembalikan list kosong jika terjadi error
+            
+    # Filter 'split'
+    @app.template_filter('split')
+    def split_filter(value, delimiter):
+        if not isinstance(value, str):
+            return value
+        return value.split(delimiter)
 
     # Registrasi semua blueprint
     app.register_blueprint(product_bp)

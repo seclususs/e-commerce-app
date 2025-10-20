@@ -29,3 +29,21 @@
     margin-top: 0;
     padding-top: 0;
 }
+
+.footer-social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.footer-social-icons a {
+    color: var(--color-text-med);
+    font-size: 1.8rem;
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.footer-social-icons a:hover {
+    color: var(--color-primary);
+    transform: scale(1.1);
+}

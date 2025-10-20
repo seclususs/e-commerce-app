@@ -6,7 +6,7 @@
     <title>{% block title %}{{ content.app_name }} - {{ content.short_description }}{% endblock %}</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=1.9">
 </head>
 <body>
@@ -79,14 +79,29 @@
                 <p>Phone: {{ content.contact_phone }}</p>
                 <p>{{ content.contact_location }}</p>
             </div>
+            {% set social_links = content.social_links|fromjson_safe %}
+            {% if social_links %}
             <div class="footer-section animated-element" data-animation-delay="400">
                 <h3>Sosial Media</h3>
-                <p style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <a href="https://github.com/seclususs" target="_blank" rel="noopener noreferrer" style="color: #f1f5f9; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                        <i class="fab fa-github"></i> seclususs
-                    </a>
-                </p>
+                <div class="footer-social-icons">
+                    {% for link in social_links %}
+                        {% set domain = link|replace('https://www.','')|replace('https://','')|split('/')|first %}
+                        {% set icon = 'fa-link' %} {# default icon #}
+                        {% set brand = 'fas' %} {# default brand #}
+                        {% if 'github' in domain %}{% set icon = 'fa-github' %}{% set brand = 'fab' %}{% endif %}
+                        {% if 'instagram' in domain %}{% set icon = 'fa-instagram' %}{% set brand = 'fab' %}{% endif %}
+                        {% if 'tiktok' in domain %}{% set icon = 'fa-tiktok' %}{% set brand = 'fab' %}{% endif %}
+                        {% if 'twitter' in domain or 'x.com' in domain %}{% set icon = 'fa-x-twitter' %}{% set brand = 'fab' %}{% endif %}
+                        {% if 'facebook' in domain %}{% set icon = 'fa-facebook' %}{% set brand = 'fab' %}{% endif %}
+                        {% if 'linkedin' in domain %}{% set icon = 'fa-linkedin' %}{% set brand = 'fab' %}{% endif %}
+
+                        <a href="{{ link }}" target="_blank" rel="noopener noreferrer" aria-label="Kunjungi profil {{ domain|replace('.com', '') }}">
+                            <i class="{{ brand }} {{ icon }}"></i>
+                        </a>
+                    {% endfor %}
+                </div>
             </div>
+            {% endif %}
         </div>
         {% endif %}
         <div class="copyright">

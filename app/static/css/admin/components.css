@@ -126,3 +126,30 @@
 .hidden { 
     display: none; 
 }
+
+/* Social Links Manager in Site Settings */
+.social-link-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-background-dark);
+    padding: 0.75rem 1rem;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-background-light);
+    margin-bottom: 0.5rem;
+    word-break: break-all;
+}
+
+.social-link-text {
+    color: var(--color-text-med);
+}
+
+.remove-social-link {
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 0.5rem;
+}

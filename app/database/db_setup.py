@@ -199,7 +199,8 @@ with connection:
         ('about_teaser_text', 'HackThread adalah brand fashion untuk generasi digital yang menghargai kreativitas, inovasi, dan teknologi. Kami percaya bahwa fashion adalah ekspresi identitas.'),
         ('contact_email', 'kontak@hackthread.dev'), 
         ('contact_phone', '+62 812-3456-7890'),
-        ('contact_location', 'Depok, Jawa Barat, Indonesia')
+        ('contact_location', 'Depok, Jawa Barat, Indonesia'),
+        ('social_links', '["https://github.com/seclususs"]')
     ]
     cursor.executemany("INSERT INTO content (key, value) VALUES (?, ?)", initial_content)
     print("- Data 'content' berhasil dimasukkan.")
