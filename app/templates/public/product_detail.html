@@ -98,6 +98,17 @@
                     <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
                 </button>
             </div>
+
+            <!-- Social Share Buttons -->
+            <div class="social-share-container animated-element" data-animation-delay="300">
+                <h3 class="details-title">Bagikan Produk Ini</h3>
+                <div class="social-share-buttons" id="social-share-links">
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}" class="social-share-btn facebook" aria-label="Bagikan ke Facebook" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://twitter.com/intent/tweet?url={{ request.url }}&text=Lihat produk keren ini: {{ product.name }}" class="social-share-btn twitter" aria-label="Bagikan ke X/Twitter" target="_blank"><i class="fab fa-twitter"></i></a>
+                    <a href="https://api.whatsapp.com/send?text=Lihat produk keren ini: {{ product.name }} - {{ request.url }}" class="social-share-btn whatsapp" aria-label="Bagikan ke WhatsApp" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+
         </div>
     </div>
     

@@ -160,9 +160,8 @@ function initSwipeableGallery() {
         slider.style.transition = 'none';
         animationID = requestAnimationFrame(animation);
         
-        // Add listeners for mouse drag
         if (e.type.includes('mouse')) {
-            e.preventDefault(); // Mencegah perilaku drag gambar bawaan
+            e.preventDefault();
             window.addEventListener('mousemove', dragMove);
             window.addEventListener('mouseup', dragEnd);
         }
@@ -181,46 +180,59 @@ function initSwipeableGallery() {
         
         const movedBy = currentTranslate - prevTranslate;
 
-        // Logika untuk snap ke slide berikutnya/sebelumnya
         if (movedBy < -100 && currentIndex < slides.length - 1) currentIndex++;
         if (movedBy > 100 && currentIndex > 0) currentIndex--;
         
         updateGallery(currentIndex);
         
-        // Hapus listener dari window setelah mouse dilepas
         if (e.type.includes('mouse')) {
             window.removeEventListener('mousemove', dragMove);
             window.removeEventListener('mouseup', dragEnd);
         }
     };
 
-    // Event listener untuk sentuhan (touch)
     container.addEventListener('touchstart', dragStart, { passive: true });
     container.addEventListener('touchmove', dragMove, { passive: true });
     container.addEventListener('touchend', dragEnd);
-
-    // Event listener untuk mouse
     container.addEventListener('mousedown', dragStart);
 
-    // Event listener untuk klik pada thumbnail
     thumbnails.forEach((thumb, index) => {
         thumb.addEventListener('click', () => updateGallery(index));
     });
 
-    // Menangani perubahan ukuran window
     window.addEventListener('resize', () => updateGallery(currentIndex, false, false));
     updateGallery(0, false, false);
 }
 
+// Social Share Popup Handler
+function initSocialShare() {
+    const shareLinks = document.getElementById('social-share-links');
+    if (!shareLinks) return;
+
+    shareLinks.addEventListener('click', function(e) {
+        const link = e.target.closest('a.social-share-btn');
+        if (!link) return;
+
+        e.preventDefault();
+        const url = link.href;
+        const width = 600;
+        const height = 400;
+        const left = (window.innerWidth / 2) - (width / 2);
+        const top = (window.innerHeight / 2) - (height / 2);
+        
+        window.open(url, 'shareWindow', `width=${width},height=${height},top=${top},left=${left},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
+    });
+}
 
 export function initProductDetailPage() {
     initSizeSelector();
     initQuantitySelector();
     initSwipeableGallery();
+    initSocialShare();
 
     const addToCartBtn = document.querySelector('.add-to-cart-btn');
     if (addToCartBtn && addToCartBtn.dataset.hasVariants === 'true') {
-        addToCartBtn.disabled = true; // Nonaktifkan secara default jika ada varian
+        addToCartBtn.disabled = true;
         const sizeWarning = document.getElementById('size-warning');
         if (sizeWarning) {
             sizeWarning.textContent = 'Silakan pilih ukuran terlebih dahulu.';

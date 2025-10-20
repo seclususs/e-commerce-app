@@ -225,6 +225,35 @@
     margin-bottom: 0.5rem;
 }
 
+/* Social Share Buttons */
+.social-share-container {
+    margin-top: 1.5rem;
+}
+.social-share-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+.social-share-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    text-decoration: none;
+    color: var(--color-white);
+    font-size: 1.2rem;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+.social-share-btn:hover {
+    transform: scale(1.1);
+}
+.social-share-btn.facebook { background-color: #1877F2; }
+.social-share-btn.twitter { background-color: #1DA1F2; }
+.social-share-btn.whatsapp { background-color: #25D366; }
+
+
 /* Bagian Ulasan */
 .reviews-section { padding-top: 3rem; border-top: 1px solid #334155; }
 .add-review-form { max-width: 800px; margin: 0 auto 3rem auto; }

@@ -14,7 +14,8 @@ def admin_reports():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
-    date_filter = " WHERE 1=1 "
+    # Base date filter clause
+    date_filter = " WHERE o.status != 'Cancelled' "
     params = []
     if start_date:
         date_filter += " AND o.order_date >= ? "
@@ -22,51 +23,84 @@ def admin_reports():
     if end_date:
         date_filter += " AND o.order_date <= ? "
         params.append(end_date + ' 23:59:59')
-    
+
+    # Sales Report
     sales_query = f"""SELECT 
                         COALESCE(SUM(o.total_amount), 0) as total_revenue, 
                         COUNT(o.id) as total_orders, 
                         COALESCE(SUM(oi.quantity), 0) as total_items_sold
                      FROM orders o
                      LEFT JOIN order_items oi ON o.id = oi.order_id
-                     {date_filter.replace('o.order_date', 'o.order_date')} AND o.status != 'Cancelled'"""
-    
+                     {date_filter.replace('o.order_date', 'o.order_date')}"""
     sales_report = conn.execute(sales_query, params).fetchone()
 
+    # Product Reports
     top_selling_products = conn.execute(f"""
         SELECT p.name, SUM(oi.quantity) as total_sold FROM products p
         JOIN order_items oi ON p.id = oi.product_id
         JOIN orders o ON oi.order_id = o.id
-        {date_filter} AND o.status != 'Cancelled'
+        {date_filter}
         GROUP BY p.id ORDER BY total_sold DESC LIMIT 10
     """, params).fetchall()
-
     most_viewed_products = conn.execute("SELECT name, popularity FROM products ORDER BY popularity DESC LIMIT 10").fetchall()
 
+    # Customer Reports
     top_spenders = conn.execute(f"""
         SELECT u.username, u.email, SUM(o.total_amount) as total_spent FROM users u
         JOIN orders o ON u.id = o.user_id
-        {date_filter} AND o.status != 'Cancelled'
+        {date_filter}
         GROUP BY u.id ORDER BY total_spent DESC LIMIT 10
     """, params).fetchall()
-
-    # Laporan Efektivitas Voucher
-    voucher_effectiveness = conn.execute("""
+    
+    # Voucher Effectiveness Report
+    voucher_effectiveness = conn.execute(f"""
         SELECT 
             voucher_code, 
-            COUNT(id) AS usage_count, 
-            SUM(discount_amount) AS total_discount
-        FROM orders 
-        WHERE voucher_code IS NOT NULL AND status != 'Cancelled'
-        GROUP BY voucher_code 
+            COUNT(o.id) AS usage_count, 
+            SUM(o.discount_amount) AS total_discount
+        FROM orders o
+        {date_filter.replace('o.order_date', 'o.order_date')} AND o.voucher_code IS NOT NULL
+        GROUP BY o.voucher_code 
         ORDER BY usage_count DESC;
+    """, params).fetchall()
+
+    total_carts_created_row = conn.execute("SELECT COUNT(DISTINCT user_id) FROM user_carts").fetchone()
+    total_carts_created = total_carts_created_row[0] if total_carts_created_row else 0
+    
+    total_orders_completed_row = conn.execute(f"SELECT COUNT(DISTINCT user_id) FROM orders o {date_filter}", params).fetchone()
+    total_orders_completed = total_orders_completed_row[0] if total_orders_completed_row else 0
+    
+    abandonment_rate = (1 - (total_orders_completed / total_carts_created)) * 100 if total_carts_created > 0 else 0
+
+    inventory_value_row = conn.execute("""
+        SELECT SUM(total_value) 
+        FROM (
+            SELECT p.price * p.stock as total_value FROM products p WHERE p.has_variants = 0
+            UNION ALL 
+            SELECT p.price * pv.stock as total_value FROM product_variants pv JOIN products p ON pv.product_id = p.id
+        )
+    """).fetchone()
+    total_inventory_value = inventory_value_row[0] if inventory_value_row else 0
+
+    slow_moving_products = conn.execute(f"""
+        SELECT p.name, p.stock, COALESCE(SUM(oi.quantity), 0) AS total_sold
+        FROM products p
+        LEFT JOIN order_items oi ON p.id = oi.product_id
+        LEFT JOIN orders o ON oi.order_id = o.id AND o.status != 'Cancelled'
+        GROUP BY p.id ORDER BY total_sold ASC, p.stock DESC LIMIT 10
     """).fetchall()
 
-    # Laporan Konversi Tamu-ke-Akun
-    guest_orders_count = conn.execute("SELECT COUNT(id) FROM orders WHERE user_id IS NULL").fetchone()[0]
-    registered_from_checkout_count = conn.execute("SELECT COUNT(id) FROM users WHERE address_line_1 IS NOT NULL AND is_admin = 0").fetchone()[0]
-    conversion_rate = (registered_from_checkout_count / guest_orders_count * 100) if guest_orders_count > 0 else 0
-
+    low_stock_products = conn.execute("""
+        SELECT name, stock, 'Produk Utama' as type, id as product_id, null as variant_id 
+        FROM products 
+        WHERE has_variants = 0 AND stock <= 5 AND stock > 0 
+        UNION ALL 
+        SELECT p.name || ' (' || pv.size || ')' as name, pv.stock, 'Varian' as type, p.id as product_id, pv.id as variant_id 
+        FROM product_variants pv 
+        JOIN products p ON pv.product_id = p.id 
+        WHERE pv.stock <= 5 AND pv.stock > 0 
+        ORDER BY stock ASC
+    """).fetchall()
 
     conn.close()
 
@@ -80,10 +114,15 @@ def admin_reports():
             'top_spenders': top_spenders
         },
         'voucher_effectiveness': voucher_effectiveness,
-        'guest_conversion': {
-            'guest_orders': guest_orders_count,
-            'new_accounts': registered_from_checkout_count,
-            'rate': round(conversion_rate, 2)
+        'cart_analytics': {
+            'abandonment_rate': round(abandonment_rate, 2),
+            'carts_created': total_carts_created,
+            'orders_completed': total_orders_completed
+        },
+        'inventory': {
+            'total_value': total_inventory_value,
+            'slow_moving': slow_moving_products,
+            'low_stock': low_stock_products
         }
     }
     return render_template('admin/reports.html', reports=reports_data, content=get_content())
@@ -120,7 +159,6 @@ def export_report(report_name):
             LEFT JOIN orders o ON oi.order_id = o.id AND (o.status != 'Cancelled' {date_filter.replace('WHERE 1=1', '')})
             GROUP BY p.id ORDER BY total_sold DESC
         """
-        # Parameter untuk subquery juga perlu
         sub_params = [p for p in params]
         data = conn.execute(query, sub_params).fetchall()
     elif report_name == 'customers':

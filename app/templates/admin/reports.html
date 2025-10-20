@@ -37,10 +37,77 @@
     </div>
 </div>
 
-<!-- Laporan Produk -->
+<!-- Analitik Keranjang Belanja -->
 <div class="admin-card animated-element" data-animation-delay="300">
+    <div class="report-header">
+        <h3>Analitik Keranjang Belanja</h3>
+    </div>
+    <p class="form-hint">Menganalisis perilaku pengguna dari pembuatan keranjang hingga checkout.</p>
+    <div class="dashboard-stats" style="margin-top: 1rem;">
+        <div class="stat-card"><h4>Tingkat Pengabaian Keranjang</h4><p>{{ reports.cart_analytics.abandonment_rate }}%</p></div>
+        <div class="stat-card"><h4>Total Pengguna dg Keranjang</h4><p>{{ reports.cart_analytics.carts_created }}</p></div>
+        <div class="stat-card"><h4>Pengguna yg Checkout</h4><p>{{ reports.cart_analytics.orders_completed }}</p></div>
+    </div>
+</div>
+
+<!-- Laporan Inventaris -->
+<div class="admin-card animated-element" data-animation-delay="400">
      <div class="report-header">
-        <h3>Laporan Produk</h3>
+        <h3>Laporan Inventaris</h3>
+    </div>
+    <div class="dashboard-stats" style="margin-top: 1rem;">
+        <div class="stat-card" style="grid-column: 1 / -1;"><h4>Total Nilai Inventaris</h4><p>{{ reports.inventory.total_value|rupiah }}</p></div>
+    </div>
+    <div class="report-grid">
+        <div>
+            <h4>Produk Stok Menipis (Stok ≤ 5)</h4>
+            <div class="table-wrapper">
+                <table class="admin-table">
+                    <thead><tr><th>Nama Produk/Varian</th><th>Sisa Stok</th><th>Aksi</th></tr></thead>
+                    <tbody>
+                    {% for product in reports.inventory.low_stock %}
+                        <tr>
+                            <td>{{ product.name }}</td>
+                            <td><span style="color: var(--color-warning); font-weight: bold;">{{ product.stock }}</span></td>
+                            <td>
+                                <a href="{{ url_for('admin.admin_edit_product', id=product.product_id) }}" class="action-link action-link-edit">Kelola</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3">Tidak ada produk dengan stok menipis.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div>
+            <h4>Produk Kurang Laris</h4>
+             <p class="form-hint">10 produk dengan penjualan terendah dalam rentang waktu yang dipilih.</p>
+            <div class="table-wrapper">
+                <table class="admin-table">
+                     <thead><tr><th>Nama Produk</th><th>Terjual</th><th>Sisa Stok</th></tr></thead>
+                     <tbody>
+                     {% for product in reports.inventory.slow_moving %}
+                         <tr>
+                             <td>{{ product.name }}</td>
+                             <td>{{ product.total_sold }}</td>
+                             <td>{{ product.stock }}</td>
+                        </tr>
+                     {% else %}
+                         <tr><td colspan="3">Tidak ada data penjualan.</td></tr>
+                     {% endfor %}
+                     </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Laporan Produk -->
+<div class="admin-card animated-element" data-animation-delay="500">
+     <div class="report-header">
+        <h3>Laporan Performa Produk</h3>
         <a href="{{ url_for('admin.export_report', report_name='products', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
     </div>
     <div class="report-grid">
@@ -78,7 +145,7 @@
 </div>
 
 <!-- Laporan Pelanggan -->
-<div class="admin-card animated-element" data-animation-delay="400">
+<div class="admin-card animated-element" data-animation-delay="600">
     <div class="report-header">
         <h3>Laporan Pelanggan</h3>
         <a href="{{ url_for('admin.export_report', report_name='customers', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
@@ -102,7 +169,7 @@
 </div>
 
 <!-- Laporan Efektivitas Voucher -->
-<div class="admin-card animated-element" data-animation-delay="500">
+<div class="admin-card animated-element" data-animation-delay="700">
     <div class="report-header">
         <h3>Laporan Efektivitas Voucher</h3>
     </div>
@@ -124,15 +191,4 @@
     </div>
 </div>
 
-<!-- Laporan Konversi Akun -->
-<div class="admin-card animated-element" data-animation-delay="600">
-     <div class="report-header">
-        <h3>Laporan Konversi Tamu-ke-Akun</h3>
-    </div>
-    <div class="dashboard-stats" style="margin-top: 1rem;">
-        <div class="stat-card"><h4>Total Pesanan Tamu</h4><p>{{ reports.guest_conversion.guest_orders }}</p></div>
-        <div class="stat-card"><h4>Akun Baru Terdaftar</h4><p>{{ reports.guest_conversion.new_accounts }}</p></div>
-        <div class="stat-card"><h4>Tingkat Konversi</h4><p>{{ reports.guest_conversion.rate }}%</p></div>
-    </div>
-</div>
 {% endblock %}
