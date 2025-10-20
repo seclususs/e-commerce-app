@@ -1,8 +1,25 @@
 /**
  * Menginisialisasi semua chart di halaman dashboard admin.
  * Membaca data dari atribut data-* pada elemen canvas.
+ * Dibuat agar theme-aware, akan menggambar ulang saat tema berganti.
  */
+
+let chartInstances = []; // Menyimpan instance chart untuk dihancurkan saat tema berubah
+
+// Fungsi helper untuk mendapatkan nilai variabel CSS
+function getCssVar(varName) {
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+// Fungsi untuk menghancurkan semua chart yang ada
+function destroyCharts() {
+    chartInstances.forEach(chart => chart.destroy());
+    chartInstances = [];
+}
+
 export function initDashboardCharts() {
+    destroyCharts(); // Hancurkan chart lama sebelum membuat yang baru
+
     // Opsi umum untuk semua chart agar konsisten
     const commonChartOptions = (isDonut = false) => ({
         responsive: true,
@@ -11,25 +28,29 @@ export function initDashboardCharts() {
             legend: {
                 display: isDonut,
                 position: 'bottom',
-                labels: { color: '#94a3b8' }
+                labels: { color: getCssVar('--color-text-secondary') }
             },
             tooltip: {
-                backgroundColor: '#1e293b',
+                backgroundColor: getCssVar('--color-background-surface'),
+                titleColor: getCssVar('--color-text-primary'),
+                bodyColor: getCssVar('--color-text-secondary'),
                 titleFont: { size: 14, weight: 'bold' },
                 bodyFont: { size: 12 },
                 padding: 10,
                 cornerRadius: 5,
                 displayColors: false,
+                borderColor: getCssVar('--color-border-default'),
+                borderWidth: 1,
             }
         },
         scales: {
             y: {
-                grid: { color: 'rgba(203, 213, 225, 0.1)' },
-                ticks: { color: '#94a3b8' }
+                grid: { color: getCssVar('--color-grid-line') },
+                ticks: { color: getCssVar('--color-text-tertiary') }
             },
             x: {
                 grid: { display: false },
-                ticks: { color: '#94a3b8' }
+                ticks: { color: getCssVar('--color-text-tertiary') }
             }
         }
     });
@@ -47,7 +68,7 @@ export function initDashboardCharts() {
                 label: (context) => `Penjualan: ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(context.parsed.y)}`
             };
 
-            new Chart(salesCtx, {
+            const salesChart = new Chart(salesCtx, {
                 type: 'bar',
                 data: {
                     labels: chartLabels,
@@ -63,9 +84,10 @@ export function initDashboardCharts() {
                 },
                 options: salesChartOptions
             });
+            chartInstances.push(salesChart);
         } catch (e) {
             console.error("Gagal memuat Sales Chart:", e);
-            salesCtx.parentElement.innerHTML = '<p style="color: #94a3b8; text-align: center;">Gagal memuat data grafik penjualan.</p>';
+            salesCtx.parentElement.innerHTML = '<p style="color: var(--color-text-secondary); text-align: center;">Gagal memuat data grafik penjualan.</p>';
         }
     }
 
@@ -83,7 +105,7 @@ export function initDashboardCharts() {
                 label: (context) => `Terjual: ${context.parsed.y} unit`
             };
 
-            new Chart(topProductsCtx, {
+            const topProductsChart = new Chart(topProductsCtx, {
                 type: 'bar',
                 data: {
                     labels: topProductsLabels,
@@ -91,10 +113,8 @@ export function initDashboardCharts() {
                         label: 'Jumlah Terjual',
                         data: topProductsData,
                         backgroundColor: [
-                            'rgba(16, 185, 129, 0.6)',
-                            'rgba(59, 130, 246, 0.6)',
-                            'rgba(139, 92, 246, 0.6)',
-                            'rgba(239, 68, 68, 0.6)',
+                            'rgba(16, 185, 129, 0.6)', 'rgba(59, 130, 246, 0.6)',
+                            'rgba(139, 92, 246, 0.6)','rgba(239, 68, 68, 0.6)',
                             'rgba(245, 158, 11, 0.6)'
                         ],
                         borderColor: [
@@ -106,9 +126,10 @@ export function initDashboardCharts() {
                 },
                 options: topProductsOptions
             });
+            chartInstances.push(topProductsChart);
         } catch (e) {
             console.error("Gagal memuat Top Products Chart:", e);
-            topProductsCtx.parentElement.innerHTML = '<p style="color: #94a3b8; text-align: center;">Gagal memuat data produk terlaris.</p>';
+            topProductsCtx.parentElement.innerHTML = '<p style="color: var(--color-text-secondary); text-align: center;">Gagal memuat data produk terlaris.</p>';
         }
     }
 
@@ -127,7 +148,7 @@ export function initDashboardCharts() {
                 label: (context) => `Sisa Stok: ${context.parsed.x}`
             };
 
-            new Chart(lowStockCtx, {
+            const lowStockChart = new Chart(lowStockCtx, {
                 type: 'bar',
                 data: {
                     labels: lowStockLabels,
@@ -142,9 +163,17 @@ export function initDashboardCharts() {
                 },
                 options: lowStockOptions
             });
+            chartInstances.push(lowStockChart);
         } catch (e) {
             console.error("Gagal memuat Low Stock Chart:", e);
-            lowStockCtx.parentElement.innerHTML = '<p style="color: #94a3b8; text-align: center;">Gagal memuat data stok produk.</p>';
+            lowStockCtx.parentElement.innerHTML = '<p style="color: var(--color-text-secondary); text-align: center;">Gagal memuat data stok produk.</p>';
         }
     }
 }
+
+// Mendengarkan event 'themeChanged' untuk menggambar ulang chart
+window.addEventListener('themeChanged', () => {
+    if (document.getElementById('salesChart')) {
+        initDashboardCharts();
+    }
+});

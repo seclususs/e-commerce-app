@@ -250,11 +250,11 @@ with connection:
 
     # Seeding data orders
     orders_to_add = [
-        (1, 2, '2024-09-10 14:30:00', 500000, 0, 15000, 515000, None, 'Selesai', 'Bank Transfer', 'TX1001', 'User 1', '081200000001', 'Jl. Dummy No. 1', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
-        (2, 3, '2024-10-01 11:00:00', 125000, 0, 10000, 135000, None, 'Dikirim', 'E-Wallet', 'TX1002', 'User 2', '081200000002', 'Jl. Dummy No. 2', '', 'Jakarta', 'DKI Jakarta', '10220', 'SC10002'),
-        (3, 4, '2024-10-14 20:00:00', 400000, 0, 20000, 420000, None, 'Diproses', 'COD', None, 'User 3', '081200000003', 'Jl. Dummy No. 3', '', 'Bandung', 'Jawa Barat', '40111', None),
-        (4, 15, '2024-10-15 09:00:00', 150000, 15000, 15000, 150000, 'HEMAT10', 'Selesai', 'E-Wallet', 'TX1003', 'User 14', '081200000014', 'Jl. Dummy No. 14', '', 'Surabaya', 'Jawa Timur', '60111', 'JN10002'),
-        (5, 5, '2024-10-18 10:00:00', 175000, 0, 15000, 190000, None, 'Menunggu Pembayaran', 'Virtual Account', None, 'User 5', '081200000005', 'Jl. Dummy No. 5', '', 'Yogyakarta', 'DIY', '55222', None),
+        (1, 2, '2025-09-10 14:30:00', 500000, 0, 15000, 515000, None, 'Selesai', 'Bank Transfer', 'TX1001', 'User 1', '081200000001', 'Jl. Dummy No. 1', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
+        (2, 3, '2025-10-01 11:00:00', 125000, 0, 10000, 135000, None, 'Dikirim', 'E-Wallet', 'TX1002', 'User 2', '081200000002', 'Jl. Dummy No. 2', '', 'Jakarta', 'DKI Jakarta', '10220', 'SC10002'),
+        (3, 4, '2025-10-14 20:00:00', 400000, 0, 20000, 420000, None, 'Diproses', 'COD', None, 'User 3', '081200000003', 'Jl. Dummy No. 3', '', 'Bandung', 'Jawa Barat', '40111', None),
+        (4, 15, '2025-10-15 09:00:00', 150000, 15000, 15000, 150000, 'HEMAT10', 'Selesai', 'E-Wallet', 'TX1003', 'User 14', '081200000014', 'Jl. Dummy No. 14', '', 'Surabaya', 'Jawa Timur', '60111', 'JN10002'),
+        (5, 5, '2025-10-18 10:00:00', 175000, 0, 15000, 190000, None, 'Menunggu Pembayaran', 'Virtual Account', None, 'User 5', '081200000005', 'Jl. Dummy No. 5', '', 'Yogyakarta', 'DIY', '55222', None),
     ]
     cursor.executemany("""
         INSERT INTO orders (id, user_id, order_date, subtotal, discount_amount, shipping_cost, total_amount, voucher_code, status, payment_method, payment_transaction_id, shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2, shipping_city, shipping_province, shipping_postal_code, tracking_number)

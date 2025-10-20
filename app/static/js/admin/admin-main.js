@@ -4,6 +4,7 @@
  */
 import { initAnimations } from '../utils/animations.js';
 import { initFlashMessages } from '../utils/ui.js';
+import { initThemeSwitcher } from '../utils/theme.js';
 import { initLogout } from '../shared/auth.js';
 import { initActionConfirmations } from '../shared/confirmations.js';
 import { initProductForms } from './product-forms.js';
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initLogout();
     initActionConfirmations();
     initAdminCardToggle();
+    initThemeSwitcher();
     
     // Inisialisasi modul spesifik per halaman admin
     if (document.getElementById('salesChart')) {

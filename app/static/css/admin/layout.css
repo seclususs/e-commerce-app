@@ -5,8 +5,8 @@
 
 .admin-sidebar {
     width: 250px;
-    background: #1e293b;
-    border-right: 1px solid #334155;
+    background: var(--color-background-surface);
+    border-right: 1px solid var(--color-border-default);
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
@@ -34,7 +34,7 @@
 }
 
 .admin-nav a {
-    color: #cbd5e1;
+    color: var(--color-text-secondary);
     text-decoration: none;
     padding: 0.8rem 1rem;
     border-radius: 8px;
@@ -42,21 +42,25 @@
 }
 
 .admin-nav a:hover {
-    background: #334155;
-    color: #f1f5f9;
+    background: var(--color-background-elevated);
+    color: var(--color-text-primary);
 }
 
 .admin-nav a.active {
-    background: #3b82f6;
+    background: var(--color-primary);
     color: white;
     font-weight: 600;
+}
+
+html.light-theme .admin-nav a.active {
+    color: var(--color-white);
 }
 
 /* Main Content Area */
 .admin-main-content {
     margin-left: 250px;
     padding: 2rem;
-    background-color: #0f172a;
+    background-color: var(--color-background-body);
 }
 
 .admin-main-header {
@@ -72,4 +76,15 @@
 .admin-main-content .flash-messages {
     padding: 0;
     margin-bottom: 1.5rem;
+}
+
+/* Theme toggle in admin sidebar */
+.admin-nav .theme-toggle-wrapper {
+    margin-top: auto; /* Pushes to the bottom */
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border-default);
+}
+.admin-nav .theme-toggle-btn {
+    width: 100%;
+    justify-content: center;
 }

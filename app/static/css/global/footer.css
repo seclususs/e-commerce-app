@@ -1,7 +1,7 @@
 /* Footer */
 .footer {
     padding: 3rem 5%;
-    border-top: 1px solid rgba(59, 130, 246, 0.2);
+    border-top: 1px solid var(--color-border-subtle);
     flex-shrink: 0;
 }
 .footer-content {
@@ -20,8 +20,8 @@
     text-align: center;
     padding-top: 2rem;
     margin-top: 2rem;
-    border-top: 1px solid rgba(59, 130, 246, 0.2);
-    color: var(--color-text-dark);
+    border-top: 1px solid var(--color-border-subtle);
+    color: var(--color-text-tertiary);
 }
 
 .copyright:only-child {
@@ -38,7 +38,7 @@
 }
 
 .footer-social-icons a {
-    color: var(--color-text-med);
+    color: var(--color-text-secondary);
     font-size: 1.8rem;
     transition: color 0.3s ease, transform 0.3s ease;
 }

@@ -3,7 +3,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0 1.5rem; /* Menghapus padding vertikal untuk mencegah overflow */
+    padding: 0 1.5rem;
     width: 100%;
     min-height: 100vh;
     flex-grow: 1;
@@ -12,17 +12,17 @@
 .auth-container { 
     width: 100%; 
     max-width: 900px; 
-    background: rgba(30, 41, 59, 0.5); 
-    border: 1px solid rgba(59, 130, 246, 0.2); 
+    background: var(--color-auth-container-bg); 
+    border: 1px solid var(--color-border-subtle); 
     border-radius: 15px; 
     display: grid; 
     grid-template-columns: 1fr 1fr; 
     overflow: hidden; 
-    box-shadow: 0 10px 40px rgba(0,0,0,0.4); 
+    box-shadow: 0 10px 40px var(--color-shadow-dark); 
 }
 
 .auth-image { 
-    background-color: #0c1222; 
+    background-color: var(--color-auth-image-bg); 
     background-size: cover; 
     background-position: center; 
     display: flex; 
@@ -32,29 +32,40 @@
     position: relative; 
     overflow: hidden; 
 }
+html.light-theme .auth-image {
+    color: var(--color-text-primary);
+}
 
 .auth-image-overlay { 
     position: relative; 
     z-index: 2; 
-    color: #fff; 
+    color: var(--color-white); 
+}
+html.light-theme .auth-image-overlay {
+    color: var(--color-text-primary);
 }
 
 .auth-image-overlay h3 { 
     font-family: 'Orbitron', sans-serif; 
     font-size: 1.6rem; 
     margin-bottom: 0.5rem; 
-    text-shadow: 0 2px 10px rgba(0,0,0,0.7); 
+    text-shadow: 0 2px 10px rgba(0,0,0,0.2); 
 }
 
 .auth-image-overlay p { 
     font-size: 1rem; 
     line-height: 1.5; 
-    text-shadow: 0 2px 5px rgba(0,0,0,0.7); 
+    text-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+    color: var(--color-text-secondary);
+}
+html.dark-theme .auth-image-overlay p {
+    text-shadow: 0 2px 5px rgba(0,0,0,0.7);
+    color: inherit;
 }
 
 .auth-image .shape { 
     position: absolute; 
-    background: linear-gradient(45deg, #3b82f6, #60a5fa); 
+    background: linear-gradient(45deg, var(--color-primary), #60a5fa); 
     border-radius: 50%; 
     opacity: 0.15; 
     animation: float 15s infinite ease-in-out; 

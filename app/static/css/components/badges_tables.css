@@ -20,11 +20,11 @@
 .status-cancelled { background-color: var(--color-danger); }
 
 /* Tables */
-.table-wrapper { -ms-overflow-style: none; scrollbar-width: none; }
+.table-wrapper { overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
 .table-wrapper::-webkit-scrollbar { display: none; }
 .admin-table { width: 100%; border-collapse: collapse; }
-.admin-table th, .admin-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--color-background-light); vertical-align: middle; }
-.admin-table th { color: var(--color-text-med); }
+.admin-table th, .admin-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--color-border-default); vertical-align: middle; }
+.admin-table th { color: var(--color-text-secondary); }
 .admin-table tbody tr { transition: background-color 0.2s ease; }
-.admin-table tbody tr:hover { background-color: rgba(30, 41, 59, 0.7); }
+.admin-table tbody tr:hover { background-color: var(--color-background-elevated); }
 .action-buttons a { margin-right: 1rem; }

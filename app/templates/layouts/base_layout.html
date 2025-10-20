@@ -7,7 +7,27 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=1.9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=2.0">
+
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme');
+                var themeClass = '';
+                if (theme) {
+                    themeClass = theme === 'light' ? 'light-theme' : 'dark-theme';
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    themeClass = 'light-theme';
+                } else {
+                    themeClass = 'dark-theme';
+                }
+                document.documentElement.classList.add(themeClass);
+            } catch (e) {
+                // Failsafe
+                document.documentElement.classList.add('dark-theme');
+            }
+        })();
+    </script>
 </head>
 <body>
     <!-- Variabel global dan flag untuk JavaScript -->
@@ -39,6 +59,13 @@
                 <li><a href="{{ url_for('auth.login') }}" class="nav-link-secondary">Login</a></li>
                 <li><a href="{{ url_for('auth.register') }}" class="cta-button nav-cta">Daftar</a></li>
             {% endif %}
+
+            <li class="theme-toggle-wrapper">
+                <button id="themeToggle" class="theme-toggle-btn" aria-label="Ganti tema">
+                    <i class="fas fa-sun" id="theme-toggle-sun"></i>
+                    <i class="fas fa-moon" id="theme-toggle-moon"></i>
+                </button>
+            </li>
 
             {% if not session.is_admin %}
             <li class="cart-icon-wrapper">

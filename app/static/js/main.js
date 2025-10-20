@@ -1,5 +1,6 @@
 import { initAnimations } from './utils/animations.js';
 import { initFlashMessages } from './utils/ui.js';
+import { initThemeSwitcher } from './utils/theme.js';
 import { cartModule } from './pages/cart.js';
 import { initLogout } from './shared/auth.js';
 import { initActionConfirmations } from './shared/confirmations.js';
@@ -30,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     initFlashMessages();
     initLogout();
     initActionConfirmations();
+    initThemeSwitcher();
     
     // Inisialisasi modul keranjang
     cartModule.init();

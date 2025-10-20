@@ -1,23 +1,39 @@
 :root {
-  /* Skema Warna */
+  /* Skema Warna Default (Gelap) */
   --color-primary: #3b82f6;
   --color-primary-dark: #2563eb;
-  --color-background-dark: #0f172a;
-  --color-background-med: #1e293b;
-  --color-background-light: #334155;
-  --color-text-light: #f1f5f9;
-  --color-text-med: #94a3b8;
-  --color-text-dark: #64748b;
+  --color-background-body: #0f172a;
+  --color-background-surface: #1e293b; /* Untuk kartu, modal, sidebar */
+  --color-background-elevated: #334155; /* Untuk hover, elemen yang lebih tinggi */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
   --color-danger: #ef4444;
   --color-danger-dark: #dc2626;
   --color-success: #16a34a;
   --color-warning: #f59e0b;
   --color-info: #8b5cf6;
   --color-white: #ffffff;
+  --color-black: #000000;
 
-  /* Variabel Warna Tautan Aksi */
+  /* Variabel Warna Lanjutan (Gelap) */
   --color-text-link: var(--color-primary);
   --color-text-danger: var(--color-danger);
+  --color-border-subtle: rgba(59, 130, 246, 0.2);
+  --color-border-default: var(--color-background-elevated);
+  --color-shadow-primary: rgba(59, 130, 246, 0.4);
+  --color-shadow-dark: rgba(0, 0, 0, 0.4);
+  --color-navbar-bg: rgba(15, 23, 42, 0.9);
+  --color-card-bg: rgba(30, 41, 59, 0.5);
+  --color-auth-image-bg: #0c1222;
+  --color-form-bg: var(--color-background-body);
+  --color-hero-gradient-start: rgba(15, 23, 42, 0.9);
+  --color-hero-gradient-end: rgba(30, 41, 59, 0.9);
+  --color-grid-line: rgba(203, 213, 225, 0.1);
+  --color-hero-h1-gradient-start: #f1f5f9;
+  --color-hero-h1-gradient-end: #3b82f6;
+  --color-logo-gradient-start: var(--color-primary);
+  --color-logo-gradient-end: #60a5fa;
 
   /* Tipografi */
   --font-primary: 'Inter', sans-serif;
@@ -31,7 +47,40 @@
   --border-radius-md: 15px;
   --border-radius-lg: 20px;
   --border-radius-full: 50px;
-  --shadow-md: 0 4px 20px rgba(59, 130, 246, 0.4);
+  --shadow-md: 0 4px 20px var(--color-shadow-primary);
   --shadow-lg: 0 10px 40px rgba(59, 130, 246, 0.3);
-  --shadow-dark: 0 10px 40px rgba(0, 0, 0, 0.4);
+  --shadow-dark: 0 10px 40px var(--color-shadow-dark);
+}
+
+/* TEMA TERANG */
+html.light-theme {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-background-body: #f1f5f9;
+  --color-background-surface: #ffffff;
+  --color-background-elevated: #e2e8f0;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94a3b8;
+  --color-danger: #dc2626;
+  --color-danger-dark: #b91c1c;
+  --color-success: #15803d;
+  --color-warning: #d97706;
+  --color-info: #7c3aed;
+  
+  --color-border-subtle: #e2e8f0;
+  --color-border-default: #cbd5e1;
+  --color-shadow-primary: rgba(59, 130, 246, 0.2);
+  --color-shadow-dark: rgba(100, 116, 139, 0.15);
+  --color-navbar-bg: rgba(241, 245, 249, 0.85);
+  --color-card-bg: #ffffff;
+  --color-auth-image-bg: #eef2ff;
+  --color-form-bg: #ffffff;
+  --color-hero-gradient-start: rgba(226, 232, 240, 0.8);
+  --color-hero-gradient-end: rgba(241, 245, 249, 0.9);
+  --color-grid-line: rgba(0, 0, 0, 0.08);
+  --color-hero-h1-gradient-start: #1e293b;
+  --color-hero-h1-gradient-end: #2563eb;
+  --color-logo-gradient-start: var(--color-primary);
+  --color-logo-gradient-end: #1d4ed8;
 }
