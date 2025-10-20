@@ -96,8 +96,8 @@ class OrderService:
 
                 final_total = subtotal - discount_amount + shipping_cost
 
-                initial_status = 'Processing' if payment_method == 'COD' else 'Pending'
-                transaction_id = f"TX-{uuid.uuid4().hex[:8].upper()}" if initial_status == 'Pending' else None
+                initial_status = 'Diproses' if payment_method == 'COD' else 'Menunggu Pembayaran'
+                transaction_id = f"TX-{uuid.uuid4().hex[:8].upper()}" if initial_status == 'Menunggu Pembayaran' else None
 
                 cursor = conn.cursor()
                 cursor.execute("""
@@ -146,7 +146,7 @@ class OrderService:
         conn = get_db_connection()
         try:
             with conn:
-                order = conn.execute("SELECT * FROM orders WHERE payment_transaction_id = ? AND status = 'Pending'", (transaction_id,)).fetchone()
+                order = conn.execute("SELECT * FROM orders WHERE payment_transaction_id = ? AND status = 'Menunggu Pembayaran'", (transaction_id,)).fetchone()
                 if not order:
                     return {'success': False, 'message': 'Pesanan tidak ditemukan atau sudah diproses.'}
                 
@@ -159,7 +159,7 @@ class OrderService:
                     stock = conn.execute(stock_query, (stock_id,)).fetchone()['stock']
                     
                     if item['quantity'] > stock:
-                        conn.execute("UPDATE orders SET status = 'Cancelled' WHERE id = ?", (order_id,))
+                        conn.execute("UPDATE orders SET status = 'Dibatalkan' WHERE id = ?", (order_id,))
                         return {'success': False, 'message': f"Stok habis untuk produk ID {item['product_id']}."}
 
                 for item in items:
@@ -167,7 +167,7 @@ class OrderService:
                     update_id = item['variant_id'] if item['variant_id'] else item['product_id']
                     conn.execute(update_query, (item['quantity'], update_id))
                 
-                conn.execute("UPDATE orders SET status = 'Processing' WHERE id = ?", (order_id,))
+                conn.execute("UPDATE orders SET status = 'Diproses' WHERE id = ?", (order_id,))
                 
                 # Update total stok produk jika memiliki varian
                 product_ids_with_variants = {item['product_id'] for item in items if item['variant_id']}
@@ -189,11 +189,11 @@ class OrderService:
                 if not order:
                     return {'success': False, 'message': 'Pesanan tidak ditemukan atau Anda tidak memiliki akses.'}
                 
-                if order['status'] not in ['Pending', 'Processing']:
+                if order['status'] not in ['Menunggu Pembayaran', 'Diproses']:
                     return {'success': False, 'message': f'Pesanan tidak dapat dibatalkan karena statusnya "{order["status"]}".'}
                 
-                # Kembalikan stok HANYA jika pesanan sudah mengurangi stok
-                if order['status'] == 'Processing' or (order['status'] == 'Pending' and order['payment_transaction_id']):
+                # Kembalikan stok HANYA jika pesanan sudah mengurangi stok (status 'Diproses')
+                if order['status'] == 'Diproses':
                     order_items = conn.execute('SELECT * FROM order_items WHERE order_id = ?', (order_id,)).fetchall()
                     for item in order_items:
                         update_query = "UPDATE {} SET stock = stock + ? WHERE id = ?".format("product_variants" if item['variant_id'] else "products")
@@ -205,7 +205,7 @@ class OrderService:
                         total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (pid,)).fetchone()[0]
                         conn.execute("UPDATE products SET stock = ? WHERE id = ?", (total_stock or 0, pid))
 
-                conn.execute('UPDATE orders SET status = ? WHERE id = ?', ('Cancelled', order_id))
+                conn.execute('UPDATE orders SET status = ? WHERE id = ?', ('Dibatalkan', order_id))
 
             return {'success': True, 'message': f'Pesanan #{order_id} berhasil dibatalkan.'}
         except Exception as e:

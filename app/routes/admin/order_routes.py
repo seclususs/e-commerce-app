@@ -67,14 +67,25 @@ def update_order_status(id):
 
     order = conn.execute('SELECT status, tracking_number FROM orders WHERE id = ?', (id,)).fetchone()
 
-    if status == 'Shipped' and not order['tracking_number'] and not tracking_number:
+    if status == 'Dikirim' and not order['tracking_number'] and not tracking_number:
         tracking_number = f"HT-{random.randint(10000000, 99999999)}"
         flash(f'Nomor resi otomatis digenerate: {tracking_number}', 'info')
     
-    if status == 'Cancelled' and order['status'] != 'Cancelled':
+    if status == 'Dibatalkan' and order['status'] != 'Dibatalkan':
         order_items = conn.execute('SELECT * FROM order_items WHERE order_id = ?', (id,)).fetchall()
         for item in order_items:
-            conn.execute('UPDATE products SET stock = stock + ? WHERE id = ?', (item['quantity'], item['product_id']))
+            # Perbarui stok berdasarkan varian atau produk utama
+            if item['variant_id']:
+                conn.execute('UPDATE product_variants SET stock = stock + ? WHERE id = ?', (item['quantity'], item['variant_id']))
+            else:
+                conn.execute('UPDATE products SET stock = stock + ? WHERE id = ?', (item['quantity'], item['product_id']))
+        
+        # Perbarui stok total produk utama jika memiliki varian
+        product_ids_with_variants = {item['product_id'] for item in order_items if item['variant_id']}
+        for pid in product_ids_with_variants:
+            total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (pid,)).fetchone()[0]
+            conn.execute("UPDATE products SET stock = ? WHERE id = ?", (total_stock or 0, pid))
+
         flash(f'Stok untuk pesanan #{id} telah dikembalikan.', 'info')
 
     conn.execute('UPDATE orders SET status = ?, tracking_number = ? WHERE id = ?', (status, tracking_number, id))

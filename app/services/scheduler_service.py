@@ -5,7 +5,7 @@ class SchedulerService:
 
     def cancel_expired_pending_orders(self):
         """
-        Membatalkan pesanan 'Pending' yang melebihi batas waktu (misal, 24 jam)
+        Membatalkan pesanan 'Menunggu Pembayaran' yang melebihi batas waktu (misal, 24 jam)
         dan mengembalikan stok yang terkait.
         """
         conn = get_db_connection()
@@ -14,9 +14,9 @@ class SchedulerService:
                 # Tentukan batas waktu, misalnya 24 jam yang lalu
                 expiration_time = datetime.now() - timedelta(hours=24)
                 
-                # Cari pesanan 'Pending' yang sudah kedaluwarsa
+                # Cari pesanan 'Menunggu Pembayaran' yang sudah kedaluwarsa
                 expired_orders = conn.execute(
-                    "SELECT id FROM orders WHERE status = 'Pending' AND order_date < ?",
+                    "SELECT id FROM orders WHERE status = 'Menunggu Pembayaran' AND order_date < ?",
                     (expiration_time,)
                 ).fetchall()
 
@@ -26,9 +26,9 @@ class SchedulerService:
 
                 cancelled_ids = [order['id'] for order in expired_orders]
                 
-                # Ubah status pesanan menjadi 'Cancelled'
+                # Ubah status pesanan menjadi 'Dibatalkan'
                 placeholders = ', '.join(['?'] * len(cancelled_ids))
-                conn.execute(f"UPDATE orders SET status = 'Cancelled' WHERE id IN ({placeholders})", cancelled_ids)
+                conn.execute(f"UPDATE orders SET status = 'Dibatalkan' WHERE id IN ({placeholders})", cancelled_ids)
                 
                 print(f"Scheduler: Berhasil membatalkan {len(cancelled_ids)} pesanan kedaluwarsa.")
                 return {'success': True, 'cancelled_count': len(cancelled_ids)}

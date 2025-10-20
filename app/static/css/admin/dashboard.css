@@ -28,18 +28,9 @@
 /* Grid for charts and tables on the dashboard */
 .dashboard-charts-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
     align-items: start;
-}
-
-.dashboard-charts-grid canvas {
-    max-height: 350px;
-}
-
-.dashboard-charts-grid .admin-table th, 
-.dashboard-charts-grid .admin-table td {
-    padding: 0.8rem;
 }
 
 /* Responsive adjustments for the dashboard grid */

@@ -59,13 +59,42 @@ def create_app():
             return json.loads(json_str)
         except (json.JSONDecodeError, TypeError):
             return [] # Mengembalikan list kosong jika terjadi error
-            
+
     # Filter 'split'
     @app.template_filter('split')
     def split_filter(value, delimiter):
         if not isinstance(value, str):
             return value
         return value.split(delimiter)
+
+    # Filter untuk menerjemahkan status pesanan
+    @app.template_filter('status_translate')
+    def status_translate_filter(status_en):
+        status_map = {
+            'Pending': 'Menunggu Pembayaran',
+            'Processing': 'Diproses',
+            'Shipped': 'Dikirim',
+            'Completed': 'Selesai',
+            'Cancelled': 'Dibatalkan',
+        }
+        return status_map.get(status_en, status_en)
+
+    # Filter untuk kelas CSS status
+    @app.template_filter('status_class')
+    def status_class_filter(status_en):
+        class_map = {
+            'Pending': 'pending',
+            'Processing': 'processing',
+            'Shipped': 'shipped',
+            'Completed': 'completed',
+            'Cancelled': 'cancelled',
+            'Menunggu Pembayaran': 'pending',
+            'Diproses': 'processing',
+            'Dikirim': 'shipped',
+            'Selesai': 'completed',
+            'Dibatalkan': 'cancelled',
+        }
+        return class_map.get(status_en, 'pending')
 
     # Registrasi semua blueprint
     app.register_blueprint(product_bp)

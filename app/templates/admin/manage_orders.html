@@ -17,11 +17,11 @@
                 <label for="status">Filter Status</label>
                 <select id="status" name="status" class="form-control">
                     <option value="">Semua Status</option>
-                    <option value="Pending" {% if request.args.get('status') == 'Pending' %}selected{% endif %}>Pending</option>
-                    <option value="Processing" {% if request.args.get('status') == 'Processing' %}selected{% endif %}>Processing</option>
-                    <option value="Shipped" {% if request.args.get('status') == 'Shipped' %}selected{% endif %}>Shipped</option>
-                    <option value="Completed" {% if request.args.get('status') == 'Completed' %}selected{% endif %}>Completed</option>
-                    <option value="Cancelled" {% if request.args.get('status') == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                    <option value="Menunggu Pembayaran" {% if request.args.get('status') == 'Menunggu Pembayaran' %}selected{% endif %}>Menunggu Pembayaran</option>
+                    <option value="Diproses" {% if request.args.get('status') == 'Diproses' %}selected{% endif %}>Diproses</option>
+                    <option value="Dikirim" {% if request.args.get('status') == 'Dikirim' %}selected{% endif %}>Dikirim</option>
+                    <option value="Selesai" {% if request.args.get('status') == 'Selesai' %}selected{% endif %}>Selesai</option>
+                    <option value="Dibatalkan" {% if request.args.get('status') == 'Dibatalkan' %}selected{% endif %}>Dibatalkan</option>
                 </select>
             </div>
             <div class="form-group">
@@ -57,7 +57,7 @@
                     <td data-label="Tanggal:">{{ order.order_date.split(' ')[0] }}</td>
                     <td data-label="Pelanggan:">{{ order.customer_name or 'Tamu' }}</td>
                     <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
-                    <td data-label="Status:"><span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></td>
+                    <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status }}</span></td>
                     <td data-label="Aksi:">
                         <a href="{{ url_for('admin.admin_order_detail', id=order.id) }}" class="btn-view">Lihat Detail</a>
                     </td>

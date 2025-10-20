@@ -6,6 +6,7 @@ import { initActionConfirmations } from './shared/confirmations.js';
 import { initProductCatalogPage } from './pages/product-catalog.js';
 import { initProductDetailPage } from './pages/product-detail.js';
 import { initCheckoutPage } from './pages/checkout.js';
+import { initPaymentPage } from './pages/payment.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Inisialisasi efek transisi halaman
@@ -48,5 +49,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     if (document.querySelector('.checkout-page-section')) {
         initCheckoutPage();
+    }
+    if (document.querySelector('.payment-page-section')) {
+        initPaymentPage();
     }
 });

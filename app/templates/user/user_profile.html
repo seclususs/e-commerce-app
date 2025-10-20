@@ -43,10 +43,10 @@
                             <td data-label="ID Pesanan:">#{{ order.id }}</td>
                             <td data-label="Tanggal:">{{ order.order_date.split(' ')[0] }}</td>
                             <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
-                            <td data-label="Status:"><span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></td>
+                            <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status }}</span></td>
                             <td data-label="No. Resi:">{{ order.tracking_number or '-' }}</td>
                             <td data-label="Aksi:">
-                                {% if order.status in ['Pending', 'Processing'] %}
+                                {% if order.status in ['Menunggu Pembayaran', 'Diproses'] %}
                                 <form method="POST" action="{{ url_for('purchase.cancel_order', order_id=order.id) }}" class="cancel-order-form">
                                     <button type="submit" class="btn-cancel">Batalkan</button>
                                 </form>

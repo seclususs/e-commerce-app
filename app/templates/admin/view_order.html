@@ -17,7 +17,7 @@
         <p><strong>Pelanggan:</strong> {{ order.customer_name or 'Tamu' }} ({{ order.email or 'N/A' }})</p>
         <p><strong>Total Pembayaran:</strong> {{ order.total_amount|rupiah }}</p>
         <p><strong>Metode Pembayaran:</strong> {{ order.payment_method or 'N/A' }}</p>
-        <p><strong>Status Saat Ini:</strong> <span class="status-badge status-{{ order.status|lower }}">{{ order.status }}</span></p>
+        <p><strong>Status Saat Ini:</strong> <span class="status-badge status-{{ order.status|status_class }}">{{ order.status }}</span></p>
     </div>
     <div class="admin-card">
         <h3>Update Pesanan</h3>
@@ -26,11 +26,11 @@
             <div class="form-group">
                 <label for="status">Ubah Status</label>
                 <select name="status" id="status" class="form-control">
-                    <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
-                    <option value="Processing" {% if order.status == 'Processing' %}selected{% endif %}>Processing</option>
-                    <option value="Shipped" {% if order.status == 'Shipped' %}selected{% endif %}>Shipped</option>
-                    <option value="Completed" {% if order.status == 'Completed' %}selected{% endif %}>Completed</option>
-                    <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                    <option value="Menunggu Pembayaran" {% if order.status == 'Menunggu Pembayaran' %}selected{% endif %}>Menunggu Pembayaran</option>
+                    <option value="Diproses" {% if order.status == 'Diproses' %}selected{% endif %}>Diproses</option>
+                    <option value="Dikirim" {% if order.status == 'Dikirim' %}selected{% endif %}>Dikirim</option>
+                    <option value="Selesai" {% if order.status == 'Selesai' %}selected{% endif %}>Selesai</option>
+                    <option value="Dibatalkan" {% if order.status == 'Dibatalkan' %}selected{% endif %}>Dibatalkan</option>
                 </select>
             </div>
              <div class="form-group">

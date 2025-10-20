@@ -1,5 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for
 from datetime import datetime, timedelta
+import json
 
 from . import admin_bp
 from database.db_config import get_db_connection, get_content
@@ -41,25 +42,31 @@ def admin_dashboard():
     end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M:%S')
 
     # Query stats dengan rentang waktu
-    total_sales = conn.execute("SELECT SUM(total_amount) FROM orders WHERE status != 'Cancelled' AND order_date BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
+    total_sales = conn.execute("SELECT SUM(total_amount) FROM orders WHERE status != 'Dibatalkan' AND order_date BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
     order_count = conn.execute("SELECT COUNT(id) FROM orders WHERE order_date BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
     new_user_count = conn.execute("SELECT COUNT(id) FROM users WHERE created_at BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
-    product_count = conn.execute('SELECT COUNT(id) FROM products').fetchone()[0] # Total produk tidak terikat waktu
+    product_count = conn.execute('SELECT COUNT(id) FROM products').fetchone()[0]
 
-    # Query kartu baru
+    # Query untuk grafik baru
     top_products = conn.execute("""
         SELECT p.name, SUM(oi.quantity) as total_sold
         FROM order_items oi JOIN products p ON oi.product_id = p.id JOIN orders o ON oi.order_id = o.id
-        WHERE o.status != 'Cancelled' AND o.order_date BETWEEN ? AND ?
+        WHERE o.status != 'Dibatalkan' AND o.order_date BETWEEN ? AND ?
         GROUP BY p.id ORDER BY total_sold DESC LIMIT 5
     """, (start_date_str, end_date_str)).fetchall()
     
-    low_stock_products = conn.execute("SELECT id, name, stock FROM products WHERE stock > 0 AND stock <= 5 ORDER BY stock ASC LIMIT 5").fetchall()
+    low_stock_products_query = """
+        SELECT name, stock, id as product_id FROM products WHERE has_variants = 0 AND stock <= 5 AND stock > 0
+        UNION ALL
+        SELECT p.name || ' (' || pv.size || ')' as name, pv.stock, p.id as product_id FROM product_variants pv JOIN products p ON pv.product_id = p.id WHERE pv.stock <= 5 AND pv.stock > 0
+        ORDER BY stock ASC LIMIT 7
+    """
+    low_stock_products = conn.execute(low_stock_products_query).fetchall()
 
-    # Logika Chart dengan rentang waktu dinamis
+    # Logika Chart Penjualan
     sales_data_raw = conn.execute("""
         SELECT date(order_date) as sale_date, SUM(total_amount) as daily_total
-        FROM orders WHERE status != 'Cancelled' AND order_date BETWEEN ? AND ?
+        FROM orders WHERE status != 'Dibatalkan' AND order_date BETWEEN ? AND ?
         GROUP BY sale_date ORDER BY sale_date ASC
     """, (start_date_str, end_date_str)).fetchall()
 
@@ -72,20 +79,30 @@ def admin_dashboard():
         chart_labels.append(current_date.strftime('%d %b'))
         chart_data.append(sales_by_date.get(date_str, 0))
 
+    # Data untuk grafik
+    top_products_chart_labels = [p['name'] for p in top_products]
+    top_products_chart_data = [p['total_sold'] for p in top_products]
+    low_stock_chart_labels = [p['name'] for p in low_stock_products]
+    low_stock_chart_data = [p['stock'] for p in low_stock_products]
+
+
     conn.close()
 
     stats = {
         'product_count': product_count,
         'order_count': order_count,
         'total_sales': total_sales or 0,
-        'new_user_count': new_user_count,
-        'top_products': top_products,
-        'low_stock_products': low_stock_products
+        'new_user_count': new_user_count
     }
     
     return render_template(
         'admin/dashboard.html', stats=stats, content=get_content(),
-        chart_labels=chart_labels, chart_data=chart_data,
+        chart_labels=json.dumps(chart_labels), 
+        chart_data=json.dumps(chart_data),
+        top_products_chart_labels=json.dumps(top_products_chart_labels),
+        top_products_chart_data=json.dumps(top_products_chart_data),
+        low_stock_chart_labels=json.dumps(low_stock_chart_labels),
+        low_stock_chart_data=json.dumps(low_stock_chart_data),
         selected_period=period, custom_start=custom_start, custom_end=custom_end
     )
 

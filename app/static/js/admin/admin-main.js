@@ -8,6 +8,8 @@ import { initLogout } from '../shared/auth.js';
 import { initActionConfirmations } from '../shared/confirmations.js';
 import { initProductForms } from './product-forms.js';
 import { initAdminCardToggle, initBulkActions } from './ui-handlers.js';
+import { initDashboardCharts } from './dashboard-charts.js';
+import { initSettingsPage } from './settings.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Inisialisasi efek transisi halaman
@@ -33,10 +35,16 @@ document.addEventListener('DOMContentLoaded', () => {
     initAdminCardToggle();
     
     // Inisialisasi modul spesifik per halaman admin
+    if (document.getElementById('salesChart')) {
+        initDashboardCharts();
+    }
     if (document.querySelector('form[action*="/admin/products"]') || document.querySelector('form[action*="/admin/edit_product"]')) {
         initProductForms();
     }
     if (document.getElementById('bulk-action-form')) {
         initBulkActions();
+    }
+    if (document.getElementById('social-links-container')) {
+        initSettingsPage();
     }
 });
