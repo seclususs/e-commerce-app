@@ -83,6 +83,8 @@ function initVoucherHandler() {
                 document.getElementById('checkoutDiscount').textContent = `- ${formatRupiah(result.discount_amount)}`;
                 document.getElementById('checkoutTotal').textContent = formatRupiah(result.final_total);
                 document.querySelector('.discount-row').style.display = 'flex';
+                document.getElementById('city')?.dispatchEvent(new Event('change'));
+
             } else {
                 messageEl.textContent = result.message;
                 messageEl.classList.add('error');
@@ -97,13 +99,11 @@ function initVoucherHandler() {
     };
     
     const resetDiscount = () => {
-        const subtotalText = document.getElementById('checkoutSubtotal').textContent;
-        const subtotal = parseFloat(subtotalText.replace(/[^0-9.]/g, '').replace(/\./g, ''));
-        
         messageEl.textContent = '';
         messageEl.className = 'voucher-feedback';
         document.querySelector('.discount-row').style.display = 'none';
-        document.getElementById('checkoutTotal').textContent = formatRupiah(subtotal);
+        document.getElementById('checkoutDiscount').textContent = '- Rp 0';
+        document.getElementById('city')?.dispatchEvent(new Event('change'));
     };
 
     applyBtn.addEventListener('click', applyVoucher);
@@ -146,6 +146,83 @@ function initStockHoldTimer(expiresAtIsoString) {
     }, 1000);
 }
 
+function initShippingCalculation() {
+    const citySelect = document.getElementById('city');
+    const cityDisplay = document.querySelector('.address-display-box');
+    const shippingRow = document.querySelector('.shipping-row');
+    const shippingCostEl = document.getElementById('checkoutShipping');
+    const totalEl = document.getElementById('checkoutTotal');
+    const subtotalEl = document.getElementById('checkoutSubtotal');
+    const discountEl = document.getElementById('checkoutDiscount');
+    const shippingCostInput = document.getElementById('shipping_cost_input');
+
+    if (!totalEl || !shippingRow || !shippingCostEl || !shippingCostInput) return;
+
+    const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID', { minimumFractionDigits: 0 })}`;
+
+    const calculateAndUpdate = () => {
+        let city = '';
+        if (citySelect) { // Guest
+            city = citySelect.value;
+        } else if (cityDisplay) { // Logged in
+            const cityParagraph = Array.from(cityDisplay.querySelectorAll('p')).find(p => p.textContent.includes(','));
+            if(cityParagraph) {
+                const parts = cityParagraph.textContent.split(',');
+                if (parts.length > 1) {
+                    city = parts[0].trim().split('\n').pop().trim();
+                }
+            }
+        }
+        
+        let shippingCost = 0;
+        const jabodetabek = ['Jakarta', 'Bogor', 'Depok', 'Tangerang', 'Bekasi'];
+
+        if (jabodetabek.includes(city)) {
+            shippingCost = 10000;
+        } else if (city && city !== "") { // Any other city selected
+            shippingCost = 20000;
+        }
+        
+        if (shippingCost > 0) {
+            shippingRow.style.display = 'flex';
+            shippingCostEl.textContent = formatRupiah(shippingCost);
+        } else {
+            shippingRow.style.display = 'none';
+        }
+
+        const subtotalText = subtotalEl.textContent || '0';
+        const discountText = discountEl.textContent || '0';
+        const subtotal = parseFloat(subtotalText.replace(/[^0-9]/g, '')) || 0;
+        const discount = parseFloat(discountText.replace(/[^0-9]/g, '')) || 0;
+
+        const finalTotal = subtotal - discount + shippingCost;
+        totalEl.textContent = formatRupiah(finalTotal);
+        shippingCostInput.value = shippingCost;
+    };
+
+    if (citySelect) {
+        citySelect.addEventListener('change', calculateAndUpdate);
+    }
+    
+    const subtotalObserver = new MutationObserver(() => {
+        calculateAndUpdate();
+        const voucherMessageEl = document.getElementById('voucher-message');
+        if (voucherMessageEl) {
+            const voucherObserver = new MutationObserver(calculateAndUpdate);
+            voucherObserver.observe(voucherMessageEl, { childList: true });
+        }
+    });
+
+    if (subtotalEl) {
+        subtotalObserver.observe(subtotalEl, { childList: true, subtree: true });
+    }
+
+    if (window.IS_USER_LOGGED_IN) {
+        setTimeout(calculateAndUpdate, 100);
+    }
+}
+
+
 async function initGuestCheckout() {
     const GUEST_CART_KEY = 'hackthreadVariantCart';
     const localCart = JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || {};
@@ -158,11 +235,10 @@ async function initGuestCheckout() {
     }
 
     try {
-        // Ambil detail produk lengkap berdasarkan data keranjang dari localStorage
         const productRes = await fetch('/api/cart', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cart_items: localCart }) // KIRIM PAYLOAD YANG BENAR
+            body: JSON.stringify({ cart_items: localCart })
         });
         if (!productRes.ok) {
             throw new Error('Gagal memuat detail produk dari keranjang.');
@@ -173,11 +249,10 @@ async function initGuestCheckout() {
              throw new Error('Keranjang Anda kosong atau item tidak valid.');
         }
 
-        // Siapkan checkout (tahan stok) menggunakan detail produk yang sudah valid
         const prepareRes = await fetch('/api/checkout/prepare', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: detailedItems }) // Gunakan hasil dari API sebelumnya
+            body: JSON.stringify({ items: detailedItems })
         });
         const prepareResult = await prepareRes.json();
         
@@ -194,7 +269,6 @@ async function initGuestCheckout() {
             timerContainer.classList.add('expired');
         }
         if (form) {
-            // Nonaktifkan semua elemen form jika terjadi error
             form.querySelectorAll('input, button, select').forEach(el => el.disabled = true);
             const mobileBtn = document.getElementById('placeOrderBtnMobile');
             if(mobileBtn) mobileBtn.disabled = true;
@@ -206,6 +280,7 @@ export function initCheckoutPage() {
     initCheckoutForm();
     initMobileCtaHandlers();
     initVoucherHandler();
+    initShippingCalculation();
     
     if (window.IS_USER_LOGGED_IN) {
         initStockHoldTimer(); 

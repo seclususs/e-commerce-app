@@ -63,6 +63,7 @@ with connection:
             additional_image_urls TEXT,
             stock INTEGER NOT NULL DEFAULT 10,
             has_variants BOOLEAN DEFAULT 0,
+            weight_grams INTEGER DEFAULT 0,
             FOREIGN KEY(category_id) REFERENCES categories(id)
         );
     """)
@@ -75,6 +76,7 @@ with connection:
             product_id INTEGER NOT NULL,
             size TEXT NOT NULL,
             stock INTEGER NOT NULL,
+            weight_grams INTEGER DEFAULT 0,
             FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
         );
     """)
@@ -89,6 +91,7 @@ with connection:
             order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, 
             subtotal REAL NOT NULL,
             discount_amount REAL DEFAULT 0,
+            shipping_cost REAL DEFAULT 0,
             total_amount REAL NOT NULL,
             voucher_code TEXT,
             status TEXT NOT NULL CHECK(status IN ('Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled')),
@@ -219,22 +222,22 @@ with connection:
     print("- Data 'categories' berhasil dimasukkan.")
 
     products_to_add = [
-        ('Kaos "Hello, World!"', 175000, 150000, 'Kaos katun premium dengan sablon klasik "Hello, World!". Sempurna untuk memulai hari (atau proyek coding). Bahan adem dan nyaman.', 1, 'Hitam, Putih, Biru Navy', 55, 'kaos_hello_world.webp', json.dumps(['kaos_hello_world_2.webp']), 0, 1),
-        ('Hoodie "Binary Tree"', 350000, None, 'Hoodie tebal dengan desain struktur data binary tree yang artistik. Jaga kehangatanmu saat begadang debugging. Fleece 280gsm.', 2, 'Hitam, Abu-abu', 85, 'hoodie_binary.webp', json.dumps([]), 0, 1),
-        ('Topi "Git Commit"', 125000, None, 'Topi baseball dengan bordir command "git commit". Sebuah pengingat untuk selalu menyimpan progresmu.', 3, 'Hitam', 70, 'topi_git.webp', json.dumps(['topi_git_2.webp']), 75, 0),
-        ('Sweater "Eat, Sleep, Code, Repeat"', 295000, 250000, 'Sweater ringan yang cocok untuk kerja di ruangan ber-AC. Slogan yang mewakili gaya hidup setiap developer.', 4, 'Biru Navy', 95, 'sweater_code.webp', json.dumps(['sweater_code_2.webp']), 60, 0)
+        ('Kaos "Hello, World!"', 175000, 150000, 'Kaos katun premium dengan sablon klasik "Hello, World!". Sempurna untuk memulai hari (atau proyek coding). Bahan adem dan nyaman.', 1, 'Hitam, Putih, Biru Navy', 55, 'kaos_hello_world.webp', json.dumps(['kaos_hello_world_2.webp']), 0, 1, 150),
+        ('Hoodie "Binary Tree"', 350000, None, 'Hoodie tebal dengan desain struktur data binary tree yang artistik. Jaga kehangatanmu saat begadang debugging. Fleece 280gsm.', 2, 'Hitam, Abu-abu', 85, 'hoodie_binary.webp', json.dumps([]), 0, 1, 500),
+        ('Topi "Git Commit"', 125000, None, 'Topi baseball dengan bordir command "git commit". Sebuah pengingat untuk selalu menyimpan progresmu.', 3, 'Hitam', 70, 'topi_git.webp', json.dumps(['topi_git_2.webp']), 75, 0, 100),
+        ('Sweater "Eat, Sleep, Code, Repeat"', 295000, 250000, 'Sweater ringan yang cocok untuk kerja di ruangan ber-AC. Slogan yang mewakili gaya hidup setiap developer.', 4, 'Biru Navy', 95, 'sweater_code.webp', json.dumps(['sweater_code_2.webp']), 60, 0, 400)
     ]
     cursor.executemany("""
-        INSERT INTO products (name, price, discount_price, description, category_id, colors, popularity, image_url, additional_image_urls, stock, has_variants)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO products (name, price, discount_price, description, category_id, colors, popularity, image_url, additional_image_urls, stock, has_variants, weight_grams)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, products_to_add)
     print("- Data 'products' berhasil dimasukkan.")
     
     variants_to_add = [
-        (1, 'S', 20), (1, 'M', 30), (1, 'L', 30), (1, 'XL', 20),
-        (2, 'M', 15), (2, 'L', 20), (2, 'XL', 15)
+        (1, 'S', 20, 150), (1, 'M', 30, 160), (1, 'L', 30, 170), (1, 'XL', 20, 180),
+        (2, 'M', 15, 500), (2, 'L', 20, 520), (2, 'XL', 15, 540)
     ]
-    cursor.executemany("INSERT INTO product_variants (product_id, size, stock) VALUES (?, ?, ?)", variants_to_add)
+    cursor.executemany("INSERT INTO product_variants (product_id, size, stock, weight_grams) VALUES (?, ?, ?, ?)", variants_to_add)
     print("- Data 'product_variants' berhasil dimasukkan.")
     
     # Update total stock for products with variants
@@ -244,14 +247,14 @@ with connection:
 
     # Seeding data orders
     orders_to_add = [
-        (1, 2, '2025-09-10 14:30:00', 500000, 0, 500000, None, 'Completed', 'Bank Transfer', 'TX1001', 'User 1', '081200000001', 'Jl. Dummy No. 1', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
-        (2, 3, '2025-10-01 11:00:00', 125000, 0, 125000, None, 'Shipped', 'E-Wallet', 'TX1002', 'User 2', '081200000002', 'Jl. Dummy No. 2', '', 'Jakarta', 'DKI Jakarta', '10220', 'SC10002'),
-        (3, 4, '2025-10-14 20:00:00', 400000, 0, 400000, None, 'Processing', 'COD', None, 'User 3', '081200000003', 'Jl. Dummy No. 3', '', 'Bandung', 'Jawa Barat', '40111', None),
-        (4, 15, '2025-10-15 09:00:00', 150000, 15000, 135000, 'HEMAT10', 'Completed', 'E-Wallet', 'TX1003', 'User 14', '081200000014', 'Jl. Dummy No. 14', '', 'Surabaya', 'Jawa Timur', '60111', 'JN10002'),
-        (5, 5, '2025-10-18 10:00:00', 175000, 0, 175000, None, 'Pending', 'Virtual Account', None, 'User 5', '081200000005', 'Jl. Dummy No. 5', '', 'Yogyakarta', 'DIY', '55222', None),
+        (1, 2, '2025-09-10 14:30:00', 500000, 0, 15000, 515000, None, 'Completed', 'Bank Transfer', 'TX1001', 'User 1', '081200000001', 'Jl. Dummy No. 1', '', 'Depok', 'Jawa Barat', '16424', 'JN10001'),
+        (2, 3, '2025-10-01 11:00:00', 125000, 0, 10000, 135000, None, 'Shipped', 'E-Wallet', 'TX1002', 'User 2', '081200000002', 'Jl. Dummy No. 2', '', 'Jakarta', 'DKI Jakarta', '10220', 'SC10002'),
+        (3, 4, '2025-10-14 20:00:00', 400000, 0, 20000, 420000, None, 'Processing', 'COD', None, 'User 3', '081200000003', 'Jl. Dummy No. 3', '', 'Bandung', 'Jawa Barat', '40111', None),
+        (4, 15, '2025-10-15 09:00:00', 150000, 15000, 15000, 150000, 'HEMAT10', 'Completed', 'E-Wallet', 'TX1003', 'User 14', '081200000014', 'Jl. Dummy No. 14', '', 'Surabaya', 'Jawa Timur', '60111', 'JN10002'),
+        (5, 5, '2025-10-18 10:00:00', 175000, 0, 15000, 190000, None, 'Pending', 'Virtual Account', None, 'User 5', '081200000005', 'Jl. Dummy No. 5', '', 'Yogyakarta', 'DIY', '55222', None),
     ]
     cursor.executemany("""
-        INSERT INTO orders (id, user_id, order_date, subtotal, discount_amount, total_amount, voucher_code, status, payment_method, payment_transaction_id, shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2, shipping_city, shipping_province, shipping_postal_code, tracking_number)
+        INSERT INTO orders (id, user_id, order_date, subtotal, discount_amount, shipping_cost, total_amount, voucher_code, status, payment_method, payment_transaction_id, shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2, shipping_city, shipping_province, shipping_postal_code, tracking_number)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, orders_to_add)
     

@@ -50,6 +50,24 @@ def admin_reports():
         GROUP BY u.id ORDER BY total_spent DESC LIMIT 10
     """, params).fetchall()
 
+    # Laporan Efektivitas Voucher
+    voucher_effectiveness = conn.execute("""
+        SELECT 
+            voucher_code, 
+            COUNT(id) AS usage_count, 
+            SUM(discount_amount) AS total_discount
+        FROM orders 
+        WHERE voucher_code IS NOT NULL AND status != 'Cancelled'
+        GROUP BY voucher_code 
+        ORDER BY usage_count DESC;
+    """).fetchall()
+
+    # Laporan Konversi Tamu-ke-Akun
+    guest_orders_count = conn.execute("SELECT COUNT(id) FROM orders WHERE user_id IS NULL").fetchone()[0]
+    registered_from_checkout_count = conn.execute("SELECT COUNT(id) FROM users WHERE address_line_1 IS NOT NULL AND is_admin = 0").fetchone()[0]
+    conversion_rate = (registered_from_checkout_count / guest_orders_count * 100) if guest_orders_count > 0 else 0
+
+
     conn.close()
 
     reports_data = {
@@ -60,6 +78,12 @@ def admin_reports():
         },
         'customers': {
             'top_spenders': top_spenders
+        },
+        'voucher_effectiveness': voucher_effectiveness,
+        'guest_conversion': {
+            'guest_orders': guest_orders_count,
+            'new_accounts': registered_from_checkout_count,
+            'rate': round(conversion_rate, 2)
         }
     }
     return render_template('admin/reports.html', reports=reports_data, content=get_content())

@@ -37,7 +37,7 @@ class OrderService:
 
         return {'success': True, 'discount_amount': discount_amount, 'final_total': final_total, 'message': 'Voucher berhasil diterapkan!'}
 
-    def create_order(self, user_id, session_id, cart_data, shipping_details, payment_method, voucher_code=None):
+    def create_order(self, user_id, session_id, cart_data, shipping_details, payment_method, voucher_code=None, shipping_cost=0):
         conn = get_db_connection()
         try:
             with conn:
@@ -86,24 +86,26 @@ class OrderService:
                         'size': item['size']
                     })
                 
-                discount_amount, final_total = 0, subtotal
+                discount_amount = 0
                 if voucher_code:
                     voucher_result = self.validate_and_calculate_voucher(voucher_code, subtotal)
                     if voucher_result['success']:
-                        discount_amount, final_total = voucher_result['discount_amount'], voucher_result['final_total']
+                        discount_amount = voucher_result['discount_amount']
                     else:
                         return {'success': False, 'message': voucher_result['message']}
+
+                final_total = subtotal - discount_amount + shipping_cost
 
                 initial_status = 'Processing' if payment_method == 'COD' else 'Pending'
                 transaction_id = f"TX-{uuid.uuid4().hex[:8].upper()}" if initial_status == 'Pending' else None
 
                 cursor = conn.cursor()
                 cursor.execute("""
-                    INSERT INTO orders (user_id, subtotal, discount_amount, total_amount, voucher_code, status, payment_method, payment_transaction_id,
+                    INSERT INTO orders (user_id, subtotal, discount_amount, shipping_cost, total_amount, voucher_code, status, payment_method, payment_transaction_id,
                                         shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2,
                                         shipping_city, shipping_province, shipping_postal_code)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (user_id, subtotal, discount_amount, final_total, voucher_code.upper() if voucher_code else None, initial_status, payment_method, 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (user_id, subtotal, discount_amount, shipping_cost, final_total, voucher_code.upper() if voucher_code else None, initial_status, payment_method, 
                       transaction_id, shipping_details['name'], shipping_details['phone'], 
                       shipping_details['address1'], shipping_details.get('address2', ''),
                       shipping_details['city'], shipping_details['province'], 

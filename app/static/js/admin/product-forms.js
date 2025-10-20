@@ -103,20 +103,27 @@ function initVariantCheckbox() {
     const checkbox = document.getElementById('has-variants-checkbox');
     const stockContainer = document.getElementById('stock-input-container');
     const stockInput = document.getElementById('stock');
-    if (!checkbox || !stockContainer || !stockInput) return;
+    const weightContainer = document.querySelector('#weight-input-container-main, #weight-input-container-edit');
+    const weightInput = document.getElementById('weight_grams');
+    
+    if (!checkbox) return;
 
-    const toggleStockInput = () => {
+    const toggleInputs = () => {
         if (checkbox.checked) {
-            stockContainer.style.display = 'none';
-            stockInput.required = false;
+            if (stockContainer) stockContainer.style.display = 'none';
+            if (stockInput) stockInput.required = false;
+            if (weightContainer) weightContainer.style.display = 'none';
+            if (weightInput) weightInput.required = false;
         } else {
-            stockContainer.style.display = 'block';
-            stockInput.required = true;
+            if (stockContainer) stockContainer.style.display = 'block';
+            if (stockInput) stockInput.required = true;
+            if (weightContainer) weightContainer.style.display = 'block';
+            if (weightInput) weightInput.required = true;
         }
     };
 
-    checkbox.addEventListener('change', toggleStockInput);
-    toggleStockInput();
+    checkbox.addEventListener('change', toggleInputs);
+    toggleInputs();
 }
 
 export function initProductForms() {

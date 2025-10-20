@@ -190,13 +190,14 @@ class ProductService:
         additional_image_urls = [fname for orig, fname in saved_filenames.items() if orig != main_image_identifier]
         has_variants = 'has_variants' in form_data
         stock = 0 if has_variants else form_data.get('stock', 10)
+        weight_grams = 0 if has_variants else form_data.get('weight_grams', 0)
 
         conn = get_db_connection()
         try:
             conn.execute(
-                'INSERT INTO products (name, price, discount_price, description, category_id, colors, image_url, additional_image_urls, stock, has_variants) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+                'INSERT INTO products (name, price, discount_price, description, category_id, colors, image_url, additional_image_urls, stock, has_variants, weight_grams) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
                 (form_data['name'], form_data['price'], form_data.get('discount_price') or None, form_data['description'], 
-                 form_data['category_id'], form_data.get('colors'), main_image_url, json.dumps(additional_image_urls), stock, has_variants)
+                 form_data['category_id'], form_data.get('colors'), main_image_url, json.dumps(additional_image_urls), stock, has_variants, weight_grams)
             )
             conn.commit()
             return {'success': True, 'message': 'Produk berhasil ditambahkan!'}
@@ -229,14 +230,16 @@ class ProductService:
             final_additional = [img for img in final_pool if img != final_main]
             
             has_variants = 'has_variants' in form_data
-            stock = form_data.get('stock', 0) if not has_variants else product['stock'] # Keep existing total stock if variants are enabled
+            stock = form_data.get('stock', 0) if not has_variants else product['stock']
+            weight_grams = form_data.get('weight_grams', 0) if not has_variants else 0
+
             if product['has_variants'] and not has_variants:
                 self.delete_all_variants_for_product(product_id, conn)
 
             conn.execute(
-                'UPDATE products SET name=?, price=?, discount_price=?, description=?, category_id=?, colors=?, stock=?, image_url=?, additional_image_urls=?, has_variants=? WHERE id=?', 
+                'UPDATE products SET name=?, price=?, discount_price=?, description=?, category_id=?, colors=?, stock=?, image_url=?, additional_image_urls=?, has_variants=?, weight_grams=? WHERE id=?', 
                 (form_data['name'], form_data['price'], form_data.get('discount_price') or None, form_data['description'], form_data['category_id'], 
-                 form_data.get('colors'), stock, final_main, json.dumps(final_additional), has_variants, product_id)
+                 form_data.get('colors'), stock, final_main, json.dumps(final_additional), has_variants, weight_grams, product_id)
             )
             conn.commit()
 
@@ -288,23 +291,23 @@ class ProductService:
             if close_conn:
                 conn.close()
     
-    def add_variant(self, product_id, size, stock):
-        if not size or not stock or int(stock) < 0:
-            return {'success': False, 'message': 'Ukuran dan stok harus diisi dengan benar.'}
+    def add_variant(self, product_id, size, stock, weight_grams):
+        if not size or not stock or int(stock) < 0 or not weight_grams or int(weight_grams) < 0:
+            return {'success': False, 'message': 'Ukuran, stok, dan berat harus diisi dengan benar.'}
         conn = get_db_connection()
         try:
-            conn.execute("INSERT INTO product_variants (product_id, size, stock) VALUES (?, ?, ?)", (product_id, size.upper(), stock))
+            conn.execute("INSERT INTO product_variants (product_id, size, stock, weight_grams) VALUES (?, ?, ?, ?)", (product_id, size.upper(), stock, weight_grams))
             conn.commit()
             return {'success': True, 'message': f'Varian {size.upper()} berhasil ditambahkan.'}
         finally:
             conn.close()
 
-    def update_variant(self, variant_id, size, stock):
-        if not size or not stock or int(stock) < 0:
-            return {'success': False, 'message': 'Ukuran dan stok harus diisi dengan benar.'}
+    def update_variant(self, variant_id, size, stock, weight_grams):
+        if not size or not stock or int(stock) < 0 or not weight_grams or int(weight_grams) < 0:
+            return {'success': False, 'message': 'Ukuran, stok, dan berat harus diisi dengan benar.'}
         conn = get_db_connection()
         try:
-            conn.execute("UPDATE product_variants SET size = ?, stock = ? WHERE id = ?", (size.upper(), stock, variant_id))
+            conn.execute("UPDATE product_variants SET size = ?, stock = ?, weight_grams = ? WHERE id = ?", (size.upper(), stock, weight_grams, variant_id))
             conn.commit()
             return {'success': True, 'message': 'Varian berhasil diperbarui.'}
         finally:

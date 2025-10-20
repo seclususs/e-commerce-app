@@ -67,8 +67,9 @@ def checkout():
 
         payment_method = request.form['payment_method']
         voucher_code = request.form.get('voucher_code') or None
+        shipping_cost = request.form.get('shipping_cost', 0, type=float)
 
-        result = order_service.create_order(user_id, session_id, cart_data, shipping_details, payment_method, voucher_code)
+        result = order_service.create_order(user_id, session_id, cart_data, shipping_details, payment_method, voucher_code, shipping_cost)
 
         if result['success']:
             order_id = result['order_id']

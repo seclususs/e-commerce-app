@@ -29,6 +29,12 @@
                         {% endfor %}
                     </div>
                      <div class="summary-row"><span>Subtotal</span><span>{{ order.subtotal|rupiah }}</span></div>
+                     {% if order.shipping_cost > 0 %}
+                     <div class="summary-row">
+                         <span>Biaya Pengiriman</span>
+                         <span>{{ order.shipping_cost|rupiah }}</span>
+                     </div>
+                     {% endif %}
                     {% if order.discount_amount > 0 %}
                     <div class="summary-row discount-row" style="color: var(--color-success);">
                         <span>Diskon ({{ order.voucher_code }})</span>

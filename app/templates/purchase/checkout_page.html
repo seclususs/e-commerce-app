@@ -33,7 +33,20 @@
                         <div class="form-group"><label for="address_line_1">Alamat Lengkap</label><input type="text" id="address_line_1" name="address_line_1" placeholder="Nama jalan, nomor rumah, RT/RW" required></div>
                         <div class="form-group"><label for="address_line_2">Detail Alamat (Opsional)</label><input type="text" id="address_line_2" name="address_line_2" placeholder="Contoh: Apartemen, lantai, unit"></div>
                         <div class="form-grid">
-                            <div class="form-group"><label for="city">Kota/Kabupaten</label><input type="text" id="city" name="city" required></div>
+                            <div class="form-group">
+                                <label for="city">Kota/Kabupaten</label>
+                                <select id="city" name="city" class="form-control" required>
+                                    <option value="" disabled selected>Pilih Kota</option>
+                                    <option value="Jakarta">Jakarta</option>
+                                    <option value="Bogor">Bogor</option>
+                                    <option value="Depok">Depok</option>
+                                    <option value="Tangerang">Tangerang</option>
+                                    <option value="Bekasi">Bekasi</option>
+                                    <option value="Bandung">Bandung</option>
+                                    <option value="Surabaya">Surabaya</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
+                            </div>
                             <div class="form-group"><label for="province">Provinsi</label><input type="text" id="province" name="province" required></div>
                         </div>
                         <div class="form-group"><label for="postal_code">Kode Pos</label><input type="text" id="postal_code" name="postal_code" required></div>
@@ -55,6 +68,11 @@
                     <div id="checkout-summary-items"><p>Memuat item...</p></div>
                     
                     <div class="summary-row"><span>Subtotal</span><span id="checkoutSubtotal">Rp 0</span></div>
+                    
+                    <div class="summary-row shipping-row" style="display: none;">
+                        <span>Biaya Pengiriman</span>
+                        <span id="checkoutShipping">Rp 0</span>
+                    </div>
 
                     <!-- Form untuk Voucher -->
                     <div class="voucher-form-container">
@@ -81,6 +99,7 @@
 
                     <!-- Input tersembunyi untuk data keranjang tamu -->
                     <input type="hidden" name="cart_data" id="cart_data_input">
+                    <input type="hidden" name="shipping_cost" id="shipping_cost_input" value="0">
                     <input type="hidden" id="stock_hold_expires_at" value="{{ stock_hold_expires }}">
                     
                     <div class="hide-on-mobile-cta">

@@ -100,4 +100,39 @@
         </table>
     </div>
 </div>
+
+<!-- Laporan Efektivitas Voucher -->
+<div class="admin-card animated-element" data-animation-delay="500">
+    <div class="report-header">
+        <h3>Laporan Efektivitas Voucher</h3>
+    </div>
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead><tr><th>Kode Voucher</th><th>Jumlah Pengguna</th><th>Total Diskon Diberikan</th></tr></thead>
+            <tbody>
+                {% for voucher in reports.voucher_effectiveness %}
+                <tr>
+                    <td><strong>{{ voucher.voucher_code }}</strong></td>
+                    <td>{{ voucher.usage_count }} kali</td>
+                    <td>{{ voucher.total_discount|rupiah }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3">Tidak ada data penggunaan voucher.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Laporan Konversi Akun -->
+<div class="admin-card animated-element" data-animation-delay="600">
+     <div class="report-header">
+        <h3>Laporan Konversi Tamu-ke-Akun</h3>
+    </div>
+    <div class="dashboard-stats" style="margin-top: 1rem;">
+        <div class="stat-card"><h4>Total Pesanan Tamu</h4><p>{{ reports.guest_conversion.guest_orders }}</p></div>
+        <div class="stat-card"><h4>Akun Baru Terdaftar</h4><p>{{ reports.guest_conversion.new_accounts }}</p></div>
+        <div class="stat-card"><h4>Tingkat Konversi</h4><p>{{ reports.guest_conversion.rate }}%</p></div>
+    </div>
+</div>
 {% endblock %}
