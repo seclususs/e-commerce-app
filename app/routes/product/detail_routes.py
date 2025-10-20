@@ -1,7 +1,8 @@
 from flask import render_template, request, session, redirect, url_for, flash
-from database.db_config import get_content
+from db.db_config import get_content
 from utils.route_decorators import login_required
-from services.product_service import product_service
+from services.products.product_service import product_service
+from services.products.review_service import review_service
 from . import product_bp
 
 @product_bp.route('/product/<int:id>')
@@ -13,16 +14,15 @@ def product_detail(id):
         flash("Produk tidak ditemukan.", "danger")
         return redirect(url_for('product.products_page'))
         
-    reviews = product_service.get_reviews_for_product(id)
+    reviews = review_service.get_reviews_for_product(id)
     
-    # Ambil produk terkait
     related_products = []
     if product.get('category_id'):
         related_products = product_service.get_related_products(id, product['category_id'])
     
     can_review = False
     if 'user_id' in session:
-        can_review = product_service.check_user_can_review(session['user_id'], id)
+        can_review = review_service.check_user_can_review(session['user_id'], id)
         
     return render_template('public/product_detail.html', 
                            product=product, 
@@ -43,7 +43,7 @@ def add_review(id):
         flash('Rating dan komentar tidak boleh kosong.', 'danger')
         return redirect(url_for('product.product_detail', id=id))
 
-    result = product_service.add_review(user_id, id, rating, comment)
+    result = review_service.add_review(user_id, id, rating, comment)
     flash(result['message'], 'success' if result['success'] else 'danger')
     
     return redirect(url_for('product.product_detail', id=id))

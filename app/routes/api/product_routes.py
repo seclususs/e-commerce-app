@@ -1,5 +1,5 @@
 from flask import jsonify, request, render_template_string, url_for
-from services.product_service import product_service
+from services.products.product_service import product_service
 from . import api_bp
 
 # Template untuk kartu produk yang akan dirender di sisi server

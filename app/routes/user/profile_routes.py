@@ -1,7 +1,7 @@
 from flask import render_template, request, session, redirect, url_for, flash
-from database.db_config import get_db_connection, get_content
+from db.db_config import get_db_connection, get_content
 from utils.route_decorators import login_required
-from services.user_service import user_service
+from services.users.user_service import user_service
 
 from . import user_bp
 

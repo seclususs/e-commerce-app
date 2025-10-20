@@ -17,7 +17,7 @@
                     {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" placeholder="cth: Hitam, Putih"></div>
+            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" placeholder="cth: Hitam"></div>
         </div>
         <div class="form-group">
             <label class="custom-checkbox">
@@ -57,11 +57,26 @@
 
 <div class="admin-card animated-element" data-animation-delay="200">
     <h3>Daftar Produk</h3>
+    
+    <!-- Search Form -->
+    <div class="product-search-bar" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-background-light);">
+        <form method="GET" action="{{ url_for('admin.admin_products') }}">
+            <div class="form-actions" style="margin-top: 0;">
+                <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+                    <label for="search-product-input" class="sr-only">Cari Produk</label>
+                    <input type="search" id="search-product-input" name="search" class="form-control" placeholder="Cari berdasarkan nama, kategori, atau SKU..." value="{{ search_term or '' }}">
+                </div>
+                <button type="submit" class="cta-button">Cari</button>
+                <a href="{{ url_for('admin.admin_products') }}" class="cta-button-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+
     <form method="POST" action="{{ url_for('admin.admin_products') }}" id="bulk-action-form">
         <div class="bulk-actions-container">
             <div class="form-group"><label for="bulk-action-select">Aksi Massal</label>
                 <select name="bulk_action" id="bulk-action-select" class="form-control">
-                    <option value="">Pilih Aksi...</option>
+                    <option value="">Pilih Aksi</option>
                     <option value="delete">Hapus</option>
                     <option value="set_category">Ubah Kategori</option>
                 </select>
@@ -105,16 +120,13 @@
                         </td>
                         <td data-label="Stok:" class="collapsible-detail">
                             {% if product.has_variants %}
-                                <span style="color: var(--color-info);">Bervariasi</span> (Total: {{ product.stock }})
+                                <span style="color: var(--color-info);">Bervariasi</span> ({{ product.stock }})
                             {% else %}
                                 {{ product.stock }}
                             {% endif %}
                         </td>
                         <td data-label="Aksi:" class="action-buttons">
                             <div class="desktop-actions">
-                               {% if product.has_variants %}
-                               <a href="{{ url_for('admin.manage_variants', product_id=product.id) }}" class="action-link" style="color: #22c55e;">Varian</a>
-                               {% endif %}
                                <a href="{{ url_for('admin.admin_edit_product', id=product.id) }}" class="action-link action-link-edit">Edit</a>
                                <a href="{{ url_for('admin.delete_product', id=product.id) }}" class="action-link action-link-delete" data-no-transition>Hapus</a>
                             </div>

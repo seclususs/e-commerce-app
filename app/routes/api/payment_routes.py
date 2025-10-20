@@ -1,7 +1,7 @@
 from flask import jsonify, request, abort, current_app
 from . import api_bp
-from services.order_service import order_service
-from services.scheduler_service import scheduler_service
+from services.orders.order_service import order_service
+from services.utils.scheduler_service import scheduler_service
 
 @api_bp.route('/payment-webhook', methods=['POST'])
 def payment_webhook():

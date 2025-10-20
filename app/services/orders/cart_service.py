@@ -1,21 +1,17 @@
 import json
-from database.db_config import get_db_connection
+from db.db_config import get_db_connection
+from services.orders.stock_service import stock_service
 
 class CartService:
     
     def get_cart_details(self, user_id):
         conn = get_db_connection()
         try:
-            # Query utama untuk mengambil item, termasuk yang tidak punya varian
             query = """
                 SELECT
                     p.id, p.name, p.price, p.discount_price, p.image_url, p.has_variants,
                     uc.quantity, uc.variant_id,
-                    pv.size,
-                    CASE
-                        WHEN uc.variant_id IS NOT NULL THEN pv.stock
-                        ELSE p.stock
-                    END as stock
+                    pv.size
                 FROM user_carts uc
                 JOIN products p ON uc.product_id = p.id
                 LEFT JOIN product_variants pv ON uc.variant_id = pv.id
@@ -27,6 +23,9 @@ class CartService:
             items = []
             for item in cart_items:
                 item_dict = dict(item)
+                # Dapatkan stok terbaru yang tersedia
+                item_dict['stock'] = stock_service.get_available_stock(item_dict['id'], item_dict['variant_id'], conn)
+                
                 effective_price = item_dict['discount_price'] if item_dict['discount_price'] and item_dict['discount_price'] > 0 else item_dict['price']
                 item_dict['line_total'] = effective_price * item_dict['quantity']
                 subtotal += item_dict['line_total']
@@ -39,7 +38,6 @@ class CartService:
     def add_to_cart(self, user_id, product_id, quantity, variant_id=None):
         conn = get_db_connection()
         try:
-            from services.product_service import product_service
             product = conn.execute("SELECT name, has_variants FROM products WHERE id = ?", (product_id,)).fetchone()
             if not product:
                 return {'success': False, 'message': 'Produk tidak ditemukan.'}
@@ -47,9 +45,9 @@ class CartService:
             if product['has_variants'] and not variant_id:
                 return {'success': False, 'message': 'Silakan pilih ukuran untuk produk ini.'}
 
-            available_stock = product_service.get_available_stock(product_id, variant_id, conn)
+            # Gunakan stock_service untuk memeriksa stok
+            available_stock = stock_service.get_available_stock(product_id, variant_id, conn)
             
-            # Tentukan klausa WHERE berdasarkan adanya variant_id
             where_clause = "user_id = ? AND product_id = ? AND variant_id = ?" if variant_id else "user_id = ? AND product_id = ? AND variant_id IS NULL"
             params = (user_id, product_id, variant_id) if variant_id else (user_id, product_id)
 
@@ -82,8 +80,8 @@ class CartService:
             if quantity <= 0:
                 conn.execute(f"DELETE FROM user_carts WHERE {where_clause}", params)
             else:
-                from services.product_service import product_service
-                available_stock = product_service.get_available_stock(product_id, variant_id, conn)
+                # Gunakan stock_service untuk memeriksa stok
+                available_stock = stock_service.get_available_stock(product_id, variant_id, conn)
 
                 if quantity > available_stock:
                     return {'success': False, 'message': f'Stok tidak mencukupi. Sisa stok tersedia: {available_stock}.'}
@@ -102,16 +100,16 @@ class CartService:
         conn = get_db_connection()
         try:
             with conn:
-                from services.product_service import product_service
                 for key, data in local_cart.items():
                     parts = key.split('-')
                     product_id = int(parts[0])
-                    variant_id = int(parts[1]) if len(parts) > 1 else None
+                    variant_id = int(parts[1]) if len(parts) > 1 and parts[1] != 'null' else None
                     quantity = data.get('quantity', 0)
                     
                     if quantity <= 0: continue
 
-                    available_stock = product_service.get_available_stock(product_id, variant_id, conn)
+                    # Gunakan stock_service untuk memeriksa stok
+                    available_stock = stock_service.get_available_stock(product_id, variant_id, conn)
                     if available_stock <= 0: continue
 
                     where_clause = "user_id = ? AND product_id = ? AND variant_id = ?" if variant_id else "user_id = ? AND product_id = ? AND variant_id IS NULL"

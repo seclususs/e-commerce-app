@@ -1,10 +1,11 @@
 import json
 import uuid
 from datetime import datetime
-from database.db_config import get_db_connection
-from services.user_service import user_service
-from services.cart_service import cart_service
-from services.product_service import product_service
+from db.db_config import get_db_connection
+from services.users.user_service import user_service
+from services.orders.cart_service import cart_service
+from services.orders.stock_service import stock_service
+from services.products.variant_service import variant_service
 
 class OrderService:
     
@@ -41,9 +42,9 @@ class OrderService:
         conn = get_db_connection()
         try:
             with conn:
+                # Dapatkan item yang ditahan dari stock_service
                 held_items_query = """
-                    SELECT p.id as product_id, p.name, sh.quantity, sh.variant_id, pv.size,
-                           CASE WHEN sh.variant_id IS NOT NULL THEN pv.stock ELSE p.stock END as stock
+                    SELECT p.id as product_id, p.name, sh.quantity, sh.variant_id, pv.size
                     FROM stock_holds sh 
                     JOIN products p ON sh.product_id = p.id
                     LEFT JOIN product_variants pv ON sh.variant_id = pv.id
@@ -72,9 +73,11 @@ class OrderService:
                     product = products_map.get(item['product_id'])
                     if not product: continue
                     
-                    if item['quantity'] > item['stock']:
+                    # Verifikasi stok sekali lagi sebelum membuat pesanan
+                    available_stock = stock_service.get_available_stock(item['product_id'], item['variant_id'], conn)
+                    if item['quantity'] > available_stock:
                          size_info = f" (Ukuran: {item['size']})" if item.get('size') else ""
-                         return {'success': False, 'message': f"Stok untuk '{product['name']}'{size_info} telah habis."}
+                         return {'success': False, 'message': f"Stok untuk '{product['name']}'{size_info} telah habis saat akan memproses pesanan."}
 
                     effective_price = product['discount_price'] if product['discount_price'] and product['discount_price'] > 0 else product['price']
                     subtotal += effective_price * item['quantity']
@@ -95,7 +98,6 @@ class OrderService:
                         return {'success': False, 'message': voucher_result['message']}
 
                 final_total = subtotal - discount_amount + shipping_cost
-
                 initial_status = 'Diproses' if payment_method == 'COD' else 'Menunggu Pembayaran'
                 transaction_id = f"TX-{uuid.uuid4().hex[:8].upper()}" if initial_status == 'Menunggu Pembayaran' else None
 
@@ -117,6 +119,7 @@ class OrderService:
                         'INSERT INTO order_items (order_id, product_id, variant_id, quantity, price, size_at_order) VALUES (?, ?, ?, ?, ?, ?)',
                         (order_id, item['id'], item['variant_id'], item['quantity'], item['price_at_order'], item['size'])
                     )
+                    # Hanya kurangi stok jika pembayaran langsung (COD)
                     if payment_method == 'COD':
                         if item['variant_id']:
                             cursor.execute('UPDATE product_variants SET stock = stock - ? WHERE id = ?', (item['quantity'], item['variant_id']))
@@ -129,13 +132,13 @@ class OrderService:
                 if user_id:
                     cursor.execute("DELETE FROM user_carts WHERE user_id = ?", (user_id,))
                 
-                product_service.release_stock_holds(user_id, session_id, conn)
+                # Lepaskan hold setelah pesanan dibuat
+                stock_service.release_stock_holds(user_id, session_id, conn)
 
-                # Update total stok produk jika memiliki varian
+                # Update stok total pada produk utama jika ada varian
                 product_ids_with_variants = {item['id'] for item in items_for_order if item['variant_id']}
                 for pid in product_ids_with_variants:
-                    total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (pid,)).fetchone()[0]
-                    conn.execute("UPDATE products SET stock = ? WHERE id = ?", (total_stock or 0, pid))
+                    variant_service.update_total_stock_from_variants(pid)
 
             return {'success': True, 'order_id': order_id}
         except Exception as e:
@@ -153,15 +156,15 @@ class OrderService:
                 order_id = order['id']
                 items = conn.execute("SELECT * FROM order_items WHERE order_id = ?", (order_id,)).fetchall()
                 
+                # Cek stok sebelum mengurangi
                 for item in items:
-                    stock_query = "SELECT stock FROM {} WHERE id = ?".format("product_variants" if item['variant_id'] else "products")
-                    stock_id = item['variant_id'] if item['variant_id'] else item['product_id']
-                    stock = conn.execute(stock_query, (stock_id,)).fetchone()['stock']
-                    
-                    if item['quantity'] > stock:
+                    available_stock = stock_service.get_available_stock(item['product_id'], item['variant_id'], conn)
+                    if item['quantity'] > available_stock:
                         conn.execute("UPDATE orders SET status = 'Dibatalkan' WHERE id = ?", (order_id,))
-                        return {'success': False, 'message': f"Stok habis untuk produk ID {item['product_id']}."}
+                        # TODO: Logika untuk refund jika diperlukan
+                        return {'success': False, 'message': f"Pembayaran gagal diproses karena stok habis untuk produk ID {item['product_id']}."}
 
+                # Kurangi stok
                 for item in items:
                     update_query = "UPDATE {} SET stock = stock - ? WHERE id = ?".format("product_variants" if item['variant_id'] else "products")
                     update_id = item['variant_id'] if item['variant_id'] else item['product_id']
@@ -169,11 +172,10 @@ class OrderService:
                 
                 conn.execute("UPDATE orders SET status = 'Diproses' WHERE id = ?", (order_id,))
                 
-                # Update total stok produk jika memiliki varian
+                # Update stok total pada produk utama
                 product_ids_with_variants = {item['product_id'] for item in items if item['variant_id']}
                 for pid in product_ids_with_variants:
-                    total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (pid,)).fetchone()[0]
-                    conn.execute("UPDATE products SET stock = ? WHERE id = ?", (total_stock or 0, pid))
+                    variant_service.update_total_stock_from_variants(pid)
 
             return {'success': True, 'message': f'Pesanan #{order_id} berhasil diproses.'}
         except Exception as e:
@@ -192,7 +194,7 @@ class OrderService:
                 if order['status'] not in ['Menunggu Pembayaran', 'Diproses']:
                     return {'success': False, 'message': f'Pesanan tidak dapat dibatalkan karena statusnya "{order["status"]}".'}
                 
-                # Kembalikan stok HANYA jika pesanan sudah mengurangi stok (status 'Diproses')
+                # Kembalikan stok HANYA jika pesanan sudah mengurangi stok (status 'Diproses' atau status lain yang relevan)
                 if order['status'] == 'Diproses':
                     order_items = conn.execute('SELECT * FROM order_items WHERE order_id = ?', (order_id,)).fetchall()
                     for item in order_items:
@@ -202,8 +204,7 @@ class OrderService:
                     
                     product_ids_with_variants = {item['product_id'] for item in order_items if item['variant_id']}
                     for pid in product_ids_with_variants:
-                        total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (pid,)).fetchone()[0]
-                        conn.execute("UPDATE products SET stock = ? WHERE id = ?", (total_stock or 0, pid))
+                        variant_service.update_total_stock_from_variants(pid)
 
                 conn.execute('UPDATE orders SET status = ? WHERE id = ?', ('Dibatalkan', order_id))
 

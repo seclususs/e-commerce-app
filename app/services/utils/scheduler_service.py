@@ -1,4 +1,4 @@
-from database.db_config import get_db_connection
+from db.db_config import get_db_connection
 from datetime import datetime, timedelta
 
 class SchedulerService:

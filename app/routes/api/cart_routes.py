@@ -1,8 +1,8 @@
 import uuid
 from flask import jsonify, request, session
 from . import api_bp
-from services.cart_service import cart_service
-from services.product_service import product_service
+from services.orders.cart_service import cart_service
+from services.orders.stock_service import stock_service
 from utils.route_decorators import login_required
 
 @api_bp.route('/cart', methods=['POST'])
@@ -16,7 +16,6 @@ def get_guest_cart_items():
     if not cart_items:
         return jsonify([])
 
-    # Parsing product and variant IDs safely from keys
     product_ids = set()
     variant_ids = set()
     for key in cart_items.keys():
@@ -29,23 +28,20 @@ def get_guest_cart_items():
     if not product_ids:
         return jsonify([])
 
-    from database.db_config import get_db_connection
+    from db.db_config import get_db_connection
     conn = get_db_connection()
     try:
-        # Fetch product details
         placeholders = ', '.join(['?'] * len(product_ids))
-        query = f'SELECT id, name, price, discount_price, image_url, stock, has_variants FROM products WHERE id IN ({placeholders})'
+        query = f'SELECT id, name, price, discount_price, image_url, has_variants FROM products WHERE id IN ({placeholders})'
         products_db = conn.execute(query, list(product_ids)).fetchall()
         products_map = {p['id']: dict(p) for p in products_db}
 
-        # Fetch variant details if any
         variants_map = {}
         if variant_ids:
             placeholders_v = ', '.join(['?'] * len(variant_ids))
-            variants_db = conn.execute(f'SELECT id, size, stock FROM product_variants WHERE id IN ({placeholders_v})', list(variant_ids)).fetchall()
+            variants_db = conn.execute(f'SELECT id, product_id, size FROM product_variants WHERE id IN ({placeholders_v})', list(variant_ids)).fetchall()
             variants_map = {v['id']: dict(v) for v in variants_db}
 
-        # Combine data
         detailed_items = []
         for key, item_data in cart_items.items():
             parts = key.split('-')
@@ -61,11 +57,13 @@ def get_guest_cart_items():
                 continue
 
             final_item = {**product_info}
+            # Ambil stok yang tersedia dari service, bukan dari DB langsung
+            final_item['stock'] = stock_service.get_available_stock(product_id, variant_id, conn)
+
             if variant_id and variant_id in variants_map:
                 variant_info = variants_map[variant_id]
                 final_item['variant_id'] = variant_id
                 final_item['size'] = variant_info['size']
-                final_item['stock'] = variant_info['stock']  # Use variant stock
             
             final_item['quantity'] = item_data['quantity']
             detailed_items.append(final_item)
@@ -101,7 +99,6 @@ def add_to_user_cart():
 @login_required
 def update_user_cart_item(product_id, variant_id):
     """Mengupdate kuantitas item di keranjang."""
-    # Konversi 'null' string dari URL menjadi None
     v_id = None if variant_id == 'null' else int(variant_id)
 
     data = request.get_json()
@@ -131,14 +128,14 @@ def prepare_guest_checkout():
     if 'user_id' in session:
         return jsonify({'success': False, 'message': 'Endpoint ini hanya untuk tamu.'}), 403
 
-    session_id = session.get('session_id', str(uuid.uuid4()))
-    session['session_id'] = session_id
+    if 'session_id' not in session:
+        session['session_id'] = str(uuid.uuid4())
+    session_id = session['session_id']
 
     items_to_hold = request.get_json().get('items')
     if not items_to_hold or not isinstance(items_to_hold, list):
         return jsonify({'success': False, 'message': 'Data keranjang tidak valid.'}), 400
 
-    # Ubah format item agar cocok dengan service
     formatted_items = []
     for item in items_to_hold:
         formatted_items.append({
@@ -149,5 +146,5 @@ def prepare_guest_checkout():
             'quantity': item['quantity']
         })
 
-    hold_result = product_service.hold_stock_for_checkout(None, session_id, formatted_items)
+    hold_result = stock_service.hold_stock_for_checkout(None, session_id, formatted_items)
     return jsonify(hold_result)

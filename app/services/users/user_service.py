@@ -1,5 +1,5 @@
 from werkzeug.security import check_password_hash, generate_password_hash
-from database.db_config import get_db_connection
+from db.db_config import get_db_connection
 
 class UserService:
     """

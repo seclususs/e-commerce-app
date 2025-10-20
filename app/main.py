@@ -11,7 +11,7 @@ from routes.purchase import purchase_bp
 
 def create_app():
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-    instance_path = os.path.join(project_root, 'instance')
+    instance_path = os.path.join(project_root, 'database')
     
     app = Flask(__name__, instance_path=instance_path)
 
@@ -20,7 +20,6 @@ def create_app():
         SECRET_KEY='2310-1140-1246',
         UPLOAD_FOLDER=os.path.join(app.root_path, 'static', 'uploads'),
         ALLOWED_EXTENSIONS={'png', 'jpg', 'jpeg', 'gif', 'webp'},
-        # Menentukan path database di dalam folder instance yang sudah benar
         DATABASE=os.path.join(app.instance_path, 'database.db')
     )
 
@@ -58,7 +57,7 @@ def create_app():
                 return []
             return json.loads(json_str)
         except (json.JSONDecodeError, TypeError):
-            return [] # Mengembalikan list kosong jika terjadi error
+            return []
 
     # Filter 'split'
     @app.template_filter('split')

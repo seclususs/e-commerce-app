@@ -1,6 +1,6 @@
 from flask import jsonify, request
 from . import api_bp
-from services.order_service import order_service 
+from services.orders.order_service import order_service 
 
 @api_bp.route('/apply-voucher', methods=['POST'])
 def apply_voucher():

@@ -101,19 +101,34 @@ export function initAdminPriceFormatting() {
 
 function initVariantCheckbox() {
     const checkbox = document.getElementById('has-variants-checkbox');
+    if (!checkbox) return;
+
     const nonVariantFields = document.getElementById('non-variant-fields');
     const stockInput = document.getElementById('stock');
     const weightInput = document.getElementById('weight_grams');
-    const skuInput = document.getElementById('sku');
     
-    if (!checkbox || !nonVariantFields) return;
+    const conversionHint = document.getElementById('variant-conversion-hint');
+    const manageVariantsPlaceholder = document.getElementById('manage-variants-link-placeholder');
+    const isInitiallyVariant = checkbox.dataset.initialState === 'true';
 
     const toggleInputs = () => {
         const isChecked = checkbox.checked;
-        nonVariantFields.style.display = isChecked ? 'none' : 'block';
+        
+        if (nonVariantFields) {
+            nonVariantFields.style.display = isChecked ? 'none' : 'block';
+        }
         
         if (stockInput) stockInput.required = !isChecked;
         if (weightInput) weightInput.required = !isChecked;
+
+        if (!isInitiallyVariant) {
+            if (conversionHint) {
+                conversionHint.style.display = isChecked ? 'block' : 'none';
+            }
+            if (manageVariantsPlaceholder) {
+                manageVariantsPlaceholder.style.display = isChecked ? 'inline' : 'none';
+            }
+        }
     };
 
     checkbox.addEventListener('change', toggleInputs);

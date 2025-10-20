@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash
 
 # KONFIGURASI
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-instance_dir = os.path.join(project_root, 'instance')
+instance_dir = os.path.join(project_root, 'database')
 os.makedirs(instance_dir, exist_ok=True)  # Pastikan folder instance ada
 db_file = os.path.join(instance_dir, 'database.db')
 

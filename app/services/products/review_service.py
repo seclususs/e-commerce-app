@@ -1,0 +1,42 @@
+from db.db_config import get_db_connection
+
+class ReviewService:
+    """
+    Layanan untuk mengelola semua logika bisnis terkait ulasan produk.
+    """
+
+    def get_reviews_for_product(self, product_id):
+        """Mengambil semua ulasan untuk produk tertentu."""
+        conn = get_db_connection()
+        reviews = conn.execute("SELECT r.*, u.username FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.product_id = ? ORDER BY r.created_at DESC", (product_id,)).fetchall()
+        conn.close()
+        return [dict(r) for r in reviews]
+
+    def check_user_can_review(self, user_id, product_id):
+        """Memeriksa apakah pengguna telah membeli dan belum mengulas produk."""
+        conn = get_db_connection()
+        try:
+            # Periksa apakah pengguna telah membeli produk dan pesanan selesai
+            has_purchased = conn.execute("SELECT 1 FROM orders o JOIN order_items oi ON o.id = oi.order_id WHERE o.user_id = ? AND oi.product_id = ? AND o.status = 'Selesai' LIMIT 1", (user_id, product_id)).fetchone()
+            if has_purchased:
+                # Periksa apakah pengguna sudah pernah memberikan ulasan untuk produk ini
+                has_reviewed = conn.execute('SELECT 1 FROM reviews WHERE user_id = ? AND product_id = ? LIMIT 1', (user_id, product_id)).fetchone()
+                return not has_reviewed
+            return False
+        finally:
+            conn.close()
+
+    def add_review(self, user_id, product_id, rating, comment):
+        """Menambahkan ulasan baru dari pengguna untuk sebuah produk."""
+        if not self.check_user_can_review(user_id, product_id):
+            return {'success': False, 'message': 'Anda hanya bisa memberi ulasan untuk produk yang sudah Anda beli dan selesaikan pesanannya.'}
+        
+        conn = get_db_connection()
+        try:
+            conn.execute('INSERT INTO reviews (product_id, user_id, rating, comment) VALUES (?, ?, ?, ?)', (product_id, user_id, rating, comment))
+            conn.commit()
+            return {'success': True, 'message': 'Terima kasih atas ulasan Anda!'}
+        finally:
+            conn.close()
+
+review_service = ReviewService()

@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 import json
 
 from . import admin_bp
-from database.db_config import get_db_connection, get_content
+from db.db_config import get_db_connection, get_content
 from utils.route_decorators import admin_required
-from services.scheduler_service import scheduler_service
+from services.utils.scheduler_service import scheduler_service
 
 def get_date_range(period_str):
     """Mendapatkan rentang tanggal berdasarkan string periode."""

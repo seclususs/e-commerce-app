@@ -1,6 +1,7 @@
 from flask import render_template, request
-from database.db_config import get_content
-from services.product_service import product_service
+from db.db_config import get_content
+from services.products.product_service import product_service
+from services.products.category_service import category_service
 from . import product_bp
 
 @product_bp.route('/products')
@@ -18,7 +19,7 @@ def products_page():
     products = product_service.get_filtered_products(filters)
     
     # Panggil service untuk mendapatkan semua kategori
-    categories = product_service.get_all_categories()
+    categories = category_service.get_all_categories()
     
     return render_template('public/product_catalog.html', 
                            products=products, 

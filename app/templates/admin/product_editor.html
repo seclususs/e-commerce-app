@@ -8,45 +8,61 @@
     <form method="POST" action="{{ url_for('admin.admin_edit_product', id=product.id) }}" enctype="multipart/form-data">
         <div class="form-grid">
             <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" value="{{ product.name }}" required></div>
-            <div class="form-group"><label for="price">Harga Asli</label><input type="text" inputmode="numeric" id="price" name="price" value="{{ product.price }}" required></div>
-            <div class="form-group"><label for="discount_price">Harga Diskon</label><input type="text" inputmode="numeric" id="discount_price" name="discount_price" value="{{ product.discount_price or '' }}"></div>
+            <div class="form-group"><label for="price">Harga Asli</label><input type="text" inputmode="numeric" id="price" name="price" value="{{ product.price|int }}" required></div>
+            <div class="form-group"><label for="discount_price">Harga Diskon</label><input type="text" inputmode="numeric" id="discount_price" name="discount_price" value="{{ product.discount_price|int if product.discount_price else '' }}"></div>
             <div class="form-group"><label for="category_id">Kategori</label>
                 <select id="category_id" name="category_id" class="form-control" required>
                     {% for cat in categories %}<option value="{{ cat.id }}" {% if cat.id == product.category_id %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" value="{{ product.colors or '' }}" placeholder="cth: Hitam, Putih"></div>
+            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" value="{{ product.colors or '' }}" placeholder="cth: Hitam"></div>
         </div>
         
         <div class="form-group" style="margin-top: 1.5rem;">
             <label class="custom-checkbox">
-                <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input" {% if product.has_variants %}checked{% endif %}>
+                <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input" 
+                       data-initial-state="{{ 'true' if product.has_variants else 'false' }}"
+                       {% if product.has_variants %}checked{% endif %}
+                       {% if product.variants and product.variants|length > 0 %}disabled title="Hapus semua varian terlebih dahulu untuk mengubah tipe produk."{% endif %}>
                 <span class="checkbox-box"><span class="checkmark"></span></span>
                 <span>Produk ini memiliki varian ukuran</span>
             </label>
         </div>
 
-        <div id="non-variant-fields">
-            <div class="form-group" id="stock-input-container" style="display: {{ 'none' if product.has_variants else 'block' }};">
+        <div id="non-variant-fields" style="display: {{ 'none' if product.has_variants else 'block' }};">
+            <div class="form-group" id="stock-input-container">
                 <label for="stock">Stok (jika tidak ada varian)</label>
                 <input type="number" id="stock" name="stock" value="{{ product.stock }}">
             </div>
 
-            <div class="form-group" id="weight-input-container-edit" style="display: {{ 'none' if product.has_variants else 'block' }};">
+            <div class="form-group" id="weight-input-container-edit">
                 <label for="weight_grams">Berat (gram) (jika tidak ada varian)</label>
                 <input type="number" id="weight_grams" name="weight_grams" value="{{ product.weight_grams or 150 }}">
             </div>
 
-            <div class="form-group" id="sku-input-container" style="display: {{ 'none' if product.has_variants else 'block' }};">
+            <div class="form-group" id="sku-input-container">
                 <label for="sku">SKU (jika tidak ada varian)</label>
                 <input type="text" id="sku" name="sku" value="{{ product.sku or '' }}">
             </div>
         </div>
-
+        
+        <div class="form-hint" id="variant-conversion-hint" style="display:none; margin-top: 1rem; padding: 1rem; background-color: rgba(59, 130, 246, 0.1); border: 1px solid var(--color-primary); border-radius: var(--border-radius-sm);">
+            <strong>Anda akan mengubah produk ini menjadi produk bervarian.</strong>
+            <ul style="margin-left: 1.5rem; margin-top: 0.5rem; font-size: 0.85rem;">
+                <li>Stok, berat, dan SKU saat ini akan diubah menjadi varian pertama dengan nama "STANDAR".</li>
+                <li>Setelah menyimpan, Anda dapat mengedit varian ini dan menambah varian lainnya melalui halaman "Kelola Varian".</li>
+            </ul>
+        </div>
 
         <div class="form-hint" style="margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <span>Jika produk memiliki varian, stok dan berat total akan dihitung otomatis.</span>
-            <a href="{{ url_for('admin.manage_variants', product_id=product.id) }}" class="cta-button-secondary" style="padding: 0.4rem 1rem; font-size: 0.9rem;">Kelola Varian</a>
+             {% if product.has_variants %}
+                <span>Stok dan berat total dihitung otomatis dari varian.</span>
+                <a href="{{ url_for('admin.manage_variants', product_id=product.id) }}" class="cta-button-secondary" style="padding: 0.4rem 1rem; font-size: 0.9rem;">Kelola Varian</a>
+            {% else %}
+                 <span id="manage-variants-link-placeholder" style="display: none;">
+                    <span style="color: var(--color-warning);">Simpan perubahan untuk mulai mengelola varian.</span>
+                 </span>
+            {% endif %}
         </div>
         
         <div class="form-group" style="margin-top: 1.5rem;">

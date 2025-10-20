@@ -2,7 +2,7 @@ import random
 from flask import render_template, request, redirect, url_for, flash
 
 from . import admin_bp
-from database.db_config import get_db_connection, get_content
+from db.db_config import get_db_connection, get_content
 from utils.route_decorators import admin_required
 
 @admin_bp.route('/orders')

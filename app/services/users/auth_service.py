@@ -1,7 +1,7 @@
 import random
-import uuid # Import uuid untuk token
+import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
-from database.db_config import get_db_connection
+from db.db_config import get_db_connection
 
 class AuthService:
     """

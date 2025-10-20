@@ -28,7 +28,7 @@
 <div class="admin-card animated-element" data-animation-delay="200">
     <div class="report-header">
         <h3>Laporan Penjualan Detail</h3>
-        <a href="{{ url_for('admin.export_report', report_name='sales', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
+        <a href="{{ url_for('admin.export_report', report_name='sales', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor CSV</a>
     </div>
     <div class="dashboard-stats" style="margin-top: 1rem;">
         <div class="stat-card"><h4>Total Pendapatan</h4><p>{{ reports.sales.total_revenue|rupiah }}</p></div>
@@ -55,8 +55,8 @@
      <div class="report-header">
         <h3>Laporan Inventaris</h3>
         <div class="report-actions" style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <a href="{{ url_for('admin.export_report', report_name='inventory_low_stock', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor Stok Menipis</a>
-            <a href="{{ url_for('admin.export_report', report_name='inventory_slow_moving', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor Kurang Laris</a>
+            <a href="{{ url_for('admin.export_report', report_name='inventory_low_stock', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor Stok Menipis</a>
+            <a href="{{ url_for('admin.export_report', report_name='inventory_slow_moving', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor Kurang Laris</a>
         </div>
     </div>
     <div class="dashboard-stats" style="margin-top: 1rem;">
@@ -112,7 +112,7 @@
 <div class="admin-card animated-element" data-animation-delay="500">
      <div class="report-header">
         <h3>Laporan Performa Produk</h3>
-        <a href="{{ url_for('admin.export_report', report_name='products', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
+        <a href="{{ url_for('admin.export_report', report_name='products', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor CSV</a>
     </div>
     <div class="report-grid">
         <div>
@@ -152,7 +152,7 @@
 <div class="admin-card animated-element" data-animation-delay="600">
     <div class="report-header">
         <h3>Laporan Pelanggan</h3>
-        <a href="{{ url_for('admin.export_report', report_name='customers', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
+        <a href="{{ url_for('admin.export_report', report_name='customers', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor CSV</a>
     </div>
     <div class="table-wrapper">
         <table class="admin-table">
@@ -176,7 +176,7 @@
 <div class="admin-card animated-element" data-animation-delay="700">
     <div class="report-header">
         <h3>Laporan Efektivitas Voucher</h3>
-        <a href="{{ url_for('admin.export_report', report_name='vouchers', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
+        <a href="{{ url_for('admin.export_report', report_name='vouchers', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor CSV</a>
     </div>
     <div class="table-wrapper">
         <table class="admin-table">

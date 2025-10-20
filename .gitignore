@@ -3,7 +3,7 @@ venv/
 env/
 pycache/
 *.pyc
-instance/
+database/
 app/static/uploads/
 .vscode/
 .DS_Store
