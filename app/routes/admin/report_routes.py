@@ -137,46 +137,89 @@ def export_report(report_name):
     si = StringIO()
     cw = csv.writer(si)
 
-    date_filter = " WHERE 1=1 "
-    params = []
+    # Filter tanggal untuk tabel pesanan (dengan alias 'o')
+    date_filter_orders = " WHERE 1=1 "
+    params_orders = []
     if start_date:
-        date_filter += " AND o.order_date >= ? "
-        params.append(start_date)
+        date_filter_orders += " AND o.order_date >= ? "
+        params_orders.append(start_date + ' 00:00:00')
     if end_date:
-        date_filter += " AND o.order_date <= ? "
-        params.append(end_date)
+        date_filter_orders += " AND o.order_date <= ? "
+        params_orders.append(end_date + ' 23:59:59')
+
+    data = []
+    headers = []
 
     if report_name == 'sales':
-        headers = ['ID Pesanan', 'Tanggal', 'Nama Pelanggan', 'Total', 'Status']
-        query = f"SELECT o.id, o.order_date, o.shipping_name, o.total_amount, o.status FROM orders o {date_filter} AND o.status != 'Cancelled' ORDER BY o.order_date DESC"
-        data = conn.execute(query, params).fetchall()
+        headers = ['ID Pesanan', 'Tanggal', 'Nama Pelanggan', 'Email Pelanggan', 'Subtotal', 'Diskon', 'Ongkir', 'Total', 'Status', 'Metode Pembayaran', 'Voucher']
+        query = f"""SELECT o.id, o.order_date, o.shipping_name, u.email, o.subtotal, o.discount_amount, o.shipping_cost, o.total_amount, o.status, o.payment_method, o.voucher_code 
+                     FROM orders o LEFT JOIN users u ON o.user_id = u.id {date_filter_orders} ORDER BY o.order_date DESC"""
+        data = conn.execute(query, params_orders).fetchall()
+    
     elif report_name == 'products':
-        headers = ['ID Produk', 'Nama Produk', 'Terjual', 'Dilihat']
+        headers = ['ID Produk', 'Nama Produk', 'Kategori', 'SKU', 'Harga Asli', 'Harga Diskon', 'Stok', 'Terjual (periode)', 'Dilihat (total)']
+        date_filter_for_join = date_filter_orders.replace(" WHERE 1=1 ", "")
+        params_for_join = params_orders[:]
         query = f"""
-            SELECT p.id, p.name, COALESCE(SUM(oi.quantity), 0) as total_sold, p.popularity
-            FROM products p
-            LEFT JOIN order_items oi ON p.id = oi.product_id
-            LEFT JOIN orders o ON oi.order_id = o.id AND (o.status != 'Cancelled' {date_filter.replace('WHERE 1=1', '')})
+            SELECT p.id, p.name, c.name as category_name, p.sku, p.price, p.discount_price, p.stock,
+                   (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.product_id = p.id AND o.status != 'Cancelled' {date_filter_for_join}) as total_sold,
+                   p.popularity
+            FROM products p LEFT JOIN categories c ON p.category_id = c.id
             GROUP BY p.id ORDER BY total_sold DESC
         """
-        sub_params = [p for p in params]
-        data = conn.execute(query, sub_params).fetchall()
+        data = conn.execute(query, params_for_join).fetchall()
+
     elif report_name == 'customers':
-        headers = ['ID Pelanggan', 'Username', 'Email', 'Total Belanja']
-        query = f"""
-            SELECT u.id, u.username, u.email, SUM(o.total_amount) as total_spent FROM users u
-            JOIN orders o ON u.id = o.user_id
-            {date_filter} AND o.status != 'Cancelled'
-            GROUP BY u.id ORDER BY total_spent DESC
+        headers = ['ID Pelanggan', 'Username', 'Email', 'Total Belanja (periode)', 'Jumlah Pesanan (periode)']
+        query = f"""SELECT u.id, u.username, u.email, SUM(o.total_amount) as total_spent, COUNT(o.id) as order_count 
+                     FROM users u JOIN orders o ON u.id = o.user_id {date_filter_orders} AND o.status != 'Cancelled'
+                     GROUP BY u.id ORDER BY total_spent DESC"""
+        data = conn.execute(query, params_orders).fetchall()
+        
+    elif report_name == 'inventory_low_stock':
+        headers = ['Nama Produk/Varian', 'Sisa Stok', 'Tipe', 'ID Produk', 'ID Varian', 'SKU']
+        query = """
+            SELECT name, stock, 'Produk Utama' as type, id as product_id, null as variant_id, sku
+            FROM products WHERE has_variants = 0 AND stock <= 5 AND stock > 0 
+            UNION ALL 
+            SELECT p.name || ' (' || pv.size || ')' as name, pv.stock, 'Varian' as type, p.id as product_id, pv.id as variant_id, pv.sku
+            FROM product_variants pv JOIN products p ON pv.product_id = p.id WHERE pv.stock <= 5 AND pv.stock > 0 
+            ORDER BY stock ASC
         """
-        data = conn.execute(query, params).fetchall()
+        data = conn.execute(query).fetchall()
+
+    elif report_name == 'inventory_slow_moving':
+        headers = ['Nama Produk', 'Stok Saat Ini', 'Total Terjual (periode)']
+        date_filter_for_join = date_filter_orders.replace(" WHERE 1=1 ", "")
+        params_for_join = params_orders[:]
+        query = f"""
+            SELECT p.name, p.stock, 
+                   (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON oi.order_id = o.id WHERE oi.product_id = p.id AND o.status != 'Cancelled' {date_filter_for_join}) AS total_sold
+            FROM products p GROUP BY p.id ORDER BY total_sold ASC, p.stock DESC LIMIT 20
+        """
+        data = conn.execute(query, params_for_join).fetchall()
+
+    elif report_name == 'vouchers':
+        headers = ['Kode Voucher', 'Tipe', 'Nilai', 'Jumlah Penggunaan (periode)', 'Total Diskon (periode)']
+        date_filter_voucher = " ".join(date_filter_orders.split(" ")[2:]) # Menghapus 'WHERE 1=1'
+        
+        query = f"""
+            SELECT 
+                v.code, v.type, v.value,
+                (SELECT COUNT(o.id) FROM orders o WHERE o.voucher_code = v.code AND o.status != 'Cancelled' { 'AND' + date_filter_voucher if date_filter_voucher else ''}) as usage_count,
+                (SELECT COALESCE(SUM(o.discount_amount), 0) FROM orders o WHERE o.voucher_code = v.code AND o.status != 'Cancelled' { 'AND' + date_filter_voucher if date_filter_voucher else ''}) as total_discount
+            FROM vouchers v ORDER BY usage_count DESC
+        """
+        data = conn.execute(query, params_orders * 2).fetchall()
+
     else:
         conn.close()
         return "Laporan tidak valid", 404
 
     cw.writerow(headers)
-    for row in data:
-        cw.writerow(row)
+    if data:
+        for row in data:
+            cw.writerow(row)
     
     conn.close()
     output = si.getvalue()

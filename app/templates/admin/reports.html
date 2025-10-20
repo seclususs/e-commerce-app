@@ -54,6 +54,10 @@
 <div class="admin-card animated-element" data-animation-delay="400">
      <div class="report-header">
         <h3>Laporan Inventaris</h3>
+        <div class="report-actions" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="{{ url_for('admin.export_report', report_name='inventory_low_stock', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor Stok Menipis</a>
+            <a href="{{ url_for('admin.export_report', report_name='inventory_slow_moving', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor Kurang Laris</a>
+        </div>
     </div>
     <div class="dashboard-stats" style="margin-top: 1rem;">
         <div class="stat-card" style="grid-column: 1 / -1;"><h4>Total Nilai Inventaris</h4><p>{{ reports.inventory.total_value|rupiah }}</p></div>
@@ -172,6 +176,7 @@
 <div class="admin-card animated-element" data-animation-delay="700">
     <div class="report-header">
         <h3>Laporan Efektivitas Voucher</h3>
+        <a href="{{ url_for('admin.export_report', report_name='vouchers', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary">Ekspor CSV</a>
     </div>
     <div class="table-wrapper">
         <table class="admin-table">
