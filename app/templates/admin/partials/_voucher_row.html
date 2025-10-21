@@ -1,20 +1,45 @@
 <tr class="admin-card-row" id="voucher-row-{{ voucher.id }}">
-<td data-label="Kode:"><strong>{{ voucher.code }}</strong></td>
-<td data-label="Tipe:" class="collapsible-detail">{{ voucher.type }}</td>
-<td data-label="Nilai:" class="collapsible-detail">
-{% if voucher.type == 'PERCENTAGE' %}{{ voucher.value }}%
-{% else %}{{ voucher.value|rupiah }}{% endif %}
-</td>
-<td data-label="Min. Beli:" class="collapsible-detail">{{ voucher.min_purchase_amount|rupiah if voucher.min_purchase_amount > 0 else '-' }}</td>
-<td data-label="Digunakan:" class="collapsible-detail">{{ voucher.use_count }} / {{ voucher.max_uses or '∞' }}</td>
-<td data-label="Status:" class="collapsible-detail status-cell">
-<span class="status-badge status-{{ 'completed' if voucher.is_active else 'cancelled' }}">{{ 'Aktif' if voucher.is_active else 'Nonaktif' }}</span>
-</td>
-<td data-label="Aksi:" class="action-buttons">
-<div class="desktop-actions">
-<a href="{{ url_for('admin.toggle_voucher', id=voucher.id) }}" class="action-link action-link-edit toggle-voucher-btn" data-ajax="true" data-update-target="#voucher-row-{{ voucher.id }}">{{ 'Nonaktifkan' if voucher.is_active else 'Aktifkan' }}</a>
-<a href="{{ url_for('admin.delete_voucher', id=voucher.id) }}" class="action-link action-link-delete" data-ajax="true" data-remove-target="#voucher-row-{{ voucher.id }}">Hapus</a>
-</div>
-<button class="mobile-details-toggle">Lihat Detail <i class="fas fa-chevron-down"></i></button>
-</td>
+  <td data-label="Kode:">
+    <strong>{{ voucher.code }}</strong>
+  </td>
+  <td data-label="Tipe:" class="collapsible-detail">
+    {{ voucher.type }}
+  </td>
+  <td data-label="Nilai:" class="collapsible-detail">
+    {% if voucher.type == 'PERCENTAGE' %}
+      {{ voucher.value }}%
+    {% else %}
+      {{ voucher.value|rupiah }}
+    {% endif %}
+  </td>
+  <td data-label="Min. Beli:" class="collapsible-detail">
+    {{ voucher.min_purchase_amount|rupiah if voucher.min_purchase_amount > 0 else '-' }}
+  </td>
+  <td data-label="Digunakan:" class="collapsible-detail">
+    {{ voucher.use_count }} / {{ voucher.max_uses or '∞' }}
+  </td>
+  <td data-label="Status:" class="collapsible-detail status-cell">
+    <span class="status-badge status-{{ 'completed' if voucher.is_active else 'cancelled' }}">
+      {{ 'Aktif' if voucher.is_active else 'Nonaktif' }}
+    </span>
+  </td>
+  <td data-label="Aksi:" class="action-buttons">
+    <div class="desktop-actions">
+      <a href="{{ url_for('admin.toggle_voucher', id=voucher.id) }}" 
+         class="action-link action-link-edit toggle-voucher-btn" 
+         data-ajax="true" 
+         data-update-target="#voucher-row-{{ voucher.id }}">
+        {{ 'Nonaktifkan' if voucher.is_active else 'Aktifkan' }}
+      </a>
+      <a href="{{ url_for('admin.delete_voucher', id=voucher.id) }}" 
+         class="action-link action-link-delete" 
+         data-ajax="true" 
+         data-remove-target="#voucher-row-{{ voucher.id }}">
+        Hapus
+      </a>
+    </div>
+    <button class="mobile-details-toggle">
+      Lihat Detail <i class="fas fa-chevron-down"></i>
+    </button>
+  </td>
 </tr>

@@ -6,7 +6,7 @@
 {% block admincontent %}
 <div class="admin-card animated-element">
     <h3>Tambah Produk Baru</h3>
-    <form id="add-product-form" method="POST" action="{{ url_for('admin.admin_products') }}" enctype="multipart/form-data" data-ajax="true" data-update-target="#products-table-body" data-update-action="prepend">
+    <form id="add-product-form" method="POST" action="{{ url_for('admin.admin_products') }}" enctype="multipart/form-data">
         <input type="hidden" name="form_type" value="add_product">
         <div class="form-grid">
             <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" required></div>
@@ -59,13 +59,13 @@
 <div class="admin-card animated-element" data-animation-delay="200">
     <h3>Daftar Produk</h3>
     
-    <!-- Search & Filter Form -->
-    <div class="product-search-bar" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-background-light);">
-        <form method="GET" action="{{ url_for('admin.admin_products') }}" id="admin-product-filter-form" data-ajax-filter="true" data-update-target="#products-table-body">
+    <!-- Form Filter & Pencarian -->
+    <div class="product-search-bar" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-border-default);">
+        <form method="GET" action="{{ url_for('admin.admin_products') }}" id="admin-product-filter-form">
             <div class="form-grid" style="align-items: flex-end; gap: 1rem;">
                 <div class="form-group">
                     <label for="search">Cari Nama/SKU</label>
-                    <input type="search" name="search" class="form-control" placeholder="Cari..." value="{{ request.args.get('search', '') }}">
+                    <input type="search" name="search" class="form-control" placeholder="Ketik untuk mencari..." value="{{ request.args.get('search', '') }}">
                 </div>
                 <div class="form-group">
                     <label for="category">Kategori</label>
@@ -87,8 +87,7 @@
                 </div>
             </div>
             <div class="form-actions" style="margin-top: 1.5rem;">
-                <button type="submit" class="cta-button">Filter</button>
-                <a href="{{ url_for('admin.admin_products') }}" class="cta-button-secondary" id="reset-filter-btn">Reset</a>
+                <a href="{{ url_for('admin.admin_products') }}" class="cta-button-secondary" id="reset-filter-btn">Reset Filter</a>
             </div>
         </form>
     </div>

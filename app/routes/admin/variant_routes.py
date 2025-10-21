@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify
 from . import admin_bp
 from db.db_config import get_content
 from utils.route_decorators import admin_required
-from services.products.product_service import product_service
+from services.products.product_query_service import product_query_service
 from services.products.variant_service import variant_service
 
 @admin_bp.route('/product/<int:product_id>/variants', methods=['GET', 'POST'])
@@ -37,13 +37,13 @@ def manage_variants(product_id):
 
         return jsonify(result), status_code
 
-    product = product_service.get_product_by_id(product_id)
+    product = product_query_service.get_product_by_id(product_id)
     if not product or not product['has_variants']:
         flash('Produk tidak ditemukan atau tidak memiliki varian.', 'danger')
         return redirect(url_for('admin.admin_products'))
     
     variants = variant_service.get_variants_for_product(product_id)
-    return render_template('admin/manage_variants.html', product=product, variants=variants, content=get_content())
+    return render_template('admin/manage_variants.html', product=product, variants=variants, content=get_content(), product_id=product_id)
 
 @admin_bp.route('/product/<int:product_id>/variant/delete/<int:variant_id>', methods=['POST'])
 @admin_required

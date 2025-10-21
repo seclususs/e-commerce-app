@@ -2,8 +2,8 @@
  * Mengelola fungsionalitas UI spesifik admin seperti
  * aksi massal dan kartu yang dapat diperluas di tabel mobile.
  */
-import { showNotification, confirmModal } from '../utils/ui.js';
-import { handleAjaxSubmit } from './ajax-forms.js';
+import { showNotification, confirmModal } from '../../utils/ui.js';
+import { handleAjaxSubmit } from '../ajax-forms.js';
 
 export function initAdminCardToggle() {
     const adminTable = document.querySelector('.admin-table');

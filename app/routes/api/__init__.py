@@ -6,3 +6,4 @@ from . import cart_routes
 from . import product_routes
 from . import voucher_routes
 from . import payment_routes
+from . import auth_routes

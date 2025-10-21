@@ -1,16 +1,43 @@
 <tr id="category-row-{{ category.id }}">
-<td data-label="ID:">{{ category.id }}</td>
-<td data-label="Nama:">
-<div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
-<form method="POST" action="{{ url_for('admin.admin_categories') }}" class="form-actions" style="flex-grow: 1; margin: 0;" data-ajax="true" data-update-action="update-text" data-update-target="#category-name-input-{{ category.id }}">
-<input type="hidden" name="id" value="{{ category.id }}">
-<div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
-<label for="category-name-input-{{ category.id }}" class="sr-only">Nama Kategori</label>
-<input type="text" name="name" value="{{ category.name }}" class="form-control" id="category-name-input-{{ category.id }}">
-</div>
-<button type="submit" name="action" value="edit" class="cta-button-secondary" style="border-color: var(--color-primary); color: var(--color-primary); white-space: nowrap;">Update</button>
-</form>
-<a href="{{ url_for('admin.delete_category', id=category.id) }}" class="action-link action-link-delete" data-ajax="true" data-remove-target="#category-row-{{ category.id }}">Hapus</a>
-</div>
-</td>
+  <td data-label="ID:">{{ category.id }}</td>
+  <td data-label="Nama:">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+      
+      <form method="POST" 
+            action="{{ url_for('admin.admin_categories') }}" 
+            class="form-actions" 
+            style="flex-grow: 1; margin: 0;" 
+            data-ajax="true" 
+            data-update-action="update-text" 
+            data-update-target="#category-name-input-{{ category.id }}">
+            
+        <input type="hidden" name="id" value="{{ category.id }}">
+        
+        <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+          <label for="category-name-input-{{ category.id }}" class="sr-only">Nama Kategori</label>
+          <input type="text" 
+                 name="name" 
+                 value="{{ category.name }}" 
+                 class="form-control" 
+                 id="category-name-input-{{ category.id }}">
+        </div>
+        
+        <button type="submit" 
+                name="action" 
+                value="edit" 
+                class="cta-button-secondary" 
+                style="border-color: var(--color-primary); color: var(--color-primary); white-space: nowrap;">
+          Update
+        </button>
+      </form>
+      
+      <a href="{{ url_for('admin.delete_category', id=category.id) }}" 
+         class="action-link action-link-delete" 
+         data-ajax="true" 
+         data-remove-target="#category-row-{{ category.id }}">
+        Hapus
+      </a>
+      
+    </div>
+  </td>
 </tr>

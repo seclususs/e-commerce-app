@@ -1,0 +1,16 @@
+{% for order in orders %}
+<tr>
+    <td data-label="ID Pesanan:">#{{ order.id }}</td>
+    <td data-label="Tanggal:">{{ order.order_date.split(' ')[0] }}</td>
+    <td data-label="Pelanggan:">{{ order.customer_name or 'Tamu' }}</td>
+    <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
+    <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status }}</span></td>
+    <td data-label="Aksi:">
+        <a href="{{ url_for('admin.admin_order_detail', id=order.id) }}" class="btn-view">Lihat Detail</a>
+    </td>
+</tr>
+{% else %}
+<tr>
+    <td colspan="6" style="text-align: center;">Tidak ada pesanan yang cocok dengan filter Anda.</td>
+</tr>
+{% endfor %}

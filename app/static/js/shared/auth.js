@@ -6,7 +6,7 @@ export function initLogout() {
         const logoutLink = e.target.closest('#logoutLink, #mobileLogoutLink');
         if (logoutLink) {
             e.preventDefault();
-            localStorage.removeItem('hackthreadCart');
+            localStorage.removeItem('hackthreadVariantCart'); // Membersihkan keranjang tamu
             window.location.href = logoutLink.href;
         }
     });

@@ -1,26 +1,58 @@
 <tr class="admin-card-row" id="variant-row-{{ variant.id }}">
-<form method="POST" action="{{ url_for('admin.manage_variants', product_id=product_id) }}" data-ajax="true" data-update-action="update-inputs">
-<input type="hidden" name="action" value="update">
-<input type="hidden" name="variant_id" value="{{ variant.id }}">
-<td data-label="ID:">{{ variant.id }}</td>
-<td data-label="Ukuran:">
-<input type="text" name="size" value="{{ variant.size }}" class="form-control" required>
-</td>
-<td data-label="Stok:">
-<input type="number" name="stock" value="{{ variant.stock }}" class="form-control" required>
-</td>
-<td data-label="Berat (gram):">
-<input type="number" name="weight_grams" value="{{ variant.weight_grams }}" class="form-control" required>
-</td>
-<td data-label="SKU:">
-<input type="text" name="sku" value="{{ variant.sku or '' }}" class="form-control">
-</td>
-<td data-label="Aksi:" class="action-buttons">
-<div class="desktop-actions">
-<button type="submit" class="cta-button-secondary" style="border-color: var(--color-primary); color: var(--color-primary); white-space: nowrap;">Update</button>
-<a href="{{ url_for('admin.delete_variant', product_id=product_id, variant_id=variant.id) }}" class="action-link action-link-delete" data-ajax="true" data-remove-target="#variant-row-{{ variant.id }}">Hapus</a>
-</div>
-<button class="mobile-details-toggle">Lihat Detail <i class="fas fa-chevron-down"></i></button>
-</td>
-</form>
+  <td data-label="ID:">{{ variant.id }}</td>
+  <td data-label="Ukuran:">
+    <input type="text" 
+           name="size" 
+           value="{{ variant.size }}" 
+           class="form-control" 
+           required 
+           form="form-variant-{{ variant.id }}"> </td>
+  <td data-label="Stok:">
+    <input type="number" 
+           name="stock" 
+           value="{{ variant.stock }}" 
+           class="form-control" 
+           required 
+           form="form-variant-{{ variant.id }}"> </td>
+  <td data-label="Berat (gram):">
+    <input type="number" 
+           name="weight_grams" 
+           value="{{ variant.weight_grams }}" 
+           class="form-control" 
+           required 
+           form="form-variant-{{ variant.id }}"> </td>
+  <td data-label="SKU:">
+    <input type="text" 
+           name="sku" 
+           value="{{ variant.sku or '' }}" 
+           class="form-control" 
+           form="form-variant-{{ variant.id }}"> </td>
+  <td data-label="Aksi:" class="action-buttons">
+    <form method="POST" 
+          action="{{ url_for('admin.manage_variants', product_id=product_id) }}" 
+          data-ajax="true" 
+          data-update-action="update-inputs"
+          id="form-variant-{{ variant.id }}"
+          style="display: contents;">
+      <input type="hidden" name="action" value="update">
+      <input type="hidden" name="variant_id" value="{{ variant.id }}">
+    </form>
+    
+    <div class="desktop-actions">
+      <button type="submit" 
+              class="cta-button-secondary" 
+              style="border-color: var(--color-primary); color: var(--color-primary); white-space: nowrap;" 
+              form="form-variant-{{ variant.id }}">
+        Update
+      </button>
+      
+      <a href="{{ url_for('admin.delete_variant', product_id=product_id, variant_id=variant.id) }}" 
+         class="action-link action-link-delete" 
+         data-ajax="true" 
+         data-remove-target="#variant-row-{{ variant.id }}">
+        Hapus
+      </a>
+    </div>
+    <button class="mobile-details-toggle">Lihat Detail <i class="fas fa-chevron-down"></i></button>
+  </td>
 </tr>

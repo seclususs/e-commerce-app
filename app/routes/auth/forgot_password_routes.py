@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for, jsonify
 from db.db_config import get_content
 from services.users.auth_service import auth_service
 from . import auth_bp
@@ -9,7 +9,12 @@ def forgot_password():
         email = request.form.get('email')
         
         auth_service.handle_password_reset_request(email)
-        flash('SIMULASI: Jika email terdaftar, email reset password telah dikirim.', 'success')
+        message = 'Jika email terdaftar, link reset password telah dikirim.'
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': True, 'message': message})
+
+        flash(f'SIMULASI: {message}', 'success')
         return redirect(url_for('auth.login'))
 
     return render_template('auth/forgot_password.html', content=get_content(), hide_navbar=True)

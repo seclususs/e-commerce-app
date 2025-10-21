@@ -1,5 +1,5 @@
-from flask import render_template, request, session, redirect, url_for, flash
-from db.db_config import get_content
+from flask import render_template, request, session, redirect, url_for, flash, jsonify
+from db.db_config import get_db_connection, get_content
 from utils.route_decorators import login_required
 from services.products.product_query_service import product_query_service
 from services.products.review_service import review_service
@@ -44,6 +44,14 @@ def add_review(id):
         return redirect(url_for('product.product_detail', id=id))
 
     result = review_service.add_review(user_id, id, rating, comment)
-    flash(result['message'], 'success' if result['success'] else 'danger')
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if result.get('success'):
+            new_review = review_service.get_review_by_id(result['review_id'])
+            review_html = render_template('partials/_review.html', review=new_review)
+            return jsonify({'success': True, 'message': result['message'], 'review_html': review_html})
+        else:
+            return jsonify({'success': False, 'message': result['message']}), 400
     
+    flash(result['message'], 'success' if result['success'] else 'danger')
     return redirect(url_for('product.product_detail', id=id))

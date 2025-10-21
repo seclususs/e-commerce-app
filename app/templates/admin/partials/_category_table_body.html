@@ -1,7 +1,7 @@
 {% for category in categories %}
-{% include 'admin/partials/_category_row.html' %}
+  {% include 'admin/partials/_category_row.html' %}
 {% else %}
-<tr class="no-items-row">
-<td colspan="2" style="text-align: center;">Belum ada kategori.</td>
-</tr>
+  <tr class="no-items-row">
+    <td colspan="2" style="text-align: center;">Belum ada kategori.</td>
+  </tr>
 {% endfor %}

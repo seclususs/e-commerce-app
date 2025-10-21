@@ -36,6 +36,13 @@ def admin_orders():
     
     orders = conn.execute(query, params).fetchall()
     conn.close()
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'success': True,
+            'html': render_template('admin/partials/_order_table_body.html', orders=orders)
+        })
+
     return render_template('admin/manage_orders.html', orders=orders, content=get_content())
 
 @admin_bp.route('/order/<int:id>')

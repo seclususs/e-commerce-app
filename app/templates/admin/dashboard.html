@@ -22,7 +22,7 @@
                     <option value="last_7_days" {% if selected_period == 'last_7_days' %}selected{% endif %}>7 Hari Terakhir</option>
                     <option value="last_30_days" {% if selected_period == 'last_30_days' %}selected{% endif %}>30 Hari Terakhir</option>
                     <option value="this_month" {% if selected_period == 'this_month' %}selected{% endif %}>Bulan Ini</option>
-                    <option value="custom" {% if selected_period == 'custom' %}selected{% endif %} disabled>Rentang Kustom</option>
+                    <option value="custom" {% if selected_period == 'custom' %}selected{% endif %}>Rentang Kustom</option>
                 </select>
             </div>
             <div class="form-group">
@@ -34,7 +34,7 @@
                 <input type="date" name="custom_end" id="custom_end" class="form-control" value="{{ custom_end or '' }}">
             </div>
             <div class="form-actions" style="margin-bottom: 0;">
-                <button type="submit" class="cta-button">Terapkan Kustom</button>
+                <button type="submit" class="cta-button">Terapkan Filter</button>
             </div>
         </div>
     </form>
@@ -43,19 +43,19 @@
 <div class="dashboard-stats">
     <div class="stat-card animated-element" data-animation-delay="100">
         <h4>Total Penjualan</h4>
-        <p>{{ stats.total_sales|rupiah }}</p>
+        <p id="stat-total-sales">{{ stats.total_sales|rupiah }}</p>
     </div>
     <div class="stat-card animated-element" data-animation-delay="200">
         <h4>Total Pesanan</h4>
-        <p>{{ stats.order_count }}</p>
+        <p id="stat-order-count">{{ stats.order_count }}</p>
     </div>
     <div class="stat-card animated-element" data-animation-delay="300">
         <h4>Pengguna Baru</h4>
-        <p>{{ stats.new_user_count }}</p>
+        <p id="stat-new-user-count">{{ stats.new_user_count }}</p>
     </div>
      <div class="stat-card animated-element" data-animation-delay="400">
         <h4>Total Produk</h4>
-        <p>{{ stats.product_count }}</p>
+        <p id="stat-product-count">{{ stats.product_count }}</p>
     </div>
 </div>
 
@@ -91,35 +91,4 @@
 
 {% block additional_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const periodSelect = document.getElementById('period');
-        const customStart = document.getElementById('custom_start');
-        const customEnd = document.getElementById('custom_end');
-        
-        periodSelect.addEventListener('change', function() {
-            if (this.value !== 'custom') {
-                customStart.value = '';
-                customEnd.value = '';
-                this.form.submit();
-            }
-        });
-        
-        document.getElementById('dashboard-filter-form').addEventListener('submit', function(e) {
-            if (e.submitter && e.submitter.textContent.includes('Terapkan Kustom')) {
-                 if (customStart.value && customEnd.value) {
-                    let customOption = periodSelect.querySelector('option[value="custom"]');
-                    if (!customOption) {
-                        customOption = new Option('Rentang Kustom', 'custom');
-                        periodSelect.add(customOption);
-                    }
-                    periodSelect.value = 'custom';
-                 } else {
-                     e.preventDefault();
-                     alert('Harap isi tanggal mulai dan tanggal selesai untuk rentang kustom.');
-                 }
-            }
-        });
-    });
-</script>
 {% endblock %}

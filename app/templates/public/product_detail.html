@@ -147,45 +147,43 @@
 
     <div class="reviews-section animated-element" data-animation-delay="400">
         <h2 class="section-title">Ulasan Pelanggan</h2>
-        {% if session.user_id and can_review %}
-            <div class="admin-card add-review-form">
-                <h3>Bagikan Pendapat Anda</h3>
-                <form action="{{ url_for('product.add_review', id=product.id) }}" method="POST">
-                    <div class="form-group">
-                        <label for="rating">Rating Anda</label>
-                        <div class="star-rating">
-                            <input type="radio" id="5-stars" name="rating" value="5" required/><label for="5-stars" class="star">&#9733;</label>
-                            <input type="radio" id="4-stars" name="rating" value="4" /><label for="4-stars" class="star">&#9733;</label>
-                            <input type="radio" id="3-stars" name="rating" value="3" /><label for="3-stars" class="star">&#9733;</label>
-                            <input type="radio" id="2-stars" name="rating" value="2" /><label for="2-stars" class="star">&#9733;</label>
-                            <input type="radio" id="1-star" name="rating" value="1" /><label for="1-star" class="star">&#9733;</label>
+        <div id="review-form-container">
+            {% if session.user_id and can_review %}
+                <div class="admin-card add-review-form">
+                    <h3>Bagikan Pendapat Anda</h3>
+                    <form action="{{ url_for('product.add_review', id=product.id) }}" method="POST" id="add-review-form">
+                        <div class="form-group">
+                            <label for="rating">Rating Anda</label>
+                            <div class="star-rating">
+                                <input type="radio" id="5-stars" name="rating" value="5" required/><label for="5-stars" class="star">&#9733;</label>
+                                <input type="radio" id="4-stars" name="rating" value="4" /><label for="4-stars" class="star">&#9733;</label>
+                                <input type="radio" id="3-stars" name="rating" value="3" /><label for="3-stars" class="star">&#9733;</label>
+                                <input type="radio" id="2-stars" name="rating" value="2" /><label for="2-stars" class="star">&#9733;</label>
+                                <input type="radio" id="1-star" name="rating" value="1" /><label for="1-star" class="star">&#9733;</label>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-group"><label for="comment">Komentar</label><textarea name="comment" id="comment" rows="4" placeholder="Tulis ulasan Anda di sini..." required></textarea></div>
-                    <button type="submit" class="cta-button form-button">Kirim Ulasan</button>
-                </form>
-            </div>
-        {% elif session.user_id %}
-             <div class="admin-card add-review-form form-disabled">
-                <h3>Bagikan Pendapat Anda</h3>
-                <p class="form-hint" style="text-align: center; margin-top: 1rem; color: var(--color-text-med);">Anda bisa memberi ulasan setelah membeli produk ini.</p>
-            </div>
-        {% else %}
-            <div class="admin-card add-review-form" style="text-align: center;">
-                <p style="color: #94a3b8; margin:0;"><a href="{{ url_for('auth.login', next=request.url) }}" style="color: var(--color-primary);">Login</a> untuk memberikan ulasan.</p>
-            </div>
-        {% endif %}
-        <div class="reviews-grid">
+                        <div class="form-group"><label for="comment">Komentar</label><textarea name="comment" id="comment" rows="4" placeholder="Tulis ulasan Anda di sini..." required></textarea></div>
+                        <button type="submit" class="cta-button form-button">Kirim Ulasan</button>
+                    </form>
+                </div>
+            {% elif session.user_id %}
+                 <div class="admin-card add-review-form form-disabled">
+                    <h3>Bagikan Pendapat Anda</h3>
+                    <p class="form-hint" style="text-align: center; margin-top: 1rem; color: var(--color-text-med);">Anda bisa memberi ulasan setelah membeli produk ini.</p>
+                </div>
+            {% else %}
+                <div class="admin-card add-review-form" style="text-align: center;">
+                    <p style="color: #94a3b8; margin:0;"><a href="{{ url_for('auth.login', next=request.url) }}" style="color: var(--color-primary);">Login</a> untuk memberikan ulasan.</p>
+                </div>
+            {% endif %}
+        </div>
+        <div class="reviews-grid" id="reviews-grid">
             {% if reviews %}
                 {% for review in reviews %}
-                <div class="testimonial-card">
-                    <div class="testimonial-header"><strong class="testimonial-name">{{ review.username }}</strong><div class="testimonial-rating">{% for i in range(5) %}<i class="fas fa-star {% if i < review.rating %}rated{% endif %}"></i>{% endfor %}</div></div>
-                    <p class="testimonial-comment">"{{ review.comment }}"</p>
-                    <small class="review-date">{{ review.created_at.split(' ')[0] }}</small>
-                </div>
+                {% include 'partials/_review.html' %}
                 {% endfor %}
             {% else %}
-                <p style="text-align: center; color: #94a3b8;">Jadilah yang pertama mengulas produk ini!</p>
+                <p id="no-reviews-message" style="text-align: center; color: #94a3b8;">Jadilah yang pertama mengulas produk ini!</p>
             {% endif %}
         </div>
     </div>

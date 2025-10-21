@@ -11,6 +11,13 @@ class ReviewService:
         reviews = conn.execute("SELECT r.*, u.username FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.product_id = ? ORDER BY r.created_at DESC", (product_id,)).fetchall()
         conn.close()
         return [dict(r) for r in reviews]
+    
+    def get_review_by_id(self, review_id):
+        """Mengambil satu ulasan berdasarkan ID."""
+        conn = get_db_connection()
+        review = conn.execute("SELECT r.*, u.username FROM reviews r JOIN users u ON r.user_id = u.id WHERE r.id = ?", (review_id,)).fetchone()
+        conn.close()
+        return dict(review) if review else None
 
     def check_user_can_review(self, user_id, product_id):
         """Memeriksa apakah pengguna telah membeli dan belum mengulas produk."""
@@ -33,9 +40,11 @@ class ReviewService:
         
         conn = get_db_connection()
         try:
-            conn.execute('INSERT INTO reviews (product_id, user_id, rating, comment) VALUES (?, ?, ?, ?)', (product_id, user_id, rating, comment))
+            cursor = conn.cursor()
+            cursor.execute('INSERT INTO reviews (product_id, user_id, rating, comment) VALUES (?, ?, ?, ?)', (product_id, user_id, rating, comment))
+            new_id = cursor.lastrowid
             conn.commit()
-            return {'success': True, 'message': 'Terima kasih atas ulasan Anda!'}
+            return {'success': True, 'message': 'Terima kasih atas ulasan Anda!', 'review_id': new_id}
         finally:
             conn.close()
 

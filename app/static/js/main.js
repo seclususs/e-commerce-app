@@ -4,45 +4,27 @@ import { initThemeSwitcher } from './utils/theme.js';
 import { cartStore } from './state/cart-store.js';
 import { initLogout } from './shared/auth.js';
 import { initActionConfirmations } from './shared/confirmations.js';
+import { initPageTransitions } from './utils/page-transitions.js';
+import { initGlobalAddToCart } from './components/product-card.js';
 import { initProductCatalogPage } from './pages/product-catalog.js';
 import { initProductDetailPage } from './pages/product-detail.js';
 import { initCheckoutPage } from './pages/checkout.js';
 import { initPaymentPage } from './pages/payment.js';
-import { initProfileEditor } from './pages/profile.js';
+import { initProfileEditor, initUserProfile } from './pages/profile.js';
 import { initCartPage } from './pages/cart.js';
+import { initRegisterPage } from './pages/auth/register.js';
+import { initForgotPasswordPage } from './pages/auth/forgot-password.js';
 
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Inisialisasi efek transisi halaman
-    const pageWrapper = document.querySelector('.page-content-wrapper');
-    if (pageWrapper) {
-        document.body.addEventListener('click', (e) => {
-            const link = e.target.closest('a');
-            
-            // Cek jika link checkout/cart dinonaktifkan
-            const isDisabledLink = link && (link.id === 'checkout-link' || link.id === 'checkout-link-mobile') && link.classList.contains('disabled-link');
-            if (isDisabledLink) {
-                 e.preventDefault();
-                 return;
-            }
-
-            if (link && link.href && link.hostname === location.hostname &&
-                !link.href.includes('#') && 
-                link.target !== '_blank' &&
-                !link.hasAttribute('data-no-transition')) {
-                e.preventDefault();
-                pageWrapper.classList.add('page-is-leaving');
-                setTimeout(() => { window.location.href = link.href; }, 300);
-            }
-        });
-    }
-
-    // Inisialisasi modul
+    // Inisialisasi modul global
+    initPageTransitions('.page-content-wrapper');
     initAnimations();
     initFlashMessages();
     initLogout();
     initActionConfirmations();
     initThemeSwitcher();
+    initGlobalAddToCart();
     
     // Inisialisasi state keranjang
     await cartStore.init();
@@ -69,7 +51,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (document.querySelector('.payment-page-section')) {
         initPaymentPage();
     }
-    if (document.querySelector('.user-profile-section .profile-container form')) {
+    if (document.querySelector('.profile-container form')) {
         initProfileEditor();
+    }
+    if (document.querySelector('.user-profile-section #orders-list')) {
+        initUserProfile();
+    }
+    if (document.getElementById('register-form')) {
+        initRegisterPage();
+    }
+    if (document.getElementById('forgot-password-form')) {
+        initForgotPasswordPage();
     }
 });

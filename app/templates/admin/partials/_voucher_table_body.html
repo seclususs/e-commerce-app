@@ -1,5 +1,9 @@
 {% for voucher in vouchers %}
-{% include 'admin/partials/_voucher_row.html' %}
+  {% include 'admin/partials/_voucher_row.html' %}
 {% else %}
-<tr class="no-items-row"><td colspan="7" style="text-align: center;">Belum ada voucher.</td></tr>
+  <tr class="no-items-row">
+    <td colspan="7" style="text-align: center;">
+      Belum ada voucher.
+    </td>
+  </tr>
 {% endfor %}

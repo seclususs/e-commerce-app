@@ -2,26 +2,30 @@ import { showNotification, confirmModal } from '../utils/ui.js';
 
 /**
  * Menangani aksi 'prepend' setelah AJAX berhasil.
- * Menambahkan HTML baru ke awal target dan memberikan efek highlight.
+ * Fungsi ini secara dinamis menambahkan baris HTML baru ke awal tabel
+ * tanpa perlu me-refresh halaman, sesuai dengan permintaan.
  * @param {HTMLFormElement} form Form yang di-submit.
- * @param {object} result Objek JSON dari server.
+ * @param {object} result Objek JSON dari server yang berisi partial HTML.
  */
 function handlePrependAction(form, result) {
     const target = document.querySelector(form.dataset.updateTarget);
     if (target && result.html) {
-        // Sembunyikan pesan "Belum ada item" jika ada
+        // Hapus pesan "Belum ada item" jika ada sebelum menambahkan baris baru.
         const noItemRow = target.querySelector('.no-items-row');
         if (noItemRow) noItemRow.remove();
 
+        // Menggunakan insertAdjacentHTML untuk menambahkan elemen HTML baru (baris produk)
+        // ke bagian atas dari body tabel (target). Ini adalah inti dari pembaruan dinamis.
         target.insertAdjacentHTML('afterbegin', result.html);
         form.reset();
         
-        // Reset khusus untuk form tambah produk
+        // Reset khusus untuk form tambah produk untuk membersihkan preview gambar.
         if(form.id === 'add-product-form') {
             document.getElementById('image-previews').innerHTML = '';
             document.getElementById('file-name').textContent = 'Belum ada file dipilih';
         }
         
+        // Memberikan efek highlight visual pada baris yang baru ditambahkan.
         const newRow = target.firstElementChild;
         if (newRow) {
             newRow.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';

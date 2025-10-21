@@ -8,9 +8,11 @@ function initProductFiltering() {
     const formDesktop = document.getElementById('filter-form-desktop');
     const formMobile = document.getElementById('filter-form-mobile');
     const container = document.getElementById('product-grid-container');
+    const resetBtnDesktop = formDesktop ? formDesktop.querySelector('.reset-filter-btn') : null;
+    const resetBtnMobile = formMobile ? formMobile.querySelector('.cta-button-secondary') : null;
     const noProductsTemplate = `<p class="no-products-found animated-element is-visible">Tidak ada produk yang cocok dengan pencarian atau filter Anda.</p>`;
 
-    if (!formDesktop || !container) {
+    if (!container) {
         return;
     }
 
@@ -33,9 +35,13 @@ function initProductFiltering() {
         container.innerHTML = skeletons;
     };
 
-    const handleFilterChange = async (form) => {
-        const formData = new FormData(form);
-        const params = new URLSearchParams(formData);
+    const handleFilterChange = async (form, isReset = false) => {
+        const params = isReset ? new URLSearchParams() : new URLSearchParams(new FormData(form));
+        if (!isReset) {
+            for (let pair of params.entries()) {
+                if (!pair[1]) params.delete(pair[0]);
+            }
+        }
         const url = `/api/products?${params.toString()}`;
 
         showLoadingState();
@@ -52,7 +58,6 @@ function initProductFiltering() {
 
             container.innerHTML = data.html.trim() !== '' ? data.html : noProductsTemplate;
            
-            // Panggil kembali animasi untuk kartu produk baru.
             initAnimations();
            
         } catch (error) {
@@ -79,6 +84,23 @@ function initProductFiltering() {
             });
         }
     });
+
+    if (resetBtnDesktop) {
+        resetBtnDesktop.addEventListener('click', e => {
+            e.preventDefault();
+            formDesktop.reset();
+            handleFilterChange(formDesktop, true);
+        });
+    }
+
+    if (resetBtnMobile) {
+        resetBtnMobile.addEventListener('click', e => {
+            e.preventDefault();
+            formMobile.reset();
+            handleFilterChange(formMobile, true);
+            document.getElementById('closeFilterBtn')?.click();
+        });
+    }
 }
 
 function initFilterModal() {

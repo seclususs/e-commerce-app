@@ -36,7 +36,7 @@
                     </div>
                      <div class="filter-actions">
                         <button type="submit" class="cta-button">Terapkan</button>
-                        <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary">Reset</a>
+                        <button type="button" class="cta-button-secondary">Reset</button>
                     </div>
                 </form>
             </div>
@@ -65,7 +65,7 @@
                     {% for cat in categories %}<label class="checkbox-label"><input type="radio" name="category" value="{{ cat.id }}" {% if request.args.get('category')|int == cat.id %}checked{% endif %}> {{ cat.name }}</label>{% endfor %}
                 </div>
             </div>
-            <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary reset-filter-btn">Reset</a>
+            <button type="button" class="cta-button-secondary reset-filter-btn">Reset</button>
         </form>
     </div>
 

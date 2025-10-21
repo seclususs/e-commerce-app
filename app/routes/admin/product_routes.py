@@ -10,9 +10,11 @@ from services.products.category_service import category_service
 @admin_bp.route('/products', methods=['GET', 'POST'])
 @admin_required
 def admin_products():
-    """Menangani daftar produk, filter, dan aksi AJAX (buat, hapus massal, ubah kategori massal)."""
+    """Menangani daftar produk, filter, dan penambahan produk."""
     if request.method == 'POST':
         form_type = request.form.get('form_type')
+        
+        # Aksi massal
         if form_type == 'bulk_action':
             action = request.form.get('bulk_action')
             selected_ids = request.form.getlist('product_ids')
@@ -28,16 +30,17 @@ def admin_products():
                 return jsonify(result)
             else:
                 return jsonify(result), 400
-        else:
+
+        # Penambahan produk baru
+        elif form_type == 'add_product':
             result = product_service.create_product(request.form, request.files)
             if result.get('success'):
-                html = render_template('admin/partials/_product_row.html', product=result['product'])
-                result['html'] = html
-                return jsonify(result)
+                flash(result.get('message', 'Produk berhasil ditambahkan!'), 'success')
             else:
-                return jsonify(result), 400
+                flash(result.get('message', 'Gagal menambahkan produk.'), 'danger')
+            return redirect(url_for('admin.admin_products'))
     
-    # Handle GET request with filters
+    # Menangani request GET dengan parameter filter
     search_term = request.args.get('search', '').strip()
     category_filter = request.args.get('category')
     stock_status_filter = request.args.get('stock_status')
@@ -48,13 +51,14 @@ def admin_products():
         stock_status=stock_status_filter
     )
     
-    # Jika ini adalah request AJAX (dari filter), kembalikan hanya HTML tabel
+    # Jika ini adalah request AJAX, kembalikan hanya HTML body tabel
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({
             'success': True, 
             'html': render_template('admin/partials/_product_table_body.html', products=products)
         })
 
+    # Untuk request non-AJAX, render seluruh halaman
     categories = category_service.get_all_categories()
     return render_template('admin/manage_products.html', 
                            products=products, 

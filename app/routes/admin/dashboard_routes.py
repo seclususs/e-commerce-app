@@ -12,7 +12,7 @@ from utils.date_utils import get_date_range
 @admin_bp.route('/dashboard')
 @admin_required
 def admin_dashboard():
-    # Logika rentang waktu
+    """Menangani pemfilteran dasbor dan merespons permintaan AJAX."""
     period = request.args.get('period', 'last_7_days')
     custom_start = request.args.get('custom_start')
     custom_end = request.args.get('custom_end')
@@ -22,15 +22,23 @@ def admin_dashboard():
     if custom_start and custom_end:
         period = 'custom'
 
-    # Panggil service untuk mendapatkan semua statistik dashboard
     stats = report_service.get_dashboard_stats(start_date_str, end_date_str)
 
-    # Proses data chart dari hasil service
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'success': True, 
+            'data': {
+                'stats': stats,
+                'selected_period': period,
+                'custom_start': custom_start,
+                'custom_end': custom_end
+            }
+        })
+
     sales_chart_data = stats['sales_chart_data']
     top_products_chart = stats['top_products_chart']
     low_stock_chart = stats['low_stock_chart']
 
-    # Format data untuk dikirim ke template
     chart_labels = json.dumps(sales_chart_data['labels'])
     chart_data = json.dumps(sales_chart_data['data'])
     top_products_chart_labels = json.dumps(top_products_chart['labels'])
@@ -53,7 +61,6 @@ def admin_dashboard():
         custom_end=custom_end
     )
 
-# Rute untuk menjalankan scheduler
 @admin_bp.route('/run-scheduler', methods=['POST'])
 @admin_required
 def run_scheduler():

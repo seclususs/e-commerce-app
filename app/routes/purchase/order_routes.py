@@ -1,4 +1,4 @@
-from flask import render_template, request, session, redirect, url_for, flash, current_app
+from flask import render_template, request, session, redirect, url_for, flash, current_app, jsonify
 from db.db_config import get_db_connection, get_content
 from utils.route_decorators import login_required
 from services.orders.order_service import order_service
@@ -52,8 +52,12 @@ def order_success():
 @login_required
 def cancel_order(order_id):
     """
-    Menangani permintaan pembatalan pesanan dari pengguna.
+    Menangani permintaan pembatalan pesanan dari pengguna, mendukung AJAX.
     """
     result = order_service.cancel_user_order(order_id, session['user_id'])
+    
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify(result)
+
     flash(result['message'], 'success' if result['success'] else 'danger')
     return redirect(url_for('user.user_profile'))

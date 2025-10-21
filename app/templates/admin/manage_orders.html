@@ -7,7 +7,7 @@
 <!-- Form Filter & Pencarian -->
 <div class="admin-card animated-element">
     <h3>Filter & Cari Pesanan</h3>
-    <form method="GET" action="{{ url_for('admin.admin_orders') }}">
+    <form method="GET" action="{{ url_for('admin.admin_orders') }}" id="admin-order-filter-form">
         <div class="form-grid" style="align-items: flex-end;">
             <div class="form-group">
                 <label for="search">Cari ID Pesanan / Nama</label>
@@ -35,7 +35,7 @@
         </div>
         <div class="form-actions" style="margin-top: 1.5rem;">
             <button type="submit" class="cta-button">Terapkan</button>
-            <a href="{{ url_for('admin.admin_orders') }}" class="cta-button-secondary">Reset Filter</a>
+            <button type="button" class="cta-button-secondary">Reset Filter</button>
         </div>
     </form>
 </div>
@@ -50,23 +50,8 @@
                     <th>ID Pesanan</th><th>Tanggal</th><th>Pelanggan</th><th>Total</th><th>Status</th><th>Aksi</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for order in orders %}
-                <tr>
-                    <td data-label="ID Pesanan:">#{{ order.id }}</td>
-                    <td data-label="Tanggal:">{{ order.order_date.split(' ')[0] }}</td>
-                    <td data-label="Pelanggan:">{{ order.customer_name or 'Tamu' }}</td>
-                    <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
-                    <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status }}</span></td>
-                    <td data-label="Aksi:">
-                        <a href="{{ url_for('admin.admin_order_detail', id=order.id) }}" class="btn-view">Lihat Detail</a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" style="text-align: center;">Tidak ada pesanan yang cocok dengan filter Anda.</td>
-                </tr>
-                {% endfor %}
+            <tbody id="orders-table-body">
+                {% include 'admin/partials/_order_table_body.html' %}
             </tbody>
         </table>
     </div>

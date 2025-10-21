@@ -1,6 +1,5 @@
-import { showNotification } from '../utils/ui.js';
-import { selectedVariantId } from './product-detail.js';
 import { cartStore } from '../state/cart-store.js';
+import { showNotification } from '../utils/ui.js';
 
 const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID')}`;
 
@@ -83,63 +82,13 @@ async function handleCartInteraction(e) {
     await cartStore.updateItem(parseInt(id, 10), newQuantity, variantId ? parseInt(variantId, 10) : null);
 }
 
-/**
- * Menangani klik pada tombol 'Tambah ke Keranjang'.
- * @param {HTMLButtonElement} btn Tombol yang diklik.
- */
-async function handleAddToCart(btn) {
-    if (!btn || btn.disabled || btn.classList.contains('is-added')) return;
-    
-    const id = parseInt(btn.dataset.id, 10);
-    const name = btn.dataset.name;
-    const hasVariants = btn.dataset.hasVariants === 'true';
-    const quantityToAdd = parseInt(document.getElementById('quantity-input')?.value, 10) || 1;
-    let variantId = selectedVariantId; // Diimpor dari product-detail.js
-
-    if (hasVariants && !variantId) {
-        showNotification('Silakan pilih ukuran terlebih dahulu.', true);
-        return;
-    }
-
-    const activeSizeBtn = document.querySelector('.size-option-btn.active');
-    const stock = activeSizeBtn ? parseInt(activeSizeBtn.dataset.stock) : parseInt(btn.dataset.stock);
-
-    btn.disabled = true;
-    const btnTextEl = btn.querySelector('span');
-    const originalText = btnTextEl ? btnTextEl.textContent : '';
-    if (btnTextEl) {
-        btnTextEl.innerHTML = `<span class="spinner" style="display: inline-block; width: 1em; height: 1em; border-width: 2px;"></span>`;
-    }
-
-    const success = await cartStore.addItem(id, quantityToAdd, variantId ? parseInt(variantId, 10) : null, name, stock);
-
-    if (success) {
-        showNotification(`'${name}' x ${quantityToAdd} ditambahkan!`);
-        const icon = document.querySelector('#bottomCartIconContainer .fa-shopping-cart');
-        if (icon) {
-            icon.classList.add('is-animating');
-            setTimeout(() => icon.classList.remove('is-animating'), 600);
-        }
-
-        btn.classList.add('is-added');
-        if(btnTextEl) btnTextEl.innerHTML = '<i class="fas fa-check checkmark-icon" style="display: inline-block;"></i> Ditambahkan!';
-        setTimeout(() => {
-            btn.classList.remove('is-added');
-            if(btnTextEl) btnTextEl.innerHTML = originalText.includes('Tambah') ? `<i class="fas fa-shopping-cart"></i> ${originalText}` : originalText;
-            btn.disabled = false;
-        }, 2000);
-    } else {
-        btn.disabled = false;
-        if(btnTextEl) btnTextEl.innerHTML = originalText;
-    }
-}
 
 /**
  * Menginisialisasi fungsionalitas untuk halaman keranjang.
  */
 export function initCartPage() {
     // Berlangganan ke perubahan state dari store
-    const unsubscribe = cartStore.subscribe(renderCartPage);
+    cartStore.subscribe(renderCartPage);
     // Render awal saat halaman dimuat
     renderCartPage(cartStore.getState());
     // Tambahkan event listener untuk interaksi
@@ -154,16 +103,4 @@ export function initCartPage() {
             }
         }
     });
-    
-    // Cleanup on page unload (hypothetical)
-    // window.addEventListener('beforeunload', unsubscribe);
 }
-
-// Inisialisasi global untuk tombol "Tambah ke Keranjang" di seluruh situs
-document.body.addEventListener('click', e => {
-    const addToCartBtn = e.target.closest('.add-to-cart-btn');
-    if (addToCartBtn) {
-        e.preventDefault();
-        handleAddToCart(addToCartBtn);
-    }
-});
