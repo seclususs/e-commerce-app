@@ -3,6 +3,7 @@
  * aksi massal dan kartu yang dapat diperluas di tabel mobile.
  */
 import { showNotification, confirmModal } from '../utils/ui.js';
+import { handleAjaxSubmit } from './ajax-forms.js';
 
 export function initAdminCardToggle() {
     const adminTable = document.querySelector('.admin-table');
@@ -43,25 +44,36 @@ export function initBulkActions() {
     }
 
     bulkActionForm.addEventListener('submit', function(e) {
+        e.preventDefault(); // Selalu cegah pengiriman form standar terlebih dahulu
+        
         const selectedAction = bulkActionSelect ? bulkActionSelect.value : '';
         const anyProductSelected = document.querySelector('.product-checkbox:checked');
+        const submitButton = bulkActionForm.querySelector('button[type="submit"]');
 
         if (!selectedAction || !anyProductSelected) {
-            e.preventDefault();
             showNotification(
                 !selectedAction ? 'Silakan pilih aksi massal.' : 'Silakan pilih setidaknya satu produk.', 
                 true
             );
             return;
         }
+        
+        // Fungsi untuk menjalankan pengiriman AJAX
+        const performSubmit = () => {
+            if (submitButton) {
+                handleAjaxSubmit(bulkActionForm, submitButton);
+            }
+        };
 
         if (selectedAction === 'delete') {
-            e.preventDefault();
+            // Tampilkan modal konfirmasi untuk tindakan hapus
             confirmModal.show(
                 'Konfirmasi Hapus Massal',
                 'Apakah Anda yakin ingin menghapus semua produk yang dipilih? Tindakan ini tidak dapat diurungkan.',
-                () => bulkActionForm.submit()
+                performSubmit // Jalankan pengiriman AJAX hanya setelah konfirmasi
             );
+        } else {
+            performSubmit();
         }
     });
 }

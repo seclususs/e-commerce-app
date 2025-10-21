@@ -8,23 +8,26 @@
         <h2 class="section-title">Edit Profil</h2>
         <div class="admin-card animated-element" data-animation-delay="100">
             <h3>Informasi Akun</h3>
-            <form method="POST" action="{{ url_for('user.edit_profile') }}">
+            <form method="POST" action="{{ url_for('user.edit_profile') }}" data-ajax="true">
+                <input type="hidden" name="form_action" value="update_info">
                 <div class="form-group"><label for="username">Username</label><input type="text" id="username" name="username" value="{{ user.username }}" required></div>
                 <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" value="{{ user.email }}" required></div>
-                <button type="submit" name="update_info" class="cta-button form-button">Simpan Info Akun</button>
+                <button type="submit" class="cta-button form-button">Simpan Info Akun</button>
             </form>
         </div>
         <div class="admin-card animated-element" data-animation-delay="200" style="margin-top: 2rem;">
             <h3>Ganti Password</h3>
-            <form method="POST" action="{{ url_for('user.edit_profile') }}">
-                 <div class="form-group"><label for="current_password">Password Saat Ini</label><input type="password" id="current_password" name="current_password" required></div>
+            <form method="POST" action="{{ url_for('user.edit_profile') }}" data-ajax="true" data-reset-on-success="true">
+                <input type="hidden" name="form_action" value="change_password">
+                <div class="form-group"><label for="current_password">Password Saat Ini</label><input type="password" id="current_password" name="current_password" required></div>
                 <div class="form-group"><label for="new_password">Password Baru</label><input type="password" id="new_password" name="new_password" required></div>
-                <button type="submit" name="change_password" class="cta-button form-button">Ubah Password</button>
+                <button type="submit" class="cta-button form-button">Ubah Password</button>
             </form>
         </div>
         <div class="admin-card animated-element" data-animation-delay="300" style="margin-top: 2rem;">
             <h3>Alamat Utama</h3>
-            <form method="POST" action="{{ url_for('user.edit_profile') }}">
+            <form method="POST" action="{{ url_for('user.edit_profile') }}" data-ajax="true">
+                <input type="hidden" name="form_action" value="update_address">
                 <div class="form-group"><label for="phone">Nomor Telepon</label><input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}"></div>
                 <div class="form-group"><label for="address_line_1">Alamat Lengkap</label><input type="text" id="address_line_1" name="address_line_1" value="{{ user.address_line_1 or '' }}" placeholder="Nama jalan, nomor rumah, RT/RW"></div>
                 <div class="form-group"><label for="address_line_2">Detail Alamat (Opsional)</label><input type="text" id="address_line_2" name="address_line_2" value="{{ user.address_line_2 or '' }}" placeholder="Contoh: Apartemen, lantai, unit"></div>
@@ -33,7 +36,7 @@
                     <div class="form-group"><label for="province">Provinsi</label><input type="text" id="province" name="province" value="{{ user.province or '' }}"></div>
                 </div>
                 <div class="form-group"><label for="postal_code">Kode Pos</label><input type="text" id="postal_code" name="postal_code" value="{{ user.postal_code or '' }}"></div>
-                <button type="submit" name="update_address" class="cta-button form-button">Simpan Alamat</button>
+                <button type="submit" class="cta-button form-button">Simpan Alamat</button>
             </form>
         </div>
         <a href="{{ url_for('user.user_profile') }}" class="cta-button-secondary" style="display:inline-block; margin-top: 2rem;">Kembali ke Profil</a>

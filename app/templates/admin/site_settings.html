@@ -5,7 +5,7 @@
 
 {% block admincontent %}
 <div class="admin-card animated-element">
-    <form method="POST" action="{{ url_for('admin.admin_settings') }}">
+    <form method="POST" action="{{ url_for('admin.admin_settings') }}" data-ajax="true">
         <h3>Pengaturan Umum Situs</h3>
         <div class="form-group">
             <label for="app_name">Nama Aplikasi</label>

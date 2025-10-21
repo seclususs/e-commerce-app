@@ -1,30 +1,60 @@
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from . import admin_bp
 from db.db_config import get_content
 from utils.route_decorators import admin_required
 from services.products.product_service import product_service
+from services.products.product_query_service import product_query_service
+from services.products.product_bulk_service import product_bulk_service
 from services.products.category_service import category_service
 
 @admin_bp.route('/products', methods=['GET', 'POST'])
 @admin_required
 def admin_products():
-    """Menangani daftar produk dan pembuatan produk baru."""
+    """Menangani daftar produk, filter, dan aksi AJAX (buat, hapus massal, ubah kategori massal)."""
     if request.method == 'POST':
-        if 'bulk_action' in request.form and request.form.get('bulk_action'):
+        form_type = request.form.get('form_type')
+        if form_type == 'bulk_action':
             action = request.form.get('bulk_action')
             selected_ids = request.form.getlist('product_ids')
             category_id = request.form.get('bulk_category_id')
-            result = product_service.handle_bulk_product_action(action, selected_ids, category_id)
-            flash(result['message'], 'success' if result['success'] else 'danger')
+            result = product_bulk_service.handle_bulk_product_action(action, selected_ids, category_id)
+
+            if result['success']:
+                result['ids'] = selected_ids
+                result['action'] = action
+                if action == 'set_category' and category_id:
+                    category = category_service.get_category_by_id(category_id)
+                    result['new_category_name'] = category['name'] if category else 'N/A'
+                return jsonify(result)
+            else:
+                return jsonify(result), 400
         else:
             result = product_service.create_product(request.form, request.files)
-            flash(result['message'], 'success' if result['success'] else 'danger')
-        
-        return redirect(url_for('admin.admin_products'))
+            if result.get('success'):
+                html = render_template('admin/partials/_product_row.html', product=result['product'])
+                result['html'] = html
+                return jsonify(result)
+            else:
+                return jsonify(result), 400
     
-    # Handle GET request with search
+    # Handle GET request with filters
     search_term = request.args.get('search', '').strip()
-    products = product_service.get_all_products_with_category(search=search_term)
+    category_filter = request.args.get('category')
+    stock_status_filter = request.args.get('stock_status')
+
+    products = product_query_service.get_all_products_with_category(
+        search=search_term,
+        category_id=category_filter,
+        stock_status=stock_status_filter
+    )
+    
+    # Jika ini adalah request AJAX (dari filter), kembalikan hanya HTML tabel
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({
+            'success': True, 
+            'html': render_template('admin/partials/_product_table_body.html', products=products)
+        })
+
     categories = category_service.get_all_categories()
     return render_template('admin/manage_products.html', 
                            products=products, 
@@ -35,15 +65,15 @@ def admin_products():
 @admin_bp.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_product(id):
-    """Menangani pembaruan produk."""
+    """Menangani pembaruan produk via AJAX."""
     if request.method == 'POST':
         result = product_service.update_product(id, request.form, request.files)
-        flash(result['message'], 'success' if result['success'] else 'danger')
         if result['success']:
-            return redirect(url_for('admin.admin_products'))
-        return redirect(url_for('admin.admin_edit_product', id=id))
+            result['redirect_url'] = url_for('admin.admin_products')
+            return jsonify(result)
+        return jsonify(result), 400
 
-    product = product_service.get_product_by_id(id)
+    product = product_query_service.get_product_by_id(id)
     if not product:
         flash('Produk tidak ditemukan.', 'danger')
         return redirect(url_for('admin.admin_products'))
@@ -57,10 +87,9 @@ def admin_edit_product(id):
                            categories=categories, 
                            content=get_content())
 
-@admin_bp.route('/delete_product/<int:id>')
+@admin_bp.route('/delete_product/<int:id>', methods=['POST'])
 @admin_required
 def delete_product(id):
-    """Menangani penghapusan produk."""
+    """Menangani penghapusan produk via AJAX."""
     result = product_service.delete_product(id)
-    flash(result['message'], 'success' if result['success'] else 'danger')
-    return redirect(url_for('admin.admin_products'))
+    return jsonify(result)

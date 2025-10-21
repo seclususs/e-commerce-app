@@ -1,14 +1,14 @@
 from flask import render_template, request, session, redirect, url_for, flash
 from db.db_config import get_content
 from utils.route_decorators import login_required
-from services.products.product_service import product_service
+from services.products.product_query_service import product_query_service
 from services.products.review_service import review_service
 from . import product_bp
 
 @product_bp.route('/product/<int:id>')
 def product_detail(id):
     """Menampilkan halaman detail untuk satu produk, termasuk ulasan dan validasi untuk ulasan baru."""
-    product = product_service.get_product_by_id(id)
+    product = product_query_service.get_product_by_id(id)
     
     if product is None:
         flash("Produk tidak ditemukan.", "danger")
@@ -18,7 +18,7 @@ def product_detail(id):
     
     related_products = []
     if product.get('category_id'):
-        related_products = product_service.get_related_products(id, product['category_id'])
+        related_products = product_query_service.get_related_products(id, product['category_id'])
     
     can_review = False
     if 'user_id' in session:

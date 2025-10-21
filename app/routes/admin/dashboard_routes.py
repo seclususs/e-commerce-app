@@ -1,117 +1,68 @@
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, jsonify
 from datetime import datetime, timedelta
 import json
 
 from . import admin_bp
-from db.db_config import get_db_connection, get_content
+from db.db_config import get_content
 from utils.route_decorators import admin_required
 from services.utils.scheduler_service import scheduler_service
-
-def get_date_range(period_str):
-    """Mendapatkan rentang tanggal berdasarkan string periode."""
-    today = datetime.now()
-    if period_str == 'last_30_days':
-        start_date = today - timedelta(days=29)
-        end_date = today
-    elif period_str == 'this_month':
-        start_date = today.replace(day=1)
-        end_date = today
-    else: # Default ke 7 hari terakhir jika tidak ada atau tidak valid
-        start_date = today - timedelta(days=6)
-        end_date = today
-    return start_date.strftime('%Y-%m-%d 00:00:00'), end_date.strftime('%Y-%m-%d 23:59:59')
+from services.reports.report_service import report_service
+from utils.date_utils import get_date_range
 
 @admin_bp.route('/dashboard')
 @admin_required
 def admin_dashboard():
-    conn = get_db_connection()
-    
     # Logika rentang waktu
-    period = request.args.get('period', 'last_7_days') # Default 7 hari
+    period = request.args.get('period', 'last_7_days')
     custom_start = request.args.get('custom_start')
     custom_end = request.args.get('custom_end')
 
-    if custom_start and custom_end:
-        start_date_str = f"{custom_start} 00:00:00"
-        end_date_str = f"{custom_end} 23:59:59"
-        period = 'custom'
-    else:
-        start_date_str, end_date_str = get_date_range(period)
-
-    start_date = datetime.strptime(start_date_str, '%Y-%m-%d %H:%M:%S')
-    end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M:%S')
-
-    # Query stats dengan rentang waktu
-    total_sales = conn.execute("SELECT SUM(total_amount) FROM orders WHERE status != 'Dibatalkan' AND order_date BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
-    order_count = conn.execute("SELECT COUNT(id) FROM orders WHERE order_date BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
-    new_user_count = conn.execute("SELECT COUNT(id) FROM users WHERE created_at BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
-    product_count = conn.execute('SELECT COUNT(id) FROM products').fetchone()[0]
-
-    # Query untuk grafik baru
-    top_products = conn.execute("""
-        SELECT p.name, SUM(oi.quantity) as total_sold
-        FROM order_items oi JOIN products p ON oi.product_id = p.id JOIN orders o ON oi.order_id = o.id
-        WHERE o.status != 'Dibatalkan' AND o.order_date BETWEEN ? AND ?
-        GROUP BY p.id ORDER BY total_sold DESC LIMIT 5
-    """, (start_date_str, end_date_str)).fetchall()
+    start_date_str, end_date_str = get_date_range(period, custom_start, custom_end)
     
-    low_stock_products_query = """
-        SELECT name, stock, id as product_id FROM products WHERE has_variants = 0 AND stock <= 5 AND stock > 0
-        UNION ALL
-        SELECT p.name || ' (' || pv.size || ')' as name, pv.stock, p.id as product_id FROM product_variants pv JOIN products p ON pv.product_id = p.id WHERE pv.stock <= 5 AND pv.stock > 0
-        ORDER BY stock ASC LIMIT 7
-    """
-    low_stock_products = conn.execute(low_stock_products_query).fetchall()
+    if custom_start and custom_end:
+        period = 'custom'
 
-    # Logika Chart Penjualan
-    sales_data_raw = conn.execute("""
-        SELECT date(order_date) as sale_date, SUM(total_amount) as daily_total
-        FROM orders WHERE status != 'Dibatalkan' AND order_date BETWEEN ? AND ?
-        GROUP BY sale_date ORDER BY sale_date ASC
-    """, (start_date_str, end_date_str)).fetchall()
+    # Panggil service untuk mendapatkan semua statistik dashboard
+    stats = report_service.get_dashboard_stats(start_date_str, end_date_str)
 
-    sales_by_date = {row['sale_date']: row['daily_total'] for row in sales_data_raw}
-    chart_labels, chart_data = [], []
-    delta = end_date.date() - start_date.date()
-    for i in range(delta.days + 1):
-        current_date = start_date.date() + timedelta(days=i)
-        date_str = current_date.strftime('%Y-%m-%d')
-        chart_labels.append(current_date.strftime('%d %b'))
-        chart_data.append(sales_by_date.get(date_str, 0))
+    # Proses data chart dari hasil service
+    sales_chart_data = stats['sales_chart_data']
+    top_products_chart = stats['top_products_chart']
+    low_stock_chart = stats['low_stock_chart']
 
-    # Data untuk grafik
-    top_products_chart_labels = [p['name'] for p in top_products]
-    top_products_chart_data = [p['total_sold'] for p in top_products]
-    low_stock_chart_labels = [p['name'] for p in low_stock_products]
-    low_stock_chart_data = [p['stock'] for p in low_stock_products]
-
-
-    conn.close()
-
-    stats = {
-        'product_count': product_count,
-        'order_count': order_count,
-        'total_sales': total_sales or 0,
-        'new_user_count': new_user_count
-    }
+    # Format data untuk dikirim ke template
+    chart_labels = json.dumps(sales_chart_data['labels'])
+    chart_data = json.dumps(sales_chart_data['data'])
+    top_products_chart_labels = json.dumps(top_products_chart['labels'])
+    top_products_chart_data = json.dumps(top_products_chart['data'])
+    low_stock_chart_labels = json.dumps(low_stock_chart['labels'])
+    low_stock_chart_data = json.dumps(low_stock_chart['data'])
     
     return render_template(
-        'admin/dashboard.html', stats=stats, content=get_content(),
-        chart_labels=json.dumps(chart_labels), 
-        chart_data=json.dumps(chart_data),
-        top_products_chart_labels=json.dumps(top_products_chart_labels),
-        top_products_chart_data=json.dumps(top_products_chart_data),
-        low_stock_chart_labels=json.dumps(low_stock_chart_labels),
-        low_stock_chart_data=json.dumps(low_stock_chart_data),
-        selected_period=period, custom_start=custom_start, custom_end=custom_end
+        'admin/dashboard.html', 
+        stats=stats, 
+        content=get_content(),
+        chart_labels=chart_labels, 
+        chart_data=chart_data,
+        top_products_chart_labels=top_products_chart_labels,
+        top_products_chart_data=top_products_chart_data,
+        low_stock_chart_labels=low_stock_chart_labels,
+        low_stock_chart_data=low_stock_chart_data,
+        selected_period=period, 
+        custom_start=custom_start, 
+        custom_end=custom_end
     )
 
 # Rute untuk menjalankan scheduler
-@admin_bp.route('/run-scheduler')
+@admin_bp.route('/run-scheduler', methods=['POST'])
 @admin_required
 def run_scheduler():
-    """Menjalankan tugas scheduler dan mengarahkan kembali dengan pesan."""
+    """Menjalankan tugas scheduler dan mengembalikan hasil sebagai JSON."""
     result = scheduler_service.cancel_expired_pending_orders()
     count = result.get('cancelled_count', 0)
-    flash(f"Tugas harian selesai. {count} pesanan kedaluwarsa berhasil dibatalkan.", 'success')
-    return redirect(url_for('admin.admin_dashboard'))
+    if result.get('success'):
+        result['message'] = f"Tugas harian selesai. {count} pesanan kedaluwarsa berhasil dibatalkan."
+    else:
+        result['message'] = result.get('message', 'Gagal menjalankan tugas harian.')
+        
+    return jsonify(result)

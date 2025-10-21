@@ -1,0 +1,5 @@
+{% for product in products %}
+{% include 'admin/partials/_product_row.html' %}
+{% else %}
+<tr class="no-items-row"><td colspan="9" style="text-align: center;">Tidak ada produk yang cocok dengan filter Anda.</td></tr>
+{% endfor %}

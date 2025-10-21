@@ -6,11 +6,13 @@
 {% block admincontent %}
 <div class="admin-card animated-element">
     <h3>Tambah Kategori Baru</h3>
-    <form method="POST" action="{{ url_for('admin.admin_categories') }}" class="form-actions">
+    <form id="add-category-form" method="POST" action="{{ url_for('admin.admin_categories') }}" class="form-actions" data-ajax="true" data-update-target="#categories-table-body" data-update-action="prepend">
+        <input type="hidden" name="action" value="add">
         <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
-            <input type="text" id="name" name="name" placeholder="Nama Kategori Baru" required>
+             <label for="name" class="sr-only">Nama Kategori Baru</label>
+            <input type="text" id="name" name="name" placeholder="Nama Kategori Baru" required class="form-control">
         </div>
-        <button type="submit" name="action" value="add" class="cta-button">Tambah</button>
+        <button type="submit" class="cta-button">Tambah</button>
     </form>
 </div>
 
@@ -24,27 +26,8 @@
                     <th>Nama Kategori & Aksi</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for category in categories %}
-                <tr>
-                    <td data-label="ID:">{{ category.id }}</td>
-                    <td data-label="Nama:">
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
-                            <!-- Form for updating the category name -->
-                            <form method="POST" action="{{ url_for('admin.admin_categories') }}" style="flex-grow: 1; display: flex; gap: 1rem; align-items: center;">
-                                <input type="hidden" name="id" value="{{ category.id }}">
-                                <input type="text" name="name" value="{{ category.name }}" class="form-control">
-                                <button type="submit" name="action" value="edit" class="cta-button-secondary" style="border-color: var(--color-primary); color: var(--color-primary); white-space: nowrap;">Update</button>
-                            </form>
-                            <a href="{{ url_for('admin.delete_category', id=category.id) }}" class="action-link action-link-delete" style="white-space: nowrap;" data-no-transition>Hapus</a>
-                        </div>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="2" style="text-align: center;">Belum ada kategori.</td>
-                </tr>
-                {% endfor %}
+            <tbody id="categories-table-body">
+                {% include 'admin/partials/_category_table_body.html' %}
             </tbody>
         </table>
     </div>

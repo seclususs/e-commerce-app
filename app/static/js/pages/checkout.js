@@ -1,3 +1,55 @@
+import { cartStore } from '../state/cart-store.js';
+
+const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID', { minimumFractionDigits: 0 })}`;
+
+/**
+ * Merender bagian ringkasan pesanan di halaman checkout.
+ * @param {object} state State keranjang dari cartStore.
+ */
+function renderCheckoutSummary(state) {
+    const { items, subtotal } = state;
+    const summaryContainer = document.getElementById('checkout-summary-items');
+    if (!summaryContainer) return;
+    
+    const subtotalEl = document.getElementById('checkoutSubtotal');
+    const totalEl = document.getElementById('checkoutTotal');
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const cartDataInput = document.getElementById('cart_data_input');
+    
+    if (items.length === 0) {
+        summaryContainer.innerHTML = '<p>Keranjang Anda kosong.</p>';
+        if (placeOrderBtn) placeOrderBtn.disabled = true;
+         // Redirect if cart is empty on checkout page
+        if(window.location.pathname.includes('/checkout')) {
+            window.location.href = '/cart';
+        }
+        return;
+    }
+
+    summaryContainer.innerHTML = items.map(p => {
+        const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
+        const sizeInfo = p.size ? ` (Ukuran: ${p.size})` : '';
+        return `<div class="summary-row"><span>${p.name}${sizeInfo} (x${p.quantity})</span><span>${formatRupiah(effectivePrice * p.quantity)}</span></div>`;
+    }).join('');
+    
+    if(subtotalEl) subtotalEl.textContent = formatRupiah(subtotal);
+    if(totalEl) totalEl.textContent = formatRupiah(subtotal);
+    
+    // Untuk checkout tamu, kita perlu mengisi input tersembunyi
+    if(!window.IS_USER_LOGGED_IN && cartDataInput) {
+        const guestCart = items.reduce((acc, item) => {
+            const key = item.variant_id ? `${item.id}-${item.variant_id}` : `${item.id}-null`;
+            acc[key] = { quantity: item.quantity };
+            return acc;
+        }, {});
+        cartDataInput.value = JSON.stringify(guestCart);
+    }
+    
+    // Panggil kalkulasi pengiriman setiap kali ringkasan diperbarui
+    const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
+    cityElement?.dispatchEvent(new Event('recalc'));
+}
+
 function initCheckoutForm() {
     const form = document.getElementById('checkout-form');
     if (!form) return;
@@ -51,8 +103,6 @@ function initVoucherHandler() {
     const messageEl = document.getElementById('voucher-message');
     if (!applyBtn || !voucherInput || !messageEl) return;
 
-    const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID', { minimumFractionDigits: 0 })}`;
-
     const applyVoucher = async () => {
         const code = voucherInput.value.trim();
         if (!code) return;
@@ -61,8 +111,7 @@ function initVoucherHandler() {
         messageEl.textContent = 'Memvalidasi...';
         messageEl.className = 'voucher-feedback';
 
-        const subtotalText = document.getElementById('checkoutSubtotal').textContent;
-        const subtotal = parseFloat(subtotalText.replace(/[^0-9.]/g, '').replace(/\./g, ''));
+        const subtotal = cartStore.getState().subtotal;
         if (isNaN(subtotal)) {
             applyBtn.disabled = false;
             return;
@@ -81,10 +130,10 @@ function initVoucherHandler() {
                 messageEl.classList.add('success');
                 
                 document.getElementById('checkoutDiscount').textContent = `- ${formatRupiah(result.discount_amount)}`;
-                document.getElementById('checkoutTotal').textContent = formatRupiah(result.final_total);
                 document.querySelector('.discount-row').style.display = 'flex';
-                document.getElementById('city')?.dispatchEvent(new Event('change'));
-
+                // Trigger shipping calculation to update total
+                const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
+                cityElement?.dispatchEvent(new Event('recalc'));
             } else {
                 messageEl.textContent = result.message;
                 messageEl.classList.add('error');
@@ -103,7 +152,8 @@ function initVoucherHandler() {
         messageEl.className = 'voucher-feedback';
         document.querySelector('.discount-row').style.display = 'none';
         document.getElementById('checkoutDiscount').textContent = '- Rp 0';
-        document.getElementById('city')?.dispatchEvent(new Event('change'));
+        const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
+        cityElement?.dispatchEvent(new Event('recalc'));
     };
 
     applyBtn.addEventListener('click', applyVoucher);
@@ -152,13 +202,10 @@ function initShippingCalculation() {
     const shippingRow = document.querySelector('.shipping-row');
     const shippingCostEl = document.getElementById('checkoutShipping');
     const totalEl = document.getElementById('checkoutTotal');
-    const subtotalEl = document.getElementById('checkoutSubtotal');
     const discountEl = document.getElementById('checkoutDiscount');
     const shippingCostInput = document.getElementById('shipping_cost_input');
 
     if (!totalEl || !shippingRow || !shippingCostEl || !shippingCostInput) return;
-
-    const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID', { minimumFractionDigits: 0 })}`;
 
     const calculateAndUpdate = () => {
         let city = '';
@@ -190,9 +237,8 @@ function initShippingCalculation() {
             shippingRow.style.display = 'none';
         }
 
-        const subtotalText = subtotalEl.textContent || '0';
+        const subtotal = cartStore.getState().subtotal || 0;
         const discountText = discountEl.textContent || '0';
-        const subtotal = parseFloat(subtotalText.replace(/[^0-9]/g, '')) || 0;
         const discount = parseFloat(discountText.replace(/[^0-9]/g, '')) || 0;
 
         const finalTotal = subtotal - discount + shippingCost;
@@ -203,56 +249,30 @@ function initShippingCalculation() {
     if (citySelect) {
         citySelect.addEventListener('change', calculateAndUpdate);
     }
+    if(cityDisplay){
+        cityDisplay.addEventListener('recalc', calculateAndUpdate);
+    }
     
-    const subtotalObserver = new MutationObserver(() => {
-        calculateAndUpdate();
-        const voucherMessageEl = document.getElementById('voucher-message');
-        if (voucherMessageEl) {
-            const voucherObserver = new MutationObserver(calculateAndUpdate);
-            voucherObserver.observe(voucherMessageEl, { childList: true });
-        }
-    });
-
-    if (subtotalEl) {
-        subtotalObserver.observe(subtotalEl, { childList: true, subtree: true });
-    }
-
-    if (window.IS_USER_LOGGED_IN) {
-        setTimeout(calculateAndUpdate, 100);
-    }
+    // Initial calculation.
+    setTimeout(calculateAndUpdate, 150);
 }
 
 
-async function initGuestCheckout() {
-    const GUEST_CART_KEY = 'hackthreadVariantCart';
-    const localCart = JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || {};
-    const form = document.getElementById('checkout-form');
+async function prepareCheckout() {
     const timerContainer = document.getElementById('stock-hold-timer-container');
+    const form = document.getElementById('checkout-form');
+    let itemsToHold = cartStore.getState().items;
 
-    if (Object.keys(localCart).length === 0) {
-        window.location.href = '/cart';
-        return;
+    if (!itemsToHold || itemsToHold.length === 0) {
+         window.location.href = '/cart';
+         return;
     }
 
     try {
-        const productRes = await fetch('/api/cart', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cart_items: localCart })
-        });
-        if (!productRes.ok) {
-            throw new Error('Gagal memuat detail produk dari keranjang.');
-        }
-        
-        const detailedItems = await productRes.json();
-        if (detailedItems.length === 0) {
-             throw new Error('Keranjang Anda kosong atau item tidak valid.');
-        }
-
         const prepareRes = await fetch('/api/checkout/prepare', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: detailedItems })
+            body: JSON.stringify({ items: itemsToHold })
         });
         const prepareResult = await prepareRes.json();
         
@@ -269,7 +289,11 @@ async function initGuestCheckout() {
             timerContainer.classList.add('expired');
         }
         if (form) {
-            form.querySelectorAll('input, button, select').forEach(el => el.disabled = true);
+            form.querySelectorAll('input, button, select').forEach(el => {
+                if(el.id !== 'voucher_code' && el.id !== 'applyVoucherBtn') {
+                    el.disabled = true;
+                }
+            });
             const mobileBtn = document.getElementById('placeOrderBtnMobile');
             if(mobileBtn) mobileBtn.disabled = true;
         }
@@ -282,9 +306,17 @@ export function initCheckoutPage() {
     initVoucherHandler();
     initShippingCalculation();
     
+    cartStore.subscribe(renderCheckoutSummary);
+    // Render awal, lalu panggil kalkulasi pengiriman
+    renderCheckoutSummary(cartStore.getState());
+    
+    // Hold stock after initial render
     if (window.IS_USER_LOGGED_IN) {
+        // Untuk pengguna login, stock hold ditangani di backend (routes/purchase/checkout_routes.py)
+        // dan waktu kedaluwarsa dilewatkan ke template.
         initStockHoldTimer(); 
     } else {
-        initGuestCheckout();
+        // Untuk tamu, kita perlu memanggil API untuk menahan stok.
+        prepareCheckout();
     }
 }

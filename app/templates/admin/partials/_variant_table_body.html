@@ -1,0 +1,7 @@
+{% for variant in variants %}
+{% include 'admin/partials/_variant_row.html' %}
+{% else %}
+<tr class="no-items-row">
+<td colspan="6" style="text-align: center;">Belum ada varian untuk produk ini.</td>
+</tr>
+{% endfor %}

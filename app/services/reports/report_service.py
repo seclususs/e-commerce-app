@@ -1,4 +1,5 @@
 from db.db_config import get_db_connection
+from datetime import datetime, timedelta
 
 class ReportService:
     """
@@ -11,12 +12,86 @@ class ReportService:
         params = []
         if start_date:
             date_filter += f" AND {table_alias}.order_date >= ? "
-            params.append(start_date + ' 00:00:00')
+            params.append(start_date)
         if end_date:
             date_filter += f" AND {table_alias}.order_date <= ? "
-            params.append(end_date + ' 23:59:59')
+            params.append(end_date)
         return date_filter, params
 
+    def get_dashboard_stats(self, start_date_str, end_date_str):
+        """Mengambil semua data statistik yang diperlukan untuk halaman dashboard."""
+        conn = get_db_connection()
+        try:
+            total_sales = conn.execute("SELECT SUM(total_amount) FROM orders WHERE status != 'Dibatalkan' AND order_date BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
+            order_count = conn.execute("SELECT COUNT(id) FROM orders WHERE order_date BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
+            new_user_count = conn.execute("SELECT COUNT(id) FROM users WHERE created_at BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
+            product_count = conn.execute('SELECT COUNT(id) FROM products').fetchone()[0]
+
+            sales_chart_data = self._get_sales_chart_data(start_date_str, end_date_str, conn)
+            top_products_chart = self._get_top_products_chart_data(start_date_str, end_date_str, conn)
+            low_stock_chart = self._get_low_stock_chart_data(conn)
+
+            return {
+                'total_sales': total_sales or 0,
+                'order_count': order_count or 0,
+                'new_user_count': new_user_count or 0,
+                'product_count': product_count or 0,
+                'sales_chart_data': sales_chart_data,
+                'top_products_chart': top_products_chart,
+                'low_stock_chart': low_stock_chart
+            }
+        finally:
+            conn.close()
+
+    def _get_sales_chart_data(self, start_date_str, end_date_str, conn):
+        """Mengambil data mentah untuk grafik penjualan harian."""
+        sales_data_raw = conn.execute("""
+            SELECT date(order_date) as sale_date, SUM(total_amount) as daily_total
+            FROM orders WHERE status != 'Dibatalkan' AND order_date BETWEEN ? AND ?
+            GROUP BY sale_date ORDER BY sale_date ASC
+        """, (start_date_str, end_date_str)).fetchall()
+        
+        sales_by_date = {row['sale_date']: row['daily_total'] for row in sales_data_raw}
+        labels, data = [], []
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d %H:%M:%S').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d %H:%M:%S').date()
+        delta = end_date - start_date
+
+        for i in range(delta.days + 1):
+            current_date = start_date + timedelta(days=i)
+            date_str = current_date.strftime('%Y-%m-%d')
+            labels.append(current_date.strftime('%d %b'))
+            data.append(sales_by_date.get(date_str, 0))
+        
+        return {'labels': labels, 'data': data}
+
+    def _get_top_products_chart_data(self, start_date_str, end_date_str, conn):
+        """Mengambil data untuk grafik produk terlaris."""
+        top_products = conn.execute("""
+            SELECT p.name, SUM(oi.quantity) as total_sold
+            FROM order_items oi JOIN products p ON oi.product_id = p.id JOIN orders o ON oi.order_id = o.id
+            WHERE o.status != 'Dibatalkan' AND o.order_date BETWEEN ? AND ?
+            GROUP BY p.id ORDER BY total_sold DESC LIMIT 5
+        """, (start_date_str, end_date_str)).fetchall()
+        return {
+            'labels': [p['name'] for p in top_products],
+            'data': [p['total_sold'] for p in top_products]
+        }
+
+    def _get_low_stock_chart_data(self, conn):
+        """Mengambil data untuk grafik stok menipis."""
+        low_stock_products_query = """
+            SELECT name, stock, id as product_id FROM products WHERE has_variants = 0 AND stock <= 5 AND stock > 0
+            UNION ALL
+            SELECT p.name || ' (' || pv.size || ')' as name, pv.stock, p.id as product_id FROM product_variants pv JOIN products p ON pv.product_id = p.id WHERE pv.stock <= 5 AND pv.stock > 0
+            ORDER BY stock ASC LIMIT 7
+        """
+        low_stock_products = conn.execute(low_stock_products_query).fetchall()
+        return {
+            'labels': [p['name'] for p in low_stock_products],
+            'data': [p['stock'] for p in low_stock_products]
+        }
+    
     def get_sales_summary(self, start_date, end_date):
         """Mengambil ringkasan data penjualan."""
         conn = get_db_connection()

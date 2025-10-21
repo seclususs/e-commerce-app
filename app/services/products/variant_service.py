@@ -19,14 +19,17 @@ class VariantService:
                 conn.close()
     
     def add_variant(self, product_id, size, stock, weight_grams, sku):
-        """Menambahkan varian baru ke produk."""
+        """Menambahkan varian baru ke produk dan mengembalikan datanya."""
         if not size or not stock or int(stock) < 0 or not weight_grams or int(weight_grams) < 0:
             return {'success': False, 'message': 'Ukuran, stok, dan berat harus diisi dengan benar.'}
         conn = get_db_connection()
         try:
             with conn:
-                conn.execute("INSERT INTO product_variants (product_id, size, stock, weight_grams, sku) VALUES (?, ?, ?, ?, ?)", (product_id, size.upper(), stock, weight_grams, sku.upper() if sku else None))
-            return {'success': True, 'message': f'Varian {size.upper()} berhasil ditambahkan.'}
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO product_variants (product_id, size, stock, weight_grams, sku) VALUES (?, ?, ?, ?, ?)", (product_id, size.upper(), stock, weight_grams, sku.upper() if sku else None))
+                new_id = cursor.lastrowid
+                new_variant = conn.execute("SELECT * FROM product_variants WHERE id = ?", (new_id,)).fetchone()
+            return {'success': True, 'message': f'Varian {size.upper()} berhasil ditambahkan.', 'data': dict(new_variant)}
         except conn.IntegrityError as e:
             if 'UNIQUE constraint failed: product_variants.sku' in str(e):
                 return {'success': False, 'message': f'SKU "{sku}" sudah ada. Harap gunakan SKU yang unik.'}

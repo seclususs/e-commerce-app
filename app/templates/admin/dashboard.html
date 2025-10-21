@@ -8,7 +8,7 @@
 <div class="admin-card animated-element">
     <h3>Tindakan Cepat</h3>
     <p class="form-hint">Jalankan tugas manual yang biasanya dijalankan oleh cron job di server.</p>
-    <a href="{{ url_for('admin.run_scheduler') }}" class="cta-button-secondary">Jalankan Tugas Harian (Simulasi Cron)</a>
+    <button id="run-cron-btn" data-url="{{ url_for('admin.run_scheduler') }}" class="cta-button-secondary">Jalankan Tugas Harian (Simulasi Cron)</button>
 </div>
 
 <!-- Form Filter Rentang Waktu -->

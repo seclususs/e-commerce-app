@@ -1,6 +1,6 @@
 from flask import jsonify, request
 from . import api_bp
-from services.orders.order_service import order_service 
+from services.orders.voucher_service import voucher_service 
 
 @api_bp.route('/apply-voucher', methods=['POST'])
 def apply_voucher():
@@ -12,6 +12,6 @@ def apply_voucher():
     if not code or subtotal is None:
         return jsonify({'success': False, 'message': 'Kode voucher dan subtotal diperlukan.'}), 400
 
-    result = order_service.validate_and_calculate_voucher(code, float(subtotal))
+    result = voucher_service.validate_and_calculate_voucher(code, float(subtotal))
     
     return jsonify(result)

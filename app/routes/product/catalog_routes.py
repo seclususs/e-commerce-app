@@ -1,6 +1,6 @@
 from flask import render_template, request
 from db.db_config import get_content
-from services.products.product_service import product_service
+from services.products.product_query_service import product_query_service
 from services.products.category_service import category_service
 from . import product_bp
 
@@ -16,7 +16,7 @@ def products_page():
     }
     
     # Panggil service untuk mendapatkan produk yang sudah difilter
-    products = product_service.get_filtered_products(filters)
+    products = product_query_service.get_filtered_products(filters)
     
     # Panggil service untuk mendapatkan semua kategori
     categories = category_service.get_all_categories()

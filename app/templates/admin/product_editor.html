@@ -5,7 +5,7 @@
 
 {% block admincontent %}
 <div class="admin-card animated-element">
-    <form method="POST" action="{{ url_for('admin.admin_edit_product', id=product.id) }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ url_for('admin.admin_edit_product', id=product.id) }}" enctype="multipart/form-data" data-ajax="true" data-update-action="redirect">
         <div class="form-grid">
             <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" value="{{ product.name }}" required></div>
             <div class="form-group"><label for="price">Harga Asli</label><input type="text" inputmode="numeric" id="price" name="price" value="{{ product.price|int }}" required></div>
@@ -23,7 +23,7 @@
                 <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input" 
                        data-initial-state="{{ 'true' if product.has_variants else 'false' }}"
                        {% if product.has_variants %}checked{% endif %}
-                       {% if product.variants and product.variants|length > 0 %}disabled title="Hapus semua varian terlebih dahulu untuk mengubah tipe produk."{% endif %}>
+                       {% if product.variants and product.variants|length > 1 %}disabled title="Hapus semua varian kecuali satu untuk mengubah tipe produk."{% endif %}>
                 <span class="checkbox-box"><span class="checkmark"></span></span>
                 <span>Produk ini memiliki varian ukuran</span>
             </label>
@@ -103,7 +103,7 @@
         <div class="form-group"><label for="description">Deskripsi</label><textarea id="description" name="description" rows="4" required>{{ product.description }}</textarea></div>
         <div class="form-actions">
             <button type="submit" class="cta-button">Simpan Perubahan</button>
-            <a href="{{ url_for('admin.admin_products') }}" class="cta-button-secondary">Batal</a>
+            <a href="{{ url_for('admin.admin_products') }}" class="cta-button-secondary" data-no-transition>Batal</a>
         </div>
     </form>
 </div>

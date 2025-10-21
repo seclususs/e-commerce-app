@@ -1,4 +1,4 @@
-from flask import render_template, request, session, redirect, url_for, flash
+from flask import render_template, request, session, redirect, url_for, flash, jsonify
 from db.db_config import get_db_connection, get_content
 from utils.route_decorators import login_required
 from services.users.user_service import user_service
@@ -22,36 +22,43 @@ def user_profile():
 @login_required
 def edit_profile():
     """
-    Menampilkan dan memproses form untuk mengedit profil, alamat, dan password pengguna.
+    Menampilkan dan memproses form untuk mengedit profil, alamat, dan password pengguna, mendukung AJAX.
     """
     user_id = session['user_id']
     if request.method == 'POST':
-        # Memperbarui info akun
-        if 'update_info' in request.form:
+        action = request.form.get('form_action')
+        result = {}
+
+        if action == 'update_info':
             result = user_service.update_user_info(
                 user_id, request.form['username'], request.form['email']
             )
-            if result['success']:
+            if result.get('success'):
                 session['username'] = request.form['username']
-            flash(result['message'], 'success' if result['success'] else 'danger')
+                result['data'] = {'username': request.form['username'], 'email': request.form['email']}
         
-        # Mengubah password
-        elif 'change_password' in request.form:
+        elif action == 'change_password':
             result = user_service.change_user_password(
                 user_id, request.form['current_password'], request.form['new_password']
             )
-            flash(result['message'], 'success' if result['success'] else 'danger')
 
-        # Memperbarui alamat
-        elif 'update_address' in request.form:
+        elif action == 'update_address':
             address_data = {
-                'phone': request.form['phone'], 'address1': request.form['address_line_1'],
+                'phone': request.form['phone'], 'address_line_1': request.form['address_line_1'],
                 'address2': request.form.get('address_line_2', ''), 'city': request.form['city'],
                 'province': request.form['province'], 'postal_code': request.form['postal_code']
             }
             result = user_service.update_user_address(user_id, address_data)
-            flash(result['message'], 'success')
+            if result.get('success'):
+                result['data'] = request.form
+
+        # Jika ini adalah request AJAX, kirimkan response JSON
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        if is_ajax:
+            return jsonify(result)
         
+        # Fallback untuk non-JS
+        flash(result.get('message', 'Terjadi kesalahan.'), 'success' if result.get('success') else 'danger')
         return redirect(url_for('user.edit_profile'))
     
     user = user_service.get_user_by_id(user_id)

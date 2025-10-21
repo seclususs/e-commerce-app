@@ -6,7 +6,7 @@
 {% block admincontent %}
 <div class="admin-card animated-element">
     <h3>Tambah Voucher Baru</h3>
-    <form method="POST" action="{{ url_for('admin.admin_vouchers') }}">
+    <form id="add-voucher-form" method="POST" action="{{ url_for('admin.admin_vouchers') }}" data-ajax="true" data-update-target="#vouchers-table-body" data-update-action="prepend">
         <div class="form-grid" style="gap: 1rem 1.5rem;">
             <div class="form-group">
                 <label for="code">Kode Voucher</label>
@@ -45,35 +45,8 @@
                     <th>Kode</th><th>Tipe</th><th>Nilai</th><th>Min. Beli</th><th>Digunakan</th><th>Status</th><th>Aksi</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for voucher in vouchers %}
-                <tr class="admin-card-row">
-                    <td data-label="Kode:"><strong>{{ voucher.code }}</strong></td>
-                    <td data-label="Tipe:" class="collapsible-detail">{{ voucher.type }}</td>
-                    <td data-label="Nilai:" class="collapsible-detail">
-                        {% if voucher.type == 'PERCENTAGE' %}{{ voucher.value }}%
-                        {% else %}{{ voucher.value|rupiah }}{% endif %}
-                    </td>
-                    <td data-label="Min. Beli:" class="collapsible-detail">{{ voucher.min_purchase_amount|rupiah if voucher.min_purchase_amount > 0 else '-' }}</td>
-                    <td data-label="Digunakan:" class="collapsible-detail">{{ voucher.use_count }} / {{ voucher.max_uses or '∞' }}</td>
-                    <td data-label="Status:" class="collapsible-detail">
-                        {% if voucher.is_active %}
-                            <span class="status-badge status-completed">Aktif</span>
-                        {% else %}
-                            <span class="status-badge status-cancelled">Nonaktif</span>
-                        {% endif %}
-                    </td>
-                    <td data-label="Aksi:" class="action-buttons">
-                         <div class="desktop-actions">
-                            <a href="{{ url_for('admin.toggle_voucher', id=voucher.id) }}" class="action-link action-link-edit">{{ 'Nonaktifkan' if voucher.is_active else 'Aktifkan' }}</a>
-                            <a href="{{ url_for('admin.delete_voucher', id=voucher.id) }}" class="action-link action-link-delete" data-no-transition>Hapus</a>
-                        </div>
-                        <button class="mobile-details-toggle">Lihat Detail <i class="fas fa-chevron-down"></i></button>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="7" style="text-align: center;">Belum ada voucher.</td></tr>
-                {% endfor %}
+            <tbody id="vouchers-table-body">
+                {% include 'admin/partials/_voucher_table_body.html' %}
             </tbody>
         </table>
     </div>

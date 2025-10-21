@@ -5,7 +5,7 @@
 
 {% block admincontent %}
 <div style="margin-bottom: 2rem;">
-    <a href="{{ url_for('admin.admin_orders') }}" class="cta-button-secondary">&larr; Kembali ke Daftar Pesanan</a>
+    <a href="{{ url_for('admin.admin_orders') }}" class="cta-button-secondary" data-no-transition>&larr; Kembali ke Daftar Pesanan</a>
     <!-- Tombol Cetak Invoice -->
     <a href="{{ url_for('admin.admin_order_invoice', id=order.id) }}" target="_blank" class="cta-button" style="float: right;">Cetak Invoice</a>
 </div>
@@ -21,7 +21,7 @@
     </div>
     <div class="admin-card">
         <h3>Update Pesanan</h3>
-        <form action="{{ url_for('admin.update_order_status', id=order.id) }}" method="POST">
+        <form action="{{ url_for('admin.update_order_status', id=order.id) }}" method="POST" data-ajax="true" data-update-action="update-status">
              <!-- Update status dan nomor resi dalam satu form -->
             <div class="form-group">
                 <label for="status">Ubah Status</label>

@@ -12,13 +12,23 @@ class CategoryService:
         conn.close()
         return [dict(c) for c in categories]
 
+    def get_category_by_id(self, category_id):
+        """Mengambil satu kategori berdasarkan ID."""
+        conn = get_db_connection()
+        category = conn.execute('SELECT * FROM categories WHERE id = ?', (category_id,)).fetchone()
+        conn.close()
+        return dict(category) if category else None
+
     def create_category(self, name):
-        """Membuat kategori baru."""
+        """Membuat kategori baru dan mengembalikan data lengkapnya."""
         conn = get_db_connection()
         try:
-            conn.execute('INSERT INTO categories (name) VALUES (?)', (name,))
+            cursor = conn.cursor()
+            cursor.execute('INSERT INTO categories (name) VALUES (?)', (name,))
+            new_id = cursor.lastrowid
             conn.commit()
-            return {'success': True, 'message': f'Kategori "{name}" berhasil ditambahkan.'}
+            new_category = conn.execute('SELECT * FROM categories WHERE id = ?', (new_id,)).fetchone()
+            return {'success': True, 'message': f'Kategori "{name}" berhasil ditambahkan.', 'data': dict(new_category)}
         except conn.IntegrityError:
             return {'success': False, 'message': f'Kategori "{name}" sudah ada.'}
         finally:
@@ -27,10 +37,14 @@ class CategoryService:
     def update_category(self, category_id, name):
         """Memperbarui nama kategori yang sudah ada."""
         conn = get_db_connection()
-        conn.execute('UPDATE categories SET name = ? WHERE id = ?', (name, category_id))
-        conn.commit()
-        conn.close()
-        return {'success': True, 'message': 'Kategori berhasil diperbarui.'}
+        try:
+            conn.execute('UPDATE categories SET name = ? WHERE id = ?', (name, category_id))
+            conn.commit()
+            return {'success': True, 'message': 'Kategori berhasil diperbarui.'}
+        except conn.IntegrityError:
+            return {'success': False, 'message': f'Nama Kategori "{name}" sudah ada.'}
+        finally:
+            conn.close()
 
     def delete_category(self, category_id):
         """Menghapus kategori dan memutuskan relasinya dengan produk."""

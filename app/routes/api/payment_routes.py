@@ -1,6 +1,6 @@
 from flask import jsonify, request, abort, current_app
 from . import api_bp
-from services.orders.order_service import order_service
+from services.orders.payment_service import payment_service
 from services.utils.scheduler_service import scheduler_service
 
 @api_bp.route('/payment-webhook', methods=['POST'])
@@ -25,7 +25,7 @@ def payment_webhook():
     status = data.get('status')
 
     if event_type == 'payment_status_update' and status == 'success' and transaction_id:
-        result = order_service.process_successful_payment(transaction_id)
+        result = payment_service.process_successful_payment(transaction_id)
         if result['success']:
             return jsonify(result), 200
         else:
