@@ -1,12 +1,9 @@
-/**
- * Mengelola logika untuk form lupa password.
- */
 export function initForgotPasswordPage() {
     const form = document.getElementById('forgot-password-form');
     const container = document.getElementById('forgot-password-container');
 
     if (!form || !container) return;
-    
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = form.querySelector('button[type="submit"]');
@@ -23,9 +20,8 @@ export function initForgotPasswordPage() {
                 body: new FormData(form)
             });
             const result = await response.json();
-            
+
             if (response.ok && result.success) {
-                // Dapatkan URL login dari link yang sudah ada di halaman
                 const loginLink = container.querySelector('a[href*="/login"]').href;
                 container.innerHTML = `
                     <h2 class="section-title">Email Terkirim</h2>

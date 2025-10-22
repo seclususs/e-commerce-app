@@ -1,7 +1,3 @@
-/**
- * Menginisialisasi Intersection Observer untuk memicu animasi fade-in
- * pada elemen saat masuk ke dalam viewport.
- */
 export const initAnimations = () => {
     const animatedElements = document.querySelectorAll('.animated-element');
     if (!animatedElements.length) return;

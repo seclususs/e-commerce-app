@@ -1,11 +1,3 @@
-/**
- * Mengelola logika untuk peralihan tema (terang/gelap).
- * - Menerapkan tema awal berdasarkan localStorage atau preferensi sistem.
- * - Menangani klik pada tombol untuk mengubah tema.
- * - Menyimpan preferensi pengguna di localStorage.
- */
-
-// Menerapkan kelas tema ke elemen <html>
 const applyTheme = (theme) => {
     const html = document.documentElement;
     if (theme === 'light') {
@@ -15,11 +7,9 @@ const applyTheme = (theme) => {
         html.classList.remove('light-theme');
         html.classList.add('dark-theme');
     }
-    // Mengirim event kustom agar skrip lain (seperti chart) dapat bereaksi
     window.dispatchEvent(new CustomEvent('themeChanged'));
 };
 
-// Memperbarui ikon pada tombol pengalih tema
 const updateToggleIcon = (theme) => {
     const sunIcon = document.getElementById('theme-toggle-sun');
     const moonIcon = document.getElementById('theme-toggle-moon');
@@ -38,7 +28,6 @@ export function initThemeSwitcher() {
     const themeToggleBtn = document.getElementById('themeToggle');
     const adminThemeToggleBtn = document.getElementById('adminThemeToggle');
 
-    // Fungsi yang dijalankan saat tombol diklik
     const toggleTheme = () => {
         const isLightTheme = document.documentElement.classList.contains('light-theme');
         const newTheme = isLightTheme ? 'dark' : 'light';
@@ -47,7 +36,6 @@ export function initThemeSwitcher() {
         updateToggleIcon(newTheme);
     };
 
-    // Menambahkan event listener ke tombol yang ada
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener('click', toggleTheme);
     }
@@ -55,7 +43,6 @@ export function initThemeSwitcher() {
         adminThemeToggleBtn.addEventListener('click', toggleTheme);
     }
 
-    // Mengatur status ikon saat halaman dimuat (setelah skrip <head> berjalan)
     const currentTheme = document.documentElement.classList.contains('light-theme') ? 'light' : 'dark';
     updateToggleIcon(currentTheme);
 }

@@ -1,7 +1,3 @@
-/**
- * Menginisialisasi logika untuk halaman pembayaran,
- * khususnya untuk simulasi webhook pembayaran.
- */
 export function initPaymentPage() {
     const simulateBtn = document.getElementById('simulate-payment-btn');
     if (!simulateBtn) return;

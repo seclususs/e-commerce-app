@@ -1,6 +1,3 @@
-/**
- * Menangani validasi form registrasi secara real-time.
- */
 import { showNotification } from '../../utils/ui.js';
 
 export function initRegisterPage() {
@@ -31,7 +28,8 @@ export function initRegisterPage() {
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ [input.name]: value })
+                body: JSON.stringify({
+                    [input.name]: value })
             });
             const result = await response.json();
 
@@ -46,7 +44,7 @@ export function initRegisterPage() {
             return false;
         }
     };
-    
+
     usernameInput.addEventListener('blur', async () => {
         isUsernameValid = await checkAvailability(usernameInput, usernameFeedback, '/api/validate/username');
     });
@@ -59,15 +57,15 @@ export function initRegisterPage() {
         if (!isUsernameValid || !isEmailValid) {
             e.preventDefault();
             if (usernameInput.value && !isUsernameValid) {
-                 showNotification('Username tidak tersedia atau belum divalidasi.', true);
+                showNotification('Username tidak tersedia atau belum divalidasi.', true);
             } else if (emailInput.value && !isEmailValid) {
-                 showNotification('Email tidak tersedia atau belum divalidasi.', true);
+                showNotification('Email tidak tersedia atau belum divalidasi.', true);
             } else {
-                 showNotification('Silakan isi dan validasi username dan email.', true);
+                showNotification('Silakan isi dan validasi username dan email.', true);
             }
         } else {
-             submitBtn.disabled = true;
-             submitBtn.innerHTML = `<span class="spinner"></span> Mendaftar...`;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="spinner"></span> Mendaftar...`;
         }
     });
 }

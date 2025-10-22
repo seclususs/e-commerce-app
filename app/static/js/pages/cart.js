@@ -3,10 +3,6 @@ import { showNotification } from '../utils/ui.js';
 
 const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID')}`;
 
-/**
- * Merender konten halaman keranjang berdasarkan state dari cartStore.
- * @param {object} state State keranjang saat ini dari cartStore.
- */
 function renderCartPage(state) {
     const { items, subtotal } = state;
     const container = document.getElementById('cartPageItems');
@@ -14,7 +10,7 @@ function renderCartPage(state) {
     const summary = document.querySelector('.cart-summary');
     const checkoutLink = document.getElementById('checkout-link');
     const checkoutLinkMobile = document.getElementById('checkout-link-mobile');
-    
+
     if (!container || !listContainer || !summary) return;
 
     if (!items || items.length === 0) {
@@ -29,7 +25,7 @@ function renderCartPage(state) {
         summary.style.display = 'block';
         if (checkoutLink) checkoutLink.classList.remove('disabled-link');
         if (checkoutLinkMobile) checkoutLinkMobile.classList.remove('disabled-link');
-        
+
         container.innerHTML = items.map(p => {
             const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
             const hasDiscount = (p.discount_price && p.discount_price > 0);
@@ -58,10 +54,6 @@ function renderCartPage(state) {
     }
 }
 
-/**
- * Menangani interaksi pengguna pada item di halaman keranjang (ubah kuantitas, hapus).
- * @param {Event} e Event klik.
- */
 async function handleCartInteraction(e) {
     const target = e.target;
     if (!target.matches('.quantity-btn, .remove-item-btn')) return;
@@ -76,28 +68,20 @@ async function handleCartInteraction(e) {
         const currentQty = parseInt(currentItem.querySelector('span').textContent, 10);
         const change = parseInt(target.dataset.change, 10);
         newQuantity = currentQty + change;
-    } else { // remove button
+    } else {
         newQuantity = 0;
     }
     await cartStore.updateItem(parseInt(id, 10), newQuantity, variantId ? parseInt(variantId, 10) : null);
 }
 
-
-/**
- * Menginisialisasi fungsionalitas untuk halaman keranjang.
- */
 export function initCartPage() {
-    // Berlangganan ke perubahan state dari store
     cartStore.subscribe(renderCartPage);
-    // Render awal saat halaman dimuat
     renderCartPage(cartStore.getState());
-    // Tambahkan event listener untuk interaksi
     document.getElementById('cartPageItems')?.addEventListener('click', handleCartInteraction);
 
-    // Mencegah klik pada link checkout jika keranjang kosong
     document.body.addEventListener('click', (e) => {
-        if(e.target.closest('#checkout-link, #checkout-link-mobile')){
-            if(cartStore.getState().items.length === 0){
+        if (e.target.closest('#checkout-link, #checkout-link-mobile')) {
+            if (cartStore.getState().items.length === 0) {
                 e.preventDefault();
                 showNotification('Keranjang Anda kosong!', true);
             }

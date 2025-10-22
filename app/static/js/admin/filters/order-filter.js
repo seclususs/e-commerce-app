@@ -1,6 +1,3 @@
-/**
- * Menangani filter pesanan di halaman admin via AJAX.
- */
 import { showNotification } from '../../utils/ui.js';
 
 export function initAdminOrderFilter() {

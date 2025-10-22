@@ -1,6 +1,3 @@
-/**
- * Menginisialisasi galeri gambar produk yang dapat di-swipe di halaman detail.
- */
 export function initProductImageGallery() {
     const container = document.querySelector('.gallery-slider-container');
     const slider = document.getElementById('gallerySlider');
@@ -10,20 +7,24 @@ export function initProductImageGallery() {
 
     const slides = slider.querySelectorAll('.gallery-slide');
     const thumbnails = thumbnailsContainer ? Array.from(thumbnailsContainer.querySelectorAll('.thumbnail-item')) : [];
-    
+
     if (slides.length <= 1) {
         if (thumbnailsContainer) thumbnailsContainer.style.display = 'none';
         return;
     }
 
-    let currentIndex = 0, startX = 0, currentTranslate = 0, prevTranslate = 0;
-    let isDragging = false, animationID = 0;
+    let currentIndex = 0,
+        startX = 0,
+        currentTranslate = 0,
+        prevTranslate = 0;
+    let isDragging = false,
+        animationID = 0;
 
     const getPositionX = (e) => e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
 
     const updateGallery = (newIndex, animate = true, scrollThumb = true) => {
         if (newIndex < 0 || newIndex >= slides.length) return;
-        
+
         currentIndex = newIndex;
         const offset = -currentIndex * container.offsetWidth;
 
@@ -40,7 +41,7 @@ export function initProductImageGallery() {
             });
         }
     };
-    
+
     const animation = () => {
         slider.style.transform = `translateX(${currentTranslate}px)`;
         if (isDragging) requestAnimationFrame(animation);
@@ -51,7 +52,7 @@ export function initProductImageGallery() {
         startX = getPositionX(e);
         slider.style.transition = 'none';
         animationID = requestAnimationFrame(animation);
-        
+
         if (e.type.includes('mouse')) {
             e.preventDefault();
             window.addEventListener('mousemove', dragMove);
@@ -69,14 +70,14 @@ export function initProductImageGallery() {
         if (!isDragging) return;
         isDragging = false;
         cancelAnimationFrame(animationID);
-        
+
         const movedBy = currentTranslate - prevTranslate;
 
         if (movedBy < -100 && currentIndex < slides.length - 1) currentIndex++;
         if (movedBy > 100 && currentIndex > 0) currentIndex--;
-        
+
         updateGallery(currentIndex);
-        
+
         if (e.type.includes('mouse')) {
             window.removeEventListener('mousemove', dragMove);
             window.removeEventListener('mouseup', dragEnd);

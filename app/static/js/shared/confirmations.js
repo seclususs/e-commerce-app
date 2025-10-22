@@ -1,6 +1,3 @@
-/**
- * Mengelola modal konfirmasi untuk tindakan destruktif seperti penghapusan.
- */
 import { confirmModal } from '../utils/ui.js';
 
 export function initActionConfirmations() {

@@ -1,6 +1,3 @@
-/**
- * Menangani logika untuk tombol simulasi cron job.
- */
 import { showNotification } from '../../utils/ui.js';
 
 export function initCronButton() {
@@ -15,9 +12,9 @@ export function initCronButton() {
         try {
             const response = await fetch(btn.dataset.url, {
                 method: 'POST',
-                headers: { 
-                    'X-Requested-With': 'XMLHttpRequest', 
-                    'Content-Type': 'application/json' 
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
                 }
             });
             const result = await response.json();

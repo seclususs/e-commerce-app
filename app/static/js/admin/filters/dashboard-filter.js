@@ -1,6 +1,3 @@
-/**
- * Menangani filter dashboard admin via AJAX.
- */
 import { showNotification } from '../../utils/ui.js';
 import { updateAllCharts } from '../charts/dashboard-charts.js';
 
@@ -23,7 +20,7 @@ export function initDashboardFilter() {
         submitBtn.textContent = 'Memuat...';
         document.querySelector('.dashboard-stats').style.opacity = '0.5';
         document.querySelector('.admin-card h3 + div').style.opacity = '0.5';
-        
+
         const params = new URLSearchParams(new FormData(form));
         const url = `${form.action}?${params.toString()}`;
 
@@ -37,14 +34,12 @@ export function initDashboardFilter() {
                 const newUrl = `${window.location.pathname}?${params.toString()}`;
                 history.pushState({ path: newUrl }, '', newUrl);
 
-                // Update stat cards
                 const stats = result.data.stats;
                 document.getElementById('stat-total-sales').textContent = formatRupiah(stats.total_sales);
                 document.getElementById('stat-order-count').textContent = stats.order_count;
                 document.getElementById('stat-new-user-count').textContent = stats.new_user_count;
                 document.getElementById('stat-product-count').textContent = stats.product_count;
 
-                // Update and re-render charts
                 updateAllCharts(stats);
 
             } else {

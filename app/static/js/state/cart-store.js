@@ -1,8 +1,3 @@
-/**
- * State management untuk keranjang belanja.
- * Mengelola state untuk pengguna login dan tamu, serta menyediakan
- * metode untuk berinteraksi dengan state tersebut.
- */
 import * as cartAPI from '../services/cart-api.js';
 import { showNotification } from '../utils/ui.js';
 
@@ -17,17 +12,15 @@ const cartStore = (() => {
     let listeners = [];
 
     const notify = () => {
-        // Update count di navbar
         const cartCountEl = document.getElementById('cartCount');
         if (cartCountEl) {
             const totalItems = state.items.reduce((sum, item) => sum + item.quantity, 0);
             cartCountEl.textContent = totalItems;
             cartCountEl.style.display = totalItems > 0 ? 'flex' : 'none';
         }
-        // Notifikasi listener lain (misal: halaman keranjang)
         listeners.forEach(listener => listener(state));
     };
-    
+
     const loadGuestCart = () => {
         return JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || {};
     }
@@ -64,7 +57,7 @@ const cartStore = (() => {
         },
         subscribe: (listener) => {
             listeners.push(listener);
-            return () => { // Unsubscribe function
+            return () => {
                 listeners = listeners.filter(l => l !== listener);
             }
         },
@@ -82,19 +75,19 @@ const cartStore = (() => {
                 const cartKey = variantId ? `${productId}-${variantId}` : `${productId}-null`;
                 const currentCart = loadGuestCart();
                 const currentInCart = currentCart[cartKey]?.quantity || 0;
-                
+
                 if (currentInCart + quantity > stock) {
                     showNotification(`Stok tidak mencukupi. Anda sudah punya ${currentInCart} di keranjang.`, true);
                     return false;
                 }
-                 currentCart[cartKey] = { quantity: currentInCart + quantity };
-                 localStorage.setItem(GUEST_CART_KEY, JSON.stringify(currentCart));
+                currentCart[cartKey] = { quantity: currentInCart + quantity };
+                localStorage.setItem(GUEST_CART_KEY, JSON.stringify(currentCart));
             }
             await refreshState();
             return true;
         },
         updateItem: async (productId, quantity, variantId) => {
-             if (window.IS_USER_LOGGED_IN) {
+            if (window.IS_USER_LOGGED_IN) {
                 const res = await cartAPI.update(productId, quantity, variantId);
                 if (!res.success && res.message) showNotification(res.message, true);
             } else {
@@ -103,11 +96,11 @@ const cartStore = (() => {
                 if (quantity <= 0) {
                     delete newCart[cartKey];
                 } else {
-                     const itemToUpdate = state.items.find(item => item.id == productId && (item.variant_id || 'null') == (variantId || 'null'));
-                     if(itemToUpdate && quantity > itemToUpdate.stock) {
-                         showNotification(`Stok tidak mencukupi. Sisa stok: ${itemToUpdate.stock}.`, true);
-                         return;
-                     }
+                    const itemToUpdate = state.items.find(item => item.id == productId && (item.variant_id || 'null') == (variantId || 'null'));
+                    if (itemToUpdate && quantity > itemToUpdate.stock) {
+                        showNotification(`Stok tidak mencukupi. Sisa stok: ${itemToUpdate.stock}.`, true);
+                        return;
+                    }
                     newCart[cartKey] = { quantity: quantity };
                 }
                 localStorage.setItem(GUEST_CART_KEY, JSON.stringify(newCart));

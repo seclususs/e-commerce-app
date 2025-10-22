@@ -1,8 +1,3 @@
-/**
- * Menyediakan fungsi-fungsi pembantu untuk elemen UI umum seperti
- * notifikasi, pesan flash, dan modal konfirmasi.
- */
-
 export const showNotification = (message, isError = false) => {
     const notification = document.createElement('div');
     notification.className = `notification ${isError ? 'error' : ''}`;

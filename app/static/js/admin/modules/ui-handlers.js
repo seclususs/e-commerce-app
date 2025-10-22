@@ -1,7 +1,3 @@
-/**
- * Mengelola fungsionalitas UI spesifik admin seperti
- * aksi massal dan kartu yang dapat diperluas di tabel mobile.
- */
 import { showNotification, confirmModal } from '../../utils/ui.js';
 import { handleAjaxSubmit } from '../ajax-forms.js';
 
@@ -44,21 +40,20 @@ export function initBulkActions() {
     }
 
     bulkActionForm.addEventListener('submit', function(e) {
-        e.preventDefault(); // Selalu cegah pengiriman form standar terlebih dahulu
-        
+        e.preventDefault();
+
         const selectedAction = bulkActionSelect ? bulkActionSelect.value : '';
         const anyProductSelected = document.querySelector('.product-checkbox:checked');
         const submitButton = bulkActionForm.querySelector('button[type="submit"]');
 
         if (!selectedAction || !anyProductSelected) {
             showNotification(
-                !selectedAction ? 'Silakan pilih aksi massal.' : 'Silakan pilih setidaknya satu produk.', 
+                !selectedAction ? 'Silakan pilih aksi massal.' : 'Silakan pilih setidaknya satu produk.',
                 true
             );
             return;
         }
-        
-        // Fungsi untuk menjalankan pengiriman AJAX
+
         const performSubmit = () => {
             if (submitButton) {
                 handleAjaxSubmit(bulkActionForm, submitButton);
@@ -66,11 +61,10 @@ export function initBulkActions() {
         };
 
         if (selectedAction === 'delete') {
-            // Tampilkan modal konfirmasi untuk tindakan hapus
             confirmModal.show(
                 'Konfirmasi Hapus Massal',
                 'Apakah Anda yakin ingin menghapus semua produk yang dipilih? Tindakan ini tidak dapat diurungkan.',
-                performSubmit // Jalankan pengiriman AJAX hanya setelah konfirmasi
+                performSubmit
             );
         } else {
             performSubmit();

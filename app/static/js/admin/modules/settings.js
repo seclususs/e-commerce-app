@@ -1,7 +1,3 @@
-/**
- * Mengelola fungsionalitas untuk halaman pengaturan situs,
- * seperti menambah dan menghapus tautan sosial media secara dinamis.
- */
 export function initSettingsPage() {
     const socialLinksContainer = document.getElementById('social-links-container');
     const addSocialLinkBtn = document.getElementById('add-social-link');

@@ -1,17 +1,9 @@
-/**
- * Menginisialisasi semua chart di halaman dashboard admin.
- * Membaca data dari atribut data-* pada elemen canvas.
- * Dibuat agar theme-aware, akan menggambar ulang saat tema berganti.
- */
+let chartInstances = {};
 
-let chartInstances = {}; // Menyimpan instance chart untuk dihancurkan saat tema berubah
-
-// Fungsi helper untuk mendapatkan nilai variabel CSS
 function getCssVar(varName) {
     return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
 }
 
-// Fungsi untuk menghancurkan semua chart yang ada
 export function destroyCharts() {
     Object.values(chartInstances).forEach(chart => chart.destroy());
     chartInstances = {};
@@ -48,7 +40,7 @@ function createSalesChart(stats) {
 
 function createTopProductsChart(stats) {
     const topProductsCtx = document.getElementById('topProductsChart');
-     if (topProductsCtx) {
+    if (topProductsCtx) {
         const chartData = stats.top_products_chart;
         const topProductsOptions = commonChartOptions();
         topProductsOptions.scales.y.beginAtZero = true;
@@ -64,8 +56,8 @@ function createTopProductsChart(stats) {
                 datasets: [{
                     label: 'Jumlah Terjual',
                     data: chartData.data,
-                    backgroundColor: [ 'rgba(16, 185, 129, 0.6)', 'rgba(59, 130, 246, 0.6)', 'rgba(139, 92, 246, 0.6)','rgba(239, 68, 68, 0.6)', 'rgba(245, 158, 11, 0.6)' ],
-                    borderColor: [ '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#f59e0b' ],
+                    backgroundColor: ['rgba(16, 185, 129, 0.6)', 'rgba(59, 130, 246, 0.6)', 'rgba(139, 92, 246, 0.6)', 'rgba(239, 68, 68, 0.6)', 'rgba(245, 158, 11, 0.6)'],
+                    borderColor: ['#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#f59e0b'],
                     borderWidth: 1,
                     borderRadius: 5
                 }]
@@ -77,7 +69,7 @@ function createTopProductsChart(stats) {
 
 function createLowStockChart(stats) {
     const lowStockCtx = document.getElementById('lowStockChart');
-     if (lowStockCtx) {
+    if (lowStockCtx) {
         const chartData = stats.low_stock_chart;
         const lowStockOptions = commonChartOptions();
         lowStockOptions.indexAxis = 'y';
@@ -112,8 +104,6 @@ export function updateAllCharts(stats) {
     createLowStockChart(stats);
 }
 
-
-// Opsi umum untuk semua chart agar konsisten
 const commonChartOptions = (isDonut = false) => ({
     responsive: true,
     maintainAspectRatio: false,
@@ -173,7 +163,6 @@ export function initDashboardCharts() {
     }
 }
 
-// Mendengarkan event 'themeChanged' untuk menggambar ulang chart
 window.addEventListener('themeChanged', () => {
     if (document.getElementById('salesChart')) {
         initDashboardCharts();

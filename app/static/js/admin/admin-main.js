@@ -1,7 +1,3 @@
-/**
- * File entri utama untuk semua skrip di sisi admin.
- * Mengimpor dan menginisialisasi modul yang diperlukan.
- */
 import { initAnimations } from '../utils/animations.js';
 import { initFlashMessages } from '../utils/ui.js';
 import { initThemeSwitcher } from '../utils/theme.js';
@@ -18,7 +14,6 @@ import { initDashboardFilter } from './filters/dashboard-filter.js';
 import { initCronButton } from './utils/cron-simulator.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Inisialisasi modul global admin
     initPageTransitions('.admin-main-content');
     initAnimations();
     initFlashMessages();
@@ -26,8 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initThemeSwitcher();
     initAjaxAdminForms();
     initAdminCardToggle();
-    
-    // Inisialisasi modul spesifik per halaman/fitur admin
+
     if (document.getElementById('salesChart')) {
         initDashboardCharts();
         initDashboardFilter();
@@ -35,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('admin-product-filter-form')) {
         initAdminProductFilter();
     }
-     if (document.getElementById('admin-order-filter-form')) {
+    if (document.getElementById('admin-order-filter-form')) {
         initAdminOrderFilter();
     }
     if (document.getElementById('run-cron-btn')) {

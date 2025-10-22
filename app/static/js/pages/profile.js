@@ -1,10 +1,5 @@
 import { showNotification, confirmModal } from '../utils/ui.js';
 
-/**
- * Handles asynchronous form submission for the profile editor page.
- * @param {HTMLFormElement} form The form being submitted.
- * @param {HTMLElement} button The submit button that was clicked.
- */
 async function handleProfileSubmit(form, button) {
     const originalButtonHTML = button.innerHTML;
     button.disabled = true;
@@ -24,7 +19,6 @@ async function handleProfileSubmit(form, button) {
         if (response.ok && result.success) {
             showNotification(result.message || 'Profil berhasil diperbarui!', false);
 
-            // Update UI based on response data
             if (result.data) {
                 for (const key in result.data) {
                     const input = form.querySelector(`[name="${key}"]`);
@@ -34,7 +28,6 @@ async function handleProfileSubmit(form, button) {
                 }
             }
 
-            // Reset password form on success
             if (form.hasAttribute('data-reset-on-success')) {
                 form.reset();
             }
@@ -82,7 +75,7 @@ async function handleCancelOrder(button) {
                         button.remove();
 
                         const aksiCell = orderRow.querySelector('td[data-label="Aksi:"]');
-                        if(aksiCell && !aksiCell.querySelector('button')) {
+                        if (aksiCell && !aksiCell.querySelector('button')) {
                             aksiCell.textContent = '-';
                         }
                     }
@@ -100,10 +93,6 @@ async function handleCancelOrder(button) {
     );
 }
 
-
-/**
- * Initializes event listeners for the profile editor forms.
- */
 export function initProfileEditor() {
     const profileContainer = document.querySelector('.profile-container');
     if (!profileContainer) return;
@@ -120,9 +109,6 @@ export function initProfileEditor() {
     });
 }
 
-/**
- * Initializes event listeners for the user profile page (order cancellation).
- */
 export function initUserProfile() {
     const ordersList = document.getElementById('orders-list');
     if (!ordersList) return;

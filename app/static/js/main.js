@@ -15,9 +15,7 @@ import { initCartPage } from './pages/cart.js';
 import { initRegisterPage } from './pages/auth/register.js';
 import { initForgotPasswordPage } from './pages/auth/forgot-password.js';
 
-
 document.addEventListener('DOMContentLoaded', async () => {
-    // Inisialisasi modul global
     initPageTransitions('.page-content-wrapper');
     initAnimations();
     initFlashMessages();
@@ -25,17 +23,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     initActionConfirmations();
     initThemeSwitcher();
     initGlobalAddToCart();
-    
-    // Inisialisasi state keranjang
+
     await cartStore.init();
 
-    // Cek jika pengguna baru saja login untuk sinkronisasi keranjang
     const justLoggedInFlag = document.getElementById('just-logged-in-flag');
-    if(justLoggedInFlag){
+    if (justLoggedInFlag) {
         await cartStore.syncOnLogin();
     }
 
-    // Inisialisasi modul spesifik per halaman
     if (document.querySelector('.products-page-section')) {
         initProductCatalogPage();
     }

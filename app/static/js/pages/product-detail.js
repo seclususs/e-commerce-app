@@ -15,24 +15,23 @@ function initSizeSelector() {
     sizeSelector.addEventListener('click', (e) => {
         const target = e.target.closest('.size-option-btn');
         if (!target || target.disabled) return;
-        
+
         document.querySelectorAll('.size-option-btn').forEach(btn => btn.classList.remove('active'));
         target.classList.add('active');
-        
+
         selectedVariantId = target.dataset.variantId;
         const maxStock = parseInt(target.dataset.stock, 10);
 
         sizeWarning.textContent = '';
         addToCartBtn.disabled = false;
-        
+
         quantityInput.max = maxStock;
         if (parseInt(quantityInput.value) > maxStock) {
             quantityInput.value = maxStock;
         }
-        
+
         stockDisplay.innerHTML = `<span style="color: #f59e0b;">Ukuran ${target.textContent}: ${maxStock}</span>`;
-        
-        // Perbarui state tombol kuantitas
+
         document.getElementById('quantity-plus').disabled = (parseInt(quantityInput.value) >= maxStock);
     });
 }
@@ -52,7 +51,7 @@ function initQuantitySelector() {
 
         if (hasVariants) {
             const activeSize = document.querySelector('.size-option-btn.active');
-            if (!activeSize) { // Jika belum ada ukuran dipilih
+            if (!activeSize) {
                 plusBtn.disabled = true;
                 minusBtn.disabled = true;
                 return;
@@ -61,7 +60,7 @@ function initQuantitySelector() {
         } else {
             maxStock = parseInt(quantityInput.max, 10);
         }
-        
+
         let warningMessage = '';
         if (currentValue >= maxStock) {
             warningMessage = `Stok maksimum tercapai.`;
@@ -81,7 +80,7 @@ function initQuantitySelector() {
 
         if (hasVariants) {
             const activeSize = document.querySelector('.size-option-btn.active');
-            if (!activeSize) return; // Jangan ubah kuantitas jika ukuran belum dipilih
+            if (!activeSize) return;
             maxStock = parseInt(activeSize.dataset.stock, 10);
         } else {
             maxStock = parseInt(quantityInput.max, 10);
@@ -89,7 +88,7 @@ function initQuantitySelector() {
 
         if (newValue < 1) newValue = 1;
         if (newValue > maxStock) newValue = maxStock;
-        
+
         quantityInput.value = newValue;
         validateStock();
     };
@@ -97,20 +96,19 @@ function initQuantitySelector() {
     minusBtn.addEventListener('click', () => updateQuantity(-1));
     plusBtn.addEventListener('click', () => updateQuantity(1));
     quantityInput.addEventListener('input', () => {
-         let value = parseInt(quantityInput.value, 10);
-         const max = parseInt(quantityInput.max, 10);
-         if (isNaN(value) || value < 1) {
-             quantityInput.value = 1;
-         } else if (value > max) {
-             quantityInput.value = max;
-         }
-         validateStock();
-     });
+        let value = parseInt(quantityInput.value, 10);
+        const max = parseInt(quantityInput.max, 10);
+        if (isNaN(value) || value < 1) {
+            quantityInput.value = 1;
+        } else if (value > max) {
+            quantityInput.value = max;
+        }
+        validateStock();
+    });
 
     validateStock();
 }
 
-// Social Share Popup Handler
 function initSocialShare() {
     const shareLinks = document.getElementById('social-share-links');
     if (!shareLinks) return;
@@ -125,7 +123,7 @@ function initSocialShare() {
         const height = 400;
         const left = (window.innerWidth / 2) - (width / 2);
         const top = (window.innerHeight / 2) - (height / 2);
-        
+
         window.open(url, 'shareWindow', `width=${width},height=${height},top=${top},left=${left},toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=yes,resizable=yes`);
     });
 }
@@ -148,7 +146,7 @@ async function handleReviewSubmit(form, button) {
             const reviewsGrid = document.getElementById('reviews-grid');
             const noReviewsMsg = document.getElementById('no-reviews-message');
             if (noReviewsMsg) noReviewsMsg.remove();
-            
+
             reviewsGrid.insertAdjacentHTML('afterbegin', result.review_html);
             document.getElementById('review-form-container').innerHTML = `
                 <div class="admin-card add-review-form" style="text-align: center;">
@@ -167,7 +165,6 @@ async function handleReviewSubmit(form, button) {
         button.textContent = 'Kirim Ulasan';
     }
 }
-
 
 export function initProductDetailPage() {
     initSizeSelector();

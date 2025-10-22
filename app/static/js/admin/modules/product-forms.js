@@ -12,12 +12,12 @@ export function initAdminImagePreviews() {
             const files = Array.from(event.target.files);
 
             if (files.length === 0) {
-                if(fileDisplay) fileDisplay.textContent = 'Belum ada file dipilih';
+                if (fileDisplay) fileDisplay.textContent = 'Belum ada file dipilih';
                 if (mainImageInput) mainImageInput.value = '';
                 return;
             }
-            
-            if(fileDisplay) fileDisplay.textContent = `${files.length} file dipilih`;
+
+            if (fileDisplay) fileDisplay.textContent = `${files.length} file dipilih`;
 
             files.forEach((file, index) => {
                 const reader = new FileReader();
@@ -34,13 +34,13 @@ export function initAdminImagePreviews() {
                         radio.name = 'main_image_selector';
                         radio.className = 'main-image-radio';
                         radio.value = file.name;
-                        
+
                         if (index === 0) {
                             radio.checked = true;
                             mainImageInput.value = file.name;
                             previewItem.classList.add('is-main');
                         }
-                        
+
                         radio.addEventListener('change', function() {
                             document.querySelectorAll(`#${previewContainerId} .preview-item`).forEach(item => item.classList.remove('is-main'));
                             mainImageInput.value = this.value;
@@ -106,18 +106,18 @@ function initVariantCheckbox() {
     const nonVariantFields = document.getElementById('non-variant-fields');
     const stockInput = document.getElementById('stock');
     const weightInput = document.getElementById('weight_grams');
-    
+
     const conversionHint = document.getElementById('variant-conversion-hint');
     const manageVariantsPlaceholder = document.getElementById('manage-variants-link-placeholder');
     const isInitiallyVariant = checkbox.dataset.initialState === 'true';
 
     const toggleInputs = () => {
         const isChecked = checkbox.checked;
-        
+
         if (nonVariantFields) {
             nonVariantFields.style.display = isChecked ? 'none' : 'block';
         }
-        
+
         if (stockInput) stockInput.required = !isChecked;
         if (weightInput) weightInput.required = !isChecked;
 
@@ -134,7 +134,6 @@ function initVariantCheckbox() {
     checkbox.addEventListener('change', toggleInputs);
     toggleInputs();
 }
-
 
 export function initProductForms() {
     initAdminImagePreviews();

@@ -1,7 +1,3 @@
-/**
- * Mengelola pemfilteran produk secara asinkron menggunakan Fetch API
- * dan fungsionalitas modal filter di perangkat mobile.
- */
 import { initAnimations } from '../utils/animations.js';
 
 function initProductFiltering() {
@@ -29,7 +25,7 @@ function initProductFiltering() {
 
     const showLoadingState = () => {
         let skeletons = '';
-        for(let i = 0; i < 8; i++) {
+        for (let i = 0; i < 8; i++) {
             skeletons += createSkeletonCard();
         }
         container.innerHTML = skeletons;
@@ -57,9 +53,9 @@ function initProductFiltering() {
             history.pushState({ path: newUrl }, '', newUrl);
 
             container.innerHTML = data.html.trim() !== '' ? data.html : noProductsTemplate;
-           
+
             initAnimations();
-           
+
         } catch (error) {
             console.error('Gagal mengambil data produk:', error);
             container.innerHTML = '<p class="no-products-found">Gagal memuat produk. Silakan coba lagi.</p>';

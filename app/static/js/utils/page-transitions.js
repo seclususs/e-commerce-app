@@ -1,7 +1,3 @@
-/**
- * Menginisialisasi efek transisi 'fade out' saat meninggalkan halaman.
- * @param {string} wrapperSelector Selector untuk elemen wrapper konten utama.
- */
 export function initPageTransitions(wrapperSelector) {
     const pageWrapper = document.querySelector(wrapperSelector);
     if (!pageWrapper) return;

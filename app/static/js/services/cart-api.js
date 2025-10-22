@@ -1,9 +1,4 @@
 /**
- * Modul ini berisi semua panggilan fetch API terkait keranjang belanja pengguna.
- * Setiap fungsi mengembalikan promise yang me-resolve dengan data JSON dari server.
- */
-
-/**
  * Mengambil semua item dan subtotal dari keranjang pengguna saat ini.
  * @returns {Promise<object>} Promise yang resolve dengan data keranjang.
  */
