@@ -10,16 +10,16 @@ function renderCheckoutSummary(state) {
     const { items, subtotal } = state;
     const summaryContainer = document.getElementById('checkout-summary-items');
     if (!summaryContainer) return;
-    
+
     const subtotalEl = document.getElementById('checkoutSubtotal');
     const totalEl = document.getElementById('checkoutTotal');
     const placeOrderBtn = document.getElementById('placeOrderBtn');
     const cartDataInput = document.getElementById('cart_data_input');
-    
+
     if (items.length === 0) {
         summaryContainer.innerHTML = '<p>Keranjang Anda kosong.</p>';
         if (placeOrderBtn) placeOrderBtn.disabled = true;
-         // Redirect if cart is empty on checkout page
+         // Redirect jika keranjang kosong di halaman checkout
         if(window.location.pathname.includes('/checkout')) {
             window.location.href = '/cart';
         }
@@ -31,10 +31,10 @@ function renderCheckoutSummary(state) {
         const sizeInfo = p.size ? ` (Ukuran: ${p.size})` : '';
         return `<div class="summary-row"><span>${p.name}${sizeInfo} (x${p.quantity})</span><span>${formatRupiah(effectivePrice * p.quantity)}</span></div>`;
     }).join('');
-    
+
     if(subtotalEl) subtotalEl.textContent = formatRupiah(subtotal);
     if(totalEl) totalEl.textContent = formatRupiah(subtotal);
-    
+
     // Untuk checkout tamu, kita perlu mengisi input tersembunyi
     if(!window.IS_USER_LOGGED_IN && cartDataInput) {
         const guestCart = items.reduce((acc, item) => {
@@ -44,7 +44,7 @@ function renderCheckoutSummary(state) {
         }, {});
         cartDataInput.value = JSON.stringify(guestCart);
     }
-    
+
     // Panggil kalkulasi pengiriman setiap kali ringkasan diperbarui
     const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
     cityElement?.dispatchEvent(new Event('recalc'));
@@ -58,8 +58,20 @@ function initCheckoutForm() {
     const placeOrderBtnMobile = document.getElementById('placeOrderBtnMobile');
     const buttons = [placeOrderBtn, placeOrderBtnMobile].filter(Boolean);
 
-    form.addEventListener('submit', () => {
-        if (!form.checkValidity()) return;
+    form.addEventListener('submit', (e) => {
+        // Cek validitas form bawaan HTML5
+        if (!form.checkValidity()) {
+             // Temukan input pertama yang tidak valid dan fokuskan
+            const firstInvalidField = form.querySelector(':invalid');
+            if (firstInvalidField) {
+                firstInvalidField.focus();
+                // Opsional: Tampilkan pesan custom
+                 showNotification('Harap lengkapi semua field yang wajib diisi.', true);
+            }
+            e.preventDefault(); // Hentikan submit jika tidak valid
+            return;
+        }
+
 
         // Nonaktifkan tombol apply voucher saat submit
         const applyBtn = document.getElementById('applyVoucherBtn');
@@ -79,6 +91,7 @@ function initMobileCtaHandlers() {
     const checkoutForm = document.getElementById('checkout-form');
 
     if (mobileCheckoutBtn && mainCheckoutBtn && checkoutForm) {
+        // Sinkronisasi status disabled antara tombol utama dan mobile
         const observer = new MutationObserver(mutations => {
             mutations.forEach(mutation => {
                 if (mutation.attributeName === 'disabled') {
@@ -87,10 +100,13 @@ function initMobileCtaHandlers() {
             });
         });
         observer.observe(mainCheckoutBtn, { attributes: true });
+        // Set status awal
         mobileCheckoutBtn.disabled = mainCheckoutBtn.disabled;
 
+        // Trigger submit form utama saat tombol mobile diklik
         mobileCheckoutBtn.addEventListener('click', () => {
             if (!mobileCheckoutBtn.disabled) {
+                // Gunakan requestSubmit() untuk memicu validasi HTML5
                 checkoutForm.requestSubmit();
             }
         });
@@ -128,16 +144,16 @@ function initVoucherHandler() {
             if (result.success) {
                 messageEl.textContent = result.message;
                 messageEl.classList.add('success');
-                
+
                 document.getElementById('checkoutDiscount').textContent = `- ${formatRupiah(result.discount_amount)}`;
                 document.querySelector('.discount-row').style.display = 'flex';
-                // Trigger shipping calculation to update total
+                // Trigger kalkulasi ulang pengiriman & total
                 const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
                 cityElement?.dispatchEvent(new Event('recalc'));
             } else {
                 messageEl.textContent = result.message;
                 messageEl.classList.add('error');
-                resetDiscount();
+                resetDiscount(); // Reset diskon jika voucher tidak valid
             }
         } catch (error) {
             messageEl.textContent = 'Gagal terhubung ke server.';
@@ -146,12 +162,15 @@ function initVoucherHandler() {
             applyBtn.disabled = false;
         }
     };
-    
+
     const resetDiscount = () => {
         messageEl.textContent = '';
         messageEl.className = 'voucher-feedback';
         document.querySelector('.discount-row').style.display = 'none';
         document.getElementById('checkoutDiscount').textContent = '- Rp 0';
+        voucherInput.value = ''; // Hapus kode voucher dari input
+         document.getElementById('voucher_code').name = 'voucher_code'; // Pastikan nama input ada
+        // Trigger kalkulasi ulang pengiriman & total
         const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
         cityElement?.dispatchEvent(new Event('recalc'));
     };
@@ -163,7 +182,13 @@ function initVoucherHandler() {
             applyVoucher();
         }
     });
-    voucherInput.addEventListener('input', resetDiscount);
+     // Reset diskon jika input voucher diubah
+    voucherInput.addEventListener('input', () => {
+        // Hanya reset jika sudah ada pesan feedback (berarti voucher pernah dicoba)
+        if (messageEl.textContent !== '') {
+            resetDiscount();
+        }
+    });
 }
 
 function initStockHoldTimer(expiresAtIsoString) {
@@ -175,7 +200,25 @@ function initStockHoldTimer(expiresAtIsoString) {
     if (!expiryTime || !timerEl || !container) return;
 
     const expiresAt = new Date(expiryTime).getTime();
-    
+
+    // Aktifkan tombol checkout jika waktu belum kedaluwarsa saat inisialisasi
+    if (expiresAt > new Date().getTime()) {
+        const placeOrderBtn = document.getElementById('placeOrderBtn');
+        const placeOrderBtnMobile = document.getElementById('placeOrderBtnMobile');
+        if (placeOrderBtn) placeOrderBtn.disabled = false;
+        if (placeOrderBtnMobile) placeOrderBtnMobile.disabled = false;
+    } else {
+        // Jika sudah kedaluwarsa saat load, langsung tampilkan pesan
+        container.innerHTML = 'Waktu penahanan stok habis! <a href="/cart" style="color: white; text-decoration: underline;">Kembali ke keranjang</a> untuk validasi ulang.';
+        container.classList.add('expired');
+        // Pastikan tombol tetap disabled
+        const placeOrderBtn = document.getElementById('placeOrderBtn');
+        const placeOrderBtnMobile = document.getElementById('placeOrderBtnMobile');
+        if (placeOrderBtn) placeOrderBtn.disabled = true;
+        if (placeOrderBtnMobile) placeOrderBtnMobile.disabled = true;
+        return; // Hentikan timer jika sudah kedaluwarsa
+    }
+
     const interval = setInterval(() => {
         const now = new Date().getTime();
         const distance = expiresAt - now;
@@ -184,9 +227,11 @@ function initStockHoldTimer(expiresAtIsoString) {
             clearInterval(interval);
             container.innerHTML = 'Waktu penahanan stok habis! <a href="/cart" style="color: white; text-decoration: underline;">Kembali ke keranjang</a> untuk validasi ulang.';
             container.classList.add('expired');
-            document.getElementById('placeOrderBtn').disabled = true;
-            const mobileBtn = document.getElementById('placeOrderBtnMobile');
-            if(mobileBtn) mobileBtn.disabled = true;
+            // Nonaktifkan tombol checkout
+            const placeOrderBtn = document.getElementById('placeOrderBtn');
+            const placeOrderBtnMobile = document.getElementById('placeOrderBtnMobile');
+             if (placeOrderBtn) placeOrderBtn.disabled = true;
+             if (placeOrderBtnMobile) placeOrderBtnMobile.disabled = true;
             return;
         }
 
@@ -209,51 +254,67 @@ function initShippingCalculation() {
 
     const calculateAndUpdate = () => {
         let city = '';
-        if (citySelect) { // Guest
+        if (citySelect) { // Tamu
             city = citySelect.value;
-        } else if (cityDisplay) { // Logged in
-            const cityParagraph = Array.from(cityDisplay.querySelectorAll('p')).find(p => p.textContent.includes(','));
-            if(cityParagraph) {
-                const parts = cityParagraph.textContent.split(',');
-                if (parts.length > 1) {
-                    city = parts[0].trim().split('\n').pop().trim();
+        } else if (cityDisplay) { // Login
+             // Cari elemen <p> yang berisi kota, provinsi, kode pos
+            const addressParagraphs = cityDisplay.querySelectorAll('p');
+            let fullAddress = '';
+            addressParagraphs.forEach(p => {
+                if(p.textContent.includes(',')){ // Asumsikan baris alamat lengkap mengandung koma
+                    fullAddress += p.textContent + ' ';
+                }
+            });
+            fullAddress = fullAddress.trim();
+
+            if (fullAddress) {
+                const parts = fullAddress.split(',');
+                if (parts.length >= 2) {
+                    city = parts[parts.length - 2].trim().split(' ').slice(-1)[0]; // Ambil kata terakhir sebelum koma terakhir
+                } else if(parts.length === 1 && !fullAddress.includes('(') ) { // Jika hanya ada kota?
+                    city = parts[0].trim();
                 }
             }
         }
-        
-        let shippingCost = 0;
-        const jabodetabek = ['Jakarta', 'Bogor', 'Depok', 'Tangerang', 'Bekasi'];
 
-        if (jabodetabek.includes(city)) {
+        let shippingCost = 0;
+        const jabodetabek = ['jakarta', 'bogor', 'depok', 'tangerang', 'bekasi'];
+
+        if (city && jabodetabek.includes(city.toLowerCase())) {
             shippingCost = 10000;
-        } else if (city && city !== "") { // Any other city selected
+        } else if (city && city !== "") { // Kota lain
             shippingCost = 20000;
         }
-        
+
         if (shippingCost > 0) {
             shippingRow.style.display = 'flex';
             shippingCostEl.textContent = formatRupiah(shippingCost);
         } else {
             shippingRow.style.display = 'none';
+             shippingCostEl.textContent = formatRupiah(0); // Set ke 0 jika tidak ada kota
         }
 
         const subtotal = cartStore.getState().subtotal || 0;
         const discountText = discountEl.textContent || '0';
-        const discount = parseFloat(discountText.replace(/[^0-9]/g, '')) || 0;
+         // Pastikan hanya angka yang diambil dari string diskon
+        const discount = parseFloat(discountText.replace(/[^\d.-]/g, '')) || 0;
 
-        const finalTotal = subtotal - discount + shippingCost;
+
+        const finalTotal = subtotal + discount + shippingCost; // Diskon sudah negatif
         totalEl.textContent = formatRupiah(finalTotal);
         shippingCostInput.value = shippingCost;
     };
 
     if (citySelect) {
         citySelect.addEventListener('change', calculateAndUpdate);
+         // Juga trigger saat pertama kali load jika tamu sudah mengisi
+        if(citySelect.value) setTimeout(calculateAndUpdate, 150);
     }
-    if(cityDisplay){
-        cityDisplay.addEventListener('recalc', calculateAndUpdate);
-    }
-    
-    // Initial calculation.
+    // Event listener custom 'recalc' untuk pengguna login atau update lainnya
+    const triggerElement = citySelect || cityDisplay || document.body;
+    triggerElement.addEventListener('recalc', calculateAndUpdate);
+
+    // Kalkulasi awal saat halaman dimuat
     setTimeout(calculateAndUpdate, 150);
 }
 
@@ -268,6 +329,11 @@ async function prepareCheckout() {
          return;
     }
 
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    const placeOrderBtnMobile = document.getElementById('placeOrderBtnMobile');
+    if (placeOrderBtn) placeOrderBtn.disabled = true;
+    if (placeOrderBtnMobile) placeOrderBtnMobile.disabled = true;
+
     try {
         const prepareRes = await fetch('/api/checkout/prepare', {
             method: 'POST',
@@ -275,11 +341,9 @@ async function prepareCheckout() {
             body: JSON.stringify({ items: itemsToHold })
         });
         const prepareResult = await prepareRes.json();
-        
+
         if (prepareResult.success) {
-            initStockHoldTimer(prepareResult.expires_at);
-            document.getElementById('placeOrderBtn')?.removeAttribute('disabled');
-            document.getElementById('placeOrderBtnMobile')?.removeAttribute('disabled');
+            initStockHoldTimer(prepareResult.expires_at); // Timer akan mengaktifkan tombol jika valid
         } else {
             throw new Error(prepareResult.message || 'Gagal memvalidasi stok.');
         }
@@ -294,8 +358,8 @@ async function prepareCheckout() {
                     el.disabled = true;
                 }
             });
-            const mobileBtn = document.getElementById('placeOrderBtnMobile');
-            if(mobileBtn) mobileBtn.disabled = true;
+             if (placeOrderBtn) placeOrderBtn.disabled = true;
+             if (placeOrderBtnMobile) placeOrderBtnMobile.disabled = true;
         }
     }
 }
@@ -305,18 +369,13 @@ export function initCheckoutPage() {
     initMobileCtaHandlers();
     initVoucherHandler();
     initShippingCalculation();
-    
+
     cartStore.subscribe(renderCheckoutSummary);
-    // Render awal, lalu panggil kalkulasi pengiriman
     renderCheckoutSummary(cartStore.getState());
-    
-    // Hold stock after initial render
+
     if (window.IS_USER_LOGGED_IN) {
-        // Untuk pengguna login, stock hold ditangani di backend (routes/purchase/checkout_routes.py)
-        // dan waktu kedaluwarsa dilewatkan ke template.
-        initStockHoldTimer(); 
+        initStockHoldTimer();
     } else {
-        // Untuk tamu, kita perlu memanggil API untuk menahan stok.
         prepareCheckout();
     }
 }

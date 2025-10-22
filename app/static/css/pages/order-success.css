@@ -1,0 +1,53 @@
+.order-success-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.success-container {
+  max-width: 550px;
+  width: 100%;
+}
+
+.success-icon {
+  font-size: 5rem;
+  color: var(--color-success);
+  margin-bottom: 1rem;
+  animation: popIn 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.order-success-page .section-title {
+  margin-bottom: 1rem;
+}
+
+.success-message {
+  color: var(--color-text-secondary);
+  margin-bottom: 2.5rem;
+  font-size: 1.1rem;
+}
+
+.create-account-prompt {
+  margin-top: 2rem;
+  text-align: left;
+  background: var(--color-background-surface);
+}
+
+.create-account-prompt p {
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}

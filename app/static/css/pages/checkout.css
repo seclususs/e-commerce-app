@@ -1,0 +1,156 @@
+.checkout-page-section,
+.edit-address-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex-grow: 1;
+  padding: 2rem 5%;
+}
+
+.checkout-page-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: auto;
+}
+
+.cart-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.address-display-box {
+  padding: 1.5rem;
+  background: var(--color-background-body);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.address-display-box p {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.address-display-box .text-warning {
+  color: var(--color-warning);
+}
+
+.edit-address-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.4rem 1rem;
+}
+
+.cart-summary {
+  position: sticky;
+  top: 100px;
+}
+
+.summary-row,
+.summary-total {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  color: var(--color-text-primary);
+}
+
+.summary-total {
+  font-size: 1.3rem;
+  font-weight: bold;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border-default);
+}
+
+.summary-total span:last-child {
+  color: var(--color-primary);
+}
+
+.voucher-form-container {
+  padding: 1rem 0;
+  margin: 1rem 0;
+  border-top: 1px solid var(--color-border-default);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.voucher-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.voucher-input-group input {
+  flex-grow: 1;
+}
+
+.voucher-input-group button {
+  white-space: nowrap;
+  padding: 0.8rem 1.2rem;
+}
+
+.voucher-feedback {
+  font-size: 0.9em;
+  margin-top: 0.75rem;
+  text-align: center;
+  font-weight: 500;
+  min-height: 1.2em;
+}
+
+.voucher-feedback.success {
+  color: var(--color-success);
+}
+
+.voucher-feedback.error {
+  color: var(--color-danger);
+}
+
+.discount-row {
+  color: var(--color-success);
+}
+
+.stock-hold-timer {
+  text-align: center;
+  padding: 0.8rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius-sm);
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+}
+
+.stock-hold-timer.expired {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: var(--color-danger);
+  color: var(--color-warning);
+}
+
+html.light-theme .stock-hold-timer.expired {
+  color: var(--color-danger);
+}
+
+.edit-address-section .profile-container {
+  max-width: 600px;
+}
+
+@media (max-width: 767px) {
+  .cart-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-summary {
+    position: static;
+    margin-top: 2rem;
+  }
+}
+
+@media (max-width: 639px) {
+  .checkout-page-section {
+    padding: 2rem 1rem;
+  }
+}

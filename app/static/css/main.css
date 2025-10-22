@@ -11,10 +11,15 @@
 @import url("components/modals.css");
 @import url("components/badges.css");
 @import url("components/tables.css");
+@import url("components/product-card.css");
 
 @import url("pages/landing.css");
-@import url("pages/product.css");
-@import url("pages/cart-checkout.css");
+@import url("pages/product-catalog.css");
+@import url("pages/product-detail.css");
+@import url("pages/cart.css");
+@import url("pages/checkout.css");
+@import url("pages/payment.css");
+@import url("pages/order-success.css");
 @import url("pages/profile.css");
 @import url("pages/auth.css");
 @import url("pages/about.css");
