@@ -1,0 +1,31 @@
+/* Bagian Profil Pengguna */
+.user-profile-section {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1rem;
+  min-height: 80vh;
+}
+
+.profile-container {
+  margin: auto;
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 15px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 900px;
+}
+
+html.light-theme .profile-container {
+  box-shadow: 0 4px 6px -1px var(--color-shadow-dark);
+}
+
+@media (max-width: 639px) {
+  .user-profile-section {
+    padding: 2rem 1rem;
+  }
+
+  .profile-container {
+    padding: 1.5rem;
+  }
+}

@@ -1,0 +1,35 @@
+/* Bagian Tentang & Info */
+.about-section {
+  padding: 5rem 5%;
+}
+
+.about-section-full {
+  padding: 5rem 5%;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-content {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.about-content p {
+  font-size: 1.2rem;
+  color: #94a3b8;
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 639px) {
+  .about-section-full {
+    padding: 2rem 1rem;
+  }
+
+  .about-content p {
+    font-size: 1.1rem;
+  }
+}

@@ -1,0 +1,128 @@
+.admin-wrapper {
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 250px;
+  background: var(--color-background-surface);
+  border-right: 1px solid var(--color-border-default);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 100;
+}
+
+.sidebar-header .logo {
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+  text-align: center;
+  display: block;
+  margin-bottom: 2rem;
+}
+
+/* Sidebar Navigation */
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-grow: 1;
+}
+
+.admin-nav a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-nav a:hover {
+  background: var(--color-background-elevated);
+  color: var(--color-text-primary);
+}
+
+.admin-nav a.active {
+  background: var(--color-primary);
+  color: white;
+  font-weight: 600;
+}
+
+html.light-theme .admin-nav a.active {
+  color: var(--color-white);
+}
+
+/* Main Content Area */
+.admin-main-content {
+  margin-left: 250px;
+  padding: 2rem;
+  background-color: var(--color-background-body);
+}
+
+.admin-main-header {
+  margin-bottom: 2rem;
+}
+
+.admin-main-header h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+}
+
+.admin-main-content .flash-messages {
+  padding: 0;
+  margin-bottom: 1.5rem;
+}
+
+.admin-nav .theme-toggle-wrapper {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border-default);
+}
+
+.admin-nav .theme-toggle-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .admin-wrapper {
+    display: block;
+  }
+
+  .admin-sidebar {
+    display: none;
+  }
+
+  .admin-main-content {
+    margin-left: 0;
+    padding-bottom: 80px;
+  }
+
+  .admin-main-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  body>.bottom-navbar {
+    display: flex;
+  }
+}
+
+@media (max-width: 639px) {
+  .admin-main-content {
+    padding: 1rem;
+    padding-bottom: 80px;
+  }
+
+  .admin-main-header h2 {
+    font-size: 1.5rem;
+  }
+}

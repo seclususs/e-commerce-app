@@ -58,3 +58,14 @@ main {
 /* Scrollbar hiding */
 body::-webkit-scrollbar { display: none; }
 body { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Responsive adjustments */
+@media (max-width: 639px) {
+    body {
+        font-size: 15px;
+    }
+    .section-title {
+        font-size: 1.8rem;
+        margin-bottom: 2rem;
+    }
+}
