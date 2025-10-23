@@ -1,13 +1,12 @@
 import json
 import uuid
 from flask import render_template, request, session, redirect, url_for, flash
-from db.db_config import get_db_connection, get_content
-from utils.route_decorators import login_required
-from services.users.user_service import user_service
-from services.orders.order_service import order_service
-from services.orders.cart_service import cart_service
-from services.orders.stock_service import stock_service
-
+from app.core.db import get_db_connection, get_content
+from app.utils.route_decorators import login_required
+from app.services.users.user_service import user_service
+from app.services.orders.order_service import order_service
+from app.services.orders.cart_service import cart_service
+from app.services.orders.stock_service import stock_service
 from . import purchase_bp
 
 

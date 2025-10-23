@@ -1,7 +1,7 @@
 import json
 from flask import render_template, request, session, redirect, url_for, flash
-from db.db_config import get_db_connection, get_content
-from services.users.auth_service import auth_service
+from app.core.db import get_db_connection, get_content
+from app.services.users.auth_service import auth_service
 from . import auth_bp
 
 

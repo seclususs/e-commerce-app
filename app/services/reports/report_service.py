@@ -1,4 +1,4 @@
-from db.db_config import get_db_connection
+from app.core.db import get_db_connection
 from datetime import datetime, timedelta
 
 from .sales_report_service import sales_report_service

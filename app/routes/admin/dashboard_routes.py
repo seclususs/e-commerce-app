@@ -1,13 +1,12 @@
 from flask import render_template, request, jsonify
 from datetime import datetime, timedelta
 import json
-
 from . import admin_bp
-from db.db_config import get_content
-from utils.route_decorators import admin_required
-from services.utils.scheduler_service import scheduler_service
-from services.reports.report_service import report_service
-from utils.date_utils import get_date_range
+from app.core.db import get_content
+from app.utils.route_decorators import admin_required
+from app.services.utils.scheduler_service import scheduler_service
+from app.services.reports.report_service import report_service
+from app.utils.date_utils import get_date_range
 
 
 @admin_bp.route('/dashboard')

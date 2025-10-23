@@ -1,9 +1,9 @@
 import uuid
 from flask import jsonify, request, session
 from . import api_bp
-from services.orders.cart_service import cart_service
-from services.orders.stock_service import stock_service
-from utils.route_decorators import login_required
+from app.services.orders.cart_service import cart_service
+from app.services.orders.stock_service import stock_service
+from app.utils.route_decorators import login_required
 
 
 @api_bp.route('/cart', methods=['POST'])

@@ -1,10 +1,9 @@
 from flask import render_template, request
 from . import admin_bp
-from db.db_config import get_content
-from utils.route_decorators import admin_required
-from services.reports.report_service import report_service
-from utils.export_utils import generate_csv_response
-
+from app.core.db import get_content
+from app.utils.route_decorators import admin_required
+from app.services.reports.report_service import report_service
+from app.utils.export_utils import generate_csv_response
 
 @admin_bp.route('/reports')
 @admin_required

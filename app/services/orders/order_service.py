@@ -2,12 +2,12 @@ import json
 import uuid
 import random
 from datetime import datetime
-from db.db_config import get_db_connection
-from services.users.user_service import user_service
-from services.orders.cart_service import cart_service
-from services.orders.stock_service import stock_service
-from services.products.variant_service import variant_service
-from services.orders.voucher_service import voucher_service
+from app.core.db import get_db_connection
+from app.services.users.user_service import user_service
+from app.services.orders.cart_service import cart_service
+from app.services.orders.stock_service import stock_service
+from app.services.products.variant_service import variant_service
+from app.services.orders.voucher_service import voucher_service
 
 
 class OrderService:

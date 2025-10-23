@@ -1,106 +1,6 @@
 import { showNotification, confirmModal } from '../utils/ui.js';
+import { handleUIUpdate } from './ajax-update-handlers.js';
 
-function handlePrependAction(form, result) {
-    const target = document.querySelector(form.dataset.updateTarget);
-    if (target && result.html) {
-        const noItemRow = target.querySelector('.no-items-row');
-        if (noItemRow) noItemRow.remove();
-
-        target.insertAdjacentHTML('afterbegin', result.html);
-        form.reset();
-
-        if (form.id === 'add-product-form') {
-            document.getElementById('image-previews').innerHTML = '';
-            document.getElementById('file-name').textContent = 'Belum ada file dipilih';
-        }
-
-        const newRow = target.firstElementChild;
-        if (newRow) {
-            newRow.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
-            setTimeout(() => {
-                newRow.style.transition = 'background-color 0.5s ease';
-                newRow.style.backgroundColor = '';
-                setTimeout(() => newRow.style.transition = '', 500);
-            }, 100);
-        }
-    }
-}
-
-function handleUpdateTextAction(form, result) {
-    const target = document.querySelector(form.dataset.updateTarget);
-    if (target && result.data && result.data.name) {
-        target.value = result.data.name;
-    }
-}
-
-function handleUpdateStatusAction(form, result) {
-    if (result.data) {
-        const statusBadge = document.querySelector('.status-badge');
-        const trackingInput = document.querySelector('input[name="tracking_number"]');
-        if (statusBadge) {
-            statusBadge.className = `status-badge status-${result.data.status_class}`;
-            statusBadge.textContent = result.data.status;
-        }
-        if (trackingInput) {
-            trackingInput.value = result.data.tracking_number || '';
-        }
-    }
-}
-
-function handleBulkActionResult(form, result) {
-    if (result.action === 'delete') {
-        result.ids.forEach(id => {
-            document.querySelector(`#product-row-${id}`)?.remove();
-        });
-    } else if (result.action === 'set_category') {
-        result.ids.forEach(id => {
-            const cell = document.querySelector(`#product-row-${id} .category-name-cell`);
-            if (cell) cell.textContent = result.new_category_name;
-        });
-    }
-
-    const select = document.getElementById('bulk-action-select');
-    if (select) select.value = '';
-    document.querySelectorAll('.product-checkbox').forEach(cb => cb.checked = false);
-    const selectAll = document.getElementById('select-all-products');
-    if (selectAll) selectAll.checked = false;
-
-    const categorySelector = document.getElementById('bulk-category-selector');
-    if (categorySelector) categorySelector.classList.add('hidden');
-}
-
-function handleRedirectAction(form, result) {
-    if (result.redirect_url) {
-        window.location.href = result.redirect_url;
-    }
-}
-
-function handleUpdateInputsAction(form, result) {
-    if (result.data) {
-        Object.keys(result.data).forEach(key => {
-            const input = form.querySelector(`input[name="${key}"]`);
-            if (input) {
-                input.value = result.data[key];
-            }
-        });
-    }
-}
-
-function handleUIUpdate(form, result) {
-    const action = form.dataset.updateAction || 'none';
-    const actionHandlers = {
-        'prepend': handlePrependAction,
-        'update-text': handleUpdateTextAction,
-        'update-status': handleUpdateStatusAction,
-        'bulk-action': handleBulkActionResult,
-        'redirect': handleRedirectAction,
-        'update-inputs': handleUpdateInputsAction
-    };
-
-    if (actionHandlers[action]) {
-        actionHandlers[action](form, result);
-    }
-}
 
 export async function handleAjaxSubmit(form, button) {
     const originalButtonHTML = button.innerHTML;
@@ -108,7 +8,7 @@ export async function handleAjaxSubmit(form, button) {
     button.disabled = true;
     button.innerHTML = `<span class="spinner" style="display: inline-block; animation: spin 0.8s ease-in-out infinite; width: 1em; height: 1em; border-width: 2px;"></span> ${isUpdate ? 'Updating...' : 'Menyimpan...'}`;
 
-    const priceInputs = form.querySelectorAll('input[name="price"], input[name="discount_price"]');
+    const priceInputs = form.querySelectorAll('input[inputmode="numeric"]');
     const originalPrices = new Map();
     priceInputs.forEach(input => {
         originalPrices.set(input, input.value);
@@ -116,9 +16,13 @@ export async function handleAjaxSubmit(form, button) {
     });
 
     try {
+        const formData = new FormData(form);
         const response = await fetch(form.getAttribute('action'), {
             method: form.method || 'POST',
-            body: new FormData(form),
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         });
 
         const result = await response.json();
@@ -128,6 +32,7 @@ export async function handleAjaxSubmit(form, button) {
             handleUIUpdate(form, result);
             if (form.hasAttribute('data-reset-on-success')) {
                 form.reset();
+                priceInputs.forEach(input => input.value = '');
             }
         } else {
             showNotification(result.message || 'Terjadi kesalahan.', true);
@@ -138,13 +43,22 @@ export async function handleAjaxSubmit(form, button) {
     } finally {
         button.disabled = false;
         button.innerHTML = originalButtonHTML;
+
         if (!form.hasAttribute('data-reset-on-success')) {
+
             priceInputs.forEach(input => {
-                input.value = originalPrices.get(input);
+                const originalValue = originalPrices.get(input);
+                if (input.value) {
+                     const numStr = String(input.value).replace(/[^0-9]/g, '');
+                     input.value = numStr ? parseInt(numStr, 10).toLocaleString('id-ID') : '';
+                } else {
+                     input.value = '';
+                }
             });
         }
     }
 }
+
 
 function handleAjaxDelete(link) {
     const url = link.href;
@@ -155,13 +69,22 @@ function handleAjaxDelete(link) {
         'Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat diurungkan.',
         async () => {
             try {
-                const response = await fetch(url, { method: 'POST' });
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
                 const result = await response.json();
                 if (response.ok && result.success) {
                     showNotification(result.message || 'Berhasil dihapus.');
                     const targetElement = document.querySelector(targetSelector);
                     if (targetElement) {
                         targetElement.remove();
+
+                        const tbody = targetElement.closest('tbody');
+                        if (tbody && tbody.children.length === 0) {
+                             const colspan = tbody.previousElementSibling?.querySelector('tr')?.children.length || 1;
+                             tbody.innerHTML = `<tr class="no-items-row"><td colspan="${colspan}">Tidak ada data lagi.</td></tr>`;
+                        }
                     } else {
                         window.location.reload();
                     }
@@ -175,15 +98,20 @@ function handleAjaxDelete(link) {
     );
 }
 
+
 async function handleAjaxToggle(link) {
     const url = link.href;
     const row = link.closest('tr');
 
     try {
-        const response = await fetch(url, { method: 'POST' });
+        const response = await fetch(url, {
+             method: 'POST',
+             headers: {'X-Requested-With': 'XMLHttpRequest'}
+        });
         const result = await response.json();
         if (response.ok && result.success) {
             showNotification(result.message);
+
             if (row && result.data) {
                 const statusCell = row.querySelector('.status-cell');
                 const newStatus = result.data.is_active;
@@ -200,16 +128,20 @@ async function handleAjaxToggle(link) {
     }
 }
 
+
 export function initAjaxAdminForms() {
     const adminContent = document.querySelector('.admin-content-area');
     if (!adminContent) return;
 
     adminContent.addEventListener('submit', e => {
+
         if (e.target.matches('form[data-ajax="true"]') && e.target.id !== 'bulk-action-form') {
             e.preventDefault();
             const submitter = e.submitter || e.target.querySelector('button[type="submit"]');
             if (submitter) {
                 handleAjaxSubmit(e.target, submitter);
+            } else {
+                 console.warn("Submitter tidak ditemukan untuk form AJAX:", e.target);
             }
         }
     });
@@ -220,7 +152,7 @@ export function initAjaxAdminForms() {
 
         e.preventDefault();
 
-        if (link.classList.contains('action-link-delete')) {
+        if (link.dataset.removeTarget || link.classList.contains('action-link-delete')) {
             handleAjaxDelete(link);
         } else if (link.classList.contains('toggle-voucher-btn')) {
             handleAjaxToggle(link);

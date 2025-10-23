@@ -3,11 +3,9 @@ import uuid
 from PIL import Image
 from flask import current_app
 
-
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
-
 
 def save_compressed_image(file_storage):
     if not file_storage or not allowed_file(file_storage.filename):
@@ -16,7 +14,9 @@ def save_compressed_image(file_storage):
     try:
         filename_base = str(uuid.uuid4())
         filename = f"{filename_base}.webp"
-        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        filepath = os.path.join(current_app.config['IMAGE_FOLDER'], filename)
+        
+        os.makedirs(current_app.config['IMAGE_FOLDER'], exist_ok=True)
 
         image = Image.open(file_storage.stream)
 

@@ -1,6 +1,6 @@
 import json
-from db.db_config import get_db_connection
-from services.orders.stock_service import stock_service
+from app.core.db import get_db_connection
+from app.services.orders.stock_service import stock_service
 
 
 class CartService:

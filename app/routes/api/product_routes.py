@@ -1,5 +1,5 @@
 from flask import jsonify, request, render_template, url_for
-from services.products.product_query_service import product_query_service
+from app.services.products.product_query_service import product_query_service
 from . import api_bp
 
 

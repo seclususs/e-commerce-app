@@ -5,9 +5,9 @@
       {% if product.discount_price and product.discount_price > 0 %}
         <span class="discount-badge">Hemat {{ product.discount_price|percentage(product.price) }}%</span>
       {% endif %}
-      <img loading="lazy" 
-           src="{{ url_for('static', filename='uploads/' + product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + product.name }}" 
-           alt="{{ product.name }}">     
+      <img loading="lazy"
+           src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + product.name }}"
+           alt="{{ product.name }}">
       {% if product.stock == 0 %}
         <div class="stock-overlay">Stok Habis</div>
       {% endif %}
@@ -29,11 +29,11 @@
         {% endif %}
         <span>Stok: {% if product.stock > 10 %}Tersedia{% elif product.stock > 0 %}Tersisa {{ product.stock }}{% else %}Habis{% endif %}</span>
       </div>
-      <button class="cta-button add-to-cart-btn" 
-              data-id="{{ product.id }}" 
-              data-name="{{ product.name }}" 
-              data-stock="{{ product.stock }}" 
-              data-has-variants="{{ 'true' if product.has_variants else 'false' }}" 
+      <button class="cta-button add-to-cart-btn"
+              data-id="{{ product.id }}"
+              data-name="{{ product.name }}"
+              data-stock="{{ product.stock }}"
+              data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
               {% if product.stock == 0 %}disabled{% endif %}>
         <i class="fas fa-shopping-cart"></i>
         <span>{% if product.stock > 0 %}Tambah ke Keranjang{% else %}Stok Habis{% endif %}</span>

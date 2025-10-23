@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from db.db_config import get_db_connection
+from app.core.db import get_db_connection
 from . import api_bp
 
 

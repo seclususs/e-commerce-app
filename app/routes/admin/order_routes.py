@@ -1,9 +1,8 @@
 from flask import render_template, request, jsonify
-
 from . import admin_bp
-from db.db_config import get_db_connection, get_content
-from utils.route_decorators import admin_required
-from services.orders.order_service import order_service
+from app.core.db import get_db_connection, get_content
+from app.utils.route_decorators import admin_required
+from app.services.orders.order_service import order_service
 
 
 @admin_bp.route('/orders')

@@ -31,9 +31,10 @@ function renderCartPage(state) {
             const hasDiscount = (p.discount_price && p.discount_price > 0);
             const sizeInfo = p.size ? `<span>Ukuran: ${p.size}</span>` : '';
             const isOutOfStock = p.quantity > p.stock;
+            const imageUrl = p.image_url ? `/images/${p.image_url}` : `https://placehold.co/80x80/0f172a/f1f5f9?text=${p.name}`;
             return `
             <div class="cart-page-item ${isOutOfStock ? 'item-out-of-stock' : ''}">
-                <div class="cart-page-item-img"><img src="${p.image_url ? `/static/uploads/${p.image_url}` : `https://placehold.co/80x80/0f172a/f1f5f9?text=${p.name}`}" alt="${p.name}"></div>
+                <div class="cart-page-item-img"><img src="${imageUrl}" alt="${p.name}"></div>
                 <div class="cart-page-item-info">
                     <strong>${p.name}</strong>
                     ${sizeInfo}

@@ -1,11 +1,11 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from . import admin_bp
-from db.db_config import get_content
-from utils.route_decorators import admin_required
-from services.products.product_service import product_service
-from services.products.product_query_service import product_query_service
-from services.products.product_bulk_service import product_bulk_service
-from services.products.category_service import category_service
+from app.core.db import get_content
+from app.utils.route_decorators import admin_required
+from app.services.products.product_service import product_service
+from app.services.products.product_query_service import product_query_service
+from app.services.products.product_bulk_service import product_bulk_service
+from app.services.products.category_service import category_service
 
 
 @admin_bp.route('/products', methods=['GET', 'POST'])

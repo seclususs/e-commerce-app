@@ -1,7 +1,7 @@
 from flask import render_template, request
-from db.db_config import get_content
-from services.products.product_query_service import product_query_service
-from services.products.category_service import category_service
+from app.core.db import get_content
+from app.services.products.product_query_service import product_query_service
+from app.services.products.category_service import category_service
 from . import product_bp
 
 

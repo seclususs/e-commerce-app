@@ -3,8 +3,8 @@ venv/
 env/
 pycache/
 *.pyc
-database/
-app/static/uploads/
+database/database.db
+database/images/
 .vscode/
 .DS_Store
 Thumbs.db

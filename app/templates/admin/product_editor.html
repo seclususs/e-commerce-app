@@ -17,10 +17,10 @@
             </div>
             <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" value="{{ product.colors or '' }}" placeholder="cth: Hitam"></div>
         </div>
-        
+
         <div class="form-group" style="margin-top: 1.5rem;">
             <label class="custom-checkbox">
-                <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input" 
+                <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input"
                        data-initial-state="{{ 'true' if product.has_variants else 'false' }}"
                        {% if product.has_variants %}checked{% endif %}
                        {% if product.variants and product.variants|length > 1 %}disabled title="Hapus semua varian kecuali satu untuk mengubah tipe produk."{% endif %}>
@@ -45,7 +45,7 @@
                 <input type="text" id="sku" name="sku" value="{{ product.sku or '' }}">
             </div>
         </div>
-        
+
         <div class="form-hint" id="variant-conversion-hint" style="display:none; margin-top: 1rem; padding: 1rem; background-color: rgba(59, 130, 246, 0.1); border: 1px solid var(--color-primary); border-radius: var(--border-radius-sm);">
             <strong>Anda akan mengubah produk ini menjadi produk bervarian.</strong>
             <ul style="margin-left: 1.5rem; margin-top: 0.5rem; font-size: 0.85rem;">
@@ -64,13 +64,13 @@
                  </span>
             {% endif %}
         </div>
-        
+
         <div class="form-group" style="margin-top: 1.5rem;">
             <label>Gambar Saat Ini</label>
             <p class="form-hint">Pilih satu gambar sebagai gambar utama. Centang untuk menghapus.</p>
             <div id="existing-image-previews" class="image-preview-container">
                 <div class="preview-item {% if product.image_url %}is-main{% endif %}">
-                    <img src="{{ url_for('static', filename='uploads/' + product.image_url) }}" alt="{{ product.name }}">
+                    <img src="{{ url_for('images.serve_image', filename=product.image_url) }}" alt="{{ product.name }}">
                     <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
                     <input type="radio" name="main_image" value="{{ product.image_url }}" class="main-image-radio" checked>
                     <div class="delete-checkbox-overlay">
@@ -79,7 +79,7 @@
                 </div>
                 {% for image in additional_images %}
                 <div class="preview-item">
-                    <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="{{ product.name }}">
+                    <img src="{{ url_for('images.serve_image', filename=image) }}" alt="{{ product.name }}">
                     <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
                     <input type="radio" name="main_image" value="{{ image }}" class="main-image-radio">
                      <div class="delete-checkbox-overlay">
@@ -89,7 +89,7 @@
                 {% endfor %}
             </div>
         </div>
-        
+
         <div class="form-group">
             <label for="new_images">Tambah Gambar Baru (Opsional)</label>
             <div>

@@ -1,7 +1,7 @@
 import random
 import uuid
 from werkzeug.security import generate_password_hash, check_password_hash
-from db.db_config import get_db_connection
+from app.core.db import get_db_connection
 
 
 class AuthService:

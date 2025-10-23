@@ -1,9 +1,9 @@
 from flask import render_template, request, redirect, url_for, flash, jsonify
 from . import admin_bp
-from db.db_config import get_content
-from utils.route_decorators import admin_required
-from services.products.product_query_service import product_query_service
-from services.products.variant_service import variant_service
+from app.core.db import get_content
+from app.utils.route_decorators import admin_required
+from app.services.products.product_query_service import product_query_service
+from app.services.products.variant_service import variant_service
 
 
 @admin_bp.route('/product/<int:product_id>/variants', methods=['GET', 'POST'])

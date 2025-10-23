@@ -1,8 +1,8 @@
 from flask import render_template, request, session, redirect, url_for, flash, jsonify
-from db.db_config import get_db_connection, get_content
-from utils.route_decorators import login_required
-from services.products.product_query_service import product_query_service
-from services.products.review_service import review_service
+from app.core.db import get_db_connection, get_content
+from app.utils.route_decorators import login_required
+from app.services.products.product_query_service import product_query_service
+from app.services.products.review_service import review_service
 from . import product_bp
 
 

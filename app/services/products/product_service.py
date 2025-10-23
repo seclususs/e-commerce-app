@@ -1,9 +1,9 @@
 import os
 import json
 from flask import current_app
-from db.db_config import get_db_connection
-from utils.image_utils import save_compressed_image
-from services.products.variant_service import variant_service
+from app.core.db import get_db_connection
+from app.utils.image_utils import save_compressed_image
+from app.services.products.variant_service import variant_service
 
 
 class ProductService:

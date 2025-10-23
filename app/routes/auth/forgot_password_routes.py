@@ -1,6 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for, jsonify
-from db.db_config import get_content
-from services.users.auth_service import auth_service
+from app.core.db import get_content
+from app.services.users.auth_service import auth_service
 from . import auth_bp
 
 
