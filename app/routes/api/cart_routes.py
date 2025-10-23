@@ -5,18 +5,15 @@ from services.orders.cart_service import cart_service
 from services.orders.stock_service import stock_service
 from utils.route_decorators import login_required
 
+
 @api_bp.route('/cart', methods=['POST'])
 def get_guest_cart_items():
-    """
-    Mengambil detail produk berdasarkan item di keranjang belanja (untuk tamu).
-    Logika dipindahkan ke cart_service.
-    """
     data = request.get_json()
     cart_items = data.get('cart_items')
 
     if not cart_items:
         return jsonify([])
-    
+
     detailed_items = cart_service.get_guest_cart_details(cart_items)
     return jsonify(detailed_items)
 
@@ -28,6 +25,7 @@ def get_user_cart():
     cart_data = cart_service.get_cart_details(user_id)
     return jsonify(cart_data)
 
+
 @api_bp.route('/user-cart', methods=['POST'])
 @login_required
 def add_to_user_cart():
@@ -36,17 +34,17 @@ def add_to_user_cart():
     variant_id = data.get('variant_id')
     quantity = data.get('quantity', 1)
     user_id = session['user_id']
-    
+
     if not product_id or not isinstance(quantity, int) or quantity <= 0:
         return jsonify({'success': False, 'message': 'Data tidak valid.'}), 400
 
     result = cart_service.add_to_cart(user_id, product_id, quantity, variant_id)
     return jsonify(result), 200 if result['success'] else 400
 
+
 @api_bp.route('/user-cart/<int:product_id>/<variant_id>', methods=['PUT'])
 @login_required
 def update_user_cart_item(product_id, variant_id):
-    """Mengupdate kuantitas item di keranjang."""
     v_id = None if variant_id == 'null' else int(variant_id)
 
     data = request.get_json()
@@ -66,10 +64,11 @@ def merge_cart():
     local_cart = request.get_json().get('local_cart')
     if not local_cart:
         return jsonify({'success': True, 'message': 'Tidak ada keranjang lokal untuk digabung.'})
-    
+
     user_id = session['user_id']
     result = cart_service.merge_local_cart_to_db(user_id, local_cart)
     return jsonify(result)
+
 
 @api_bp.route('/checkout/prepare', methods=['POST'])
 def prepare_guest_checkout():

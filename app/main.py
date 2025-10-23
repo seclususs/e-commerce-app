@@ -1,21 +1,21 @@
 import os
-import json
 from flask import Flask
 
-from routes.product import product_bp 
+from routes.product import product_bp
 from routes.auth import auth_bp
 from routes.user import user_bp
 from routes.admin import admin_bp
 from routes.api import api_bp
 from routes.purchase import purchase_bp
 
+from utils.template_filters import register_template_filters
+
 def create_app():
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
     instance_path = os.path.join(project_root, 'database')
-    
+
     app = Flask(__name__, instance_path=instance_path)
 
-    # Konfigurasi aplikasi
     app.config.from_mapping(
         SECRET_KEY='2310-1140-1246',
         UPLOAD_FOLDER=os.path.join(app.root_path, 'static', 'uploads'),
@@ -23,79 +23,8 @@ def create_app():
         DATABASE=os.path.join(app.instance_path, 'database.db')
     )
 
-    # Filter kustom untuk format Rupiah di Jinja2
-    @app.template_filter('rupiah')
-    def format_rupiah(value):
-        try:
-            val = float(value)
-            # Format sebagai mata uang Rupiah
-            return f"Rp {val:,.0f}".replace(',', '.')
-        except (ValueError, TypeError, AttributeError):
-            return "Rp 0"
+    register_template_filters(app)
 
-    # Filter kustom untuk menghitung persentase diskon
-    @app.template_filter('percentage')
-    def format_percentage(part, whole):
-        try:
-            part = float(part)
-            whole = float(whole)
-            if whole == 0:
-                return 0
-            return round(100 * (whole - part) / whole)
-        except (ValueError, TypeError):
-            return 0
-            
-    @app.template_filter('tojson_safe')
-    def tojson_safe_filter(obj):
-        return json.dumps(obj)
-    
-    # Filter kustom untuk mem-parsing JSON di template
-    @app.template_filter('fromjson_safe')
-    def fromjson_safe_filter(json_str):
-        try:
-            if not json_str:
-                return []
-            return json.loads(json_str)
-        except (json.JSONDecodeError, TypeError):
-            return []
-
-    # Filter 'split'
-    @app.template_filter('split')
-    def split_filter(value, delimiter):
-        if not isinstance(value, str):
-            return value
-        return value.split(delimiter)
-
-    # Filter untuk menerjemahkan status pesanan
-    @app.template_filter('status_translate')
-    def status_translate_filter(status_en):
-        status_map = {
-            'Pending': 'Menunggu Pembayaran',
-            'Processing': 'Diproses',
-            'Shipped': 'Dikirim',
-            'Completed': 'Selesai',
-            'Cancelled': 'Dibatalkan',
-        }
-        return status_map.get(status_en, status_en)
-
-    # Filter untuk kelas CSS status
-    @app.template_filter('status_class')
-    def status_class_filter(status_en):
-        class_map = {
-            'Pending': 'pending',
-            'Processing': 'processing',
-            'Shipped': 'shipped',
-            'Completed': 'completed',
-            'Cancelled': 'cancelled',
-            'Menunggu Pembayaran': 'pending',
-            'Diproses': 'processing',
-            'Dikirim': 'shipped',
-            'Selesai': 'completed',
-            'Dibatalkan': 'cancelled',
-        }
-        return class_map.get(status_en, 'pending')
-
-    # Registrasi semua blueprint
     app.register_blueprint(product_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
@@ -103,13 +32,15 @@ def create_app():
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(purchase_bp)
 
-    # Pastikan folder instance dan upload ada saat aplikasi berjalan
     try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
-    
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        os.makedirs(app.instance_path, exist_ok=True)
+    except OSError as e:
+        print(f"Error creating instance path: {e}")
+
+    try:
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    except OSError as e:
+        print(f"Error creating upload folder: {e}")
 
     return app
 

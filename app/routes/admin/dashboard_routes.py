@@ -9,16 +9,16 @@ from services.utils.scheduler_service import scheduler_service
 from services.reports.report_service import report_service
 from utils.date_utils import get_date_range
 
+
 @admin_bp.route('/dashboard')
 @admin_required
 def admin_dashboard():
-    """Menangani pemfilteran dasbor dan merespons permintaan AJAX."""
     period = request.args.get('period', 'last_7_days')
     custom_start = request.args.get('custom_start')
     custom_end = request.args.get('custom_end')
 
     start_date_str, end_date_str = get_date_range(period, custom_start, custom_end)
-    
+
     if custom_start and custom_end:
         period = 'custom'
 
@@ -26,7 +26,7 @@ def admin_dashboard():
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({
-            'success': True, 
+            'success': True,
             'data': {
                 'stats': stats,
                 'selected_period': period,
@@ -45,31 +45,31 @@ def admin_dashboard():
     top_products_chart_data = json.dumps(top_products_chart['data'])
     low_stock_chart_labels = json.dumps(low_stock_chart['labels'])
     low_stock_chart_data = json.dumps(low_stock_chart['data'])
-    
+
     return render_template(
-        'admin/dashboard.html', 
-        stats=stats, 
+        'admin/dashboard.html',
+        stats=stats,
         content=get_content(),
-        chart_labels=chart_labels, 
+        chart_labels=chart_labels,
         chart_data=chart_data,
         top_products_chart_labels=top_products_chart_labels,
         top_products_chart_data=top_products_chart_data,
         low_stock_chart_labels=low_stock_chart_labels,
         low_stock_chart_data=low_stock_chart_data,
-        selected_period=period, 
-        custom_start=custom_start, 
+        selected_period=period,
+        custom_start=custom_start,
         custom_end=custom_end
     )
+
 
 @admin_bp.route('/run-scheduler', methods=['POST'])
 @admin_required
 def run_scheduler():
-    """Menjalankan tugas scheduler dan mengembalikan hasil sebagai JSON."""
     result = scheduler_service.cancel_expired_pending_orders()
     count = result.get('cancelled_count', 0)
     if result.get('success'):
         result['message'] = f"Tugas harian selesai. {count} pesanan kedaluwarsa berhasil dibatalkan."
     else:
         result['message'] = result.get('message', 'Gagal menjalankan tugas harian.')
-        
+
     return jsonify(result)

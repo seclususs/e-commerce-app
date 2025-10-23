@@ -7,14 +7,13 @@ from services.products.product_query_service import product_query_service
 from services.products.product_bulk_service import product_bulk_service
 from services.products.category_service import category_service
 
+
 @admin_bp.route('/products', methods=['GET', 'POST'])
 @admin_required
 def admin_products():
-    """Menangani daftar produk, filter, dan penambahan produk."""
     if request.method == 'POST':
         form_type = request.form.get('form_type')
-        
-        # Aksi massal
+
         if form_type == 'bulk_action':
             action = request.form.get('bulk_action')
             selected_ids = request.form.getlist('product_ids')
@@ -31,7 +30,6 @@ def admin_products():
             else:
                 return jsonify(result), 400
 
-        # Penambahan produk baru
         elif form_type == 'add_product':
             result = product_service.create_product(request.form, request.files)
             if result.get('success'):
@@ -39,8 +37,7 @@ def admin_products():
             else:
                 flash(result.get('message', 'Gagal menambahkan produk.'), 'danger')
             return redirect(url_for('admin.admin_products'))
-    
-    # Menangani request GET dengan parameter filter
+
     search_term = request.args.get('search', '').strip()
     category_filter = request.args.get('category')
     stock_status_filter = request.args.get('stock_status')
@@ -50,26 +47,26 @@ def admin_products():
         category_id=category_filter,
         stock_status=stock_status_filter
     )
-    
-    # Jika ini adalah request AJAX, kembalikan hanya HTML body tabel
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({
-            'success': True, 
+            'success': True,
             'html': render_template('admin/partials/_product_table_body.html', products=products)
         })
 
-    # Untuk request non-AJAX, render seluruh halaman
     categories = category_service.get_all_categories()
-    return render_template('admin/manage_products.html', 
-                           products=products, 
-                           categories=categories, 
-                           content=get_content(),
-                           search_term=search_term)
+    return render_template(
+        'admin/manage_products.html',
+        products=products,
+        categories=categories,
+        content=get_content(),
+        search_term=search_term
+    )
+
 
 @admin_bp.route('/edit_product/<int:id>', methods=['GET', 'POST'])
 @admin_required
 def admin_edit_product(id):
-    """Menangani pembaruan produk via AJAX."""
     if request.method == 'POST':
         result = product_service.update_product(id, request.form, request.files)
         if result['success']:
@@ -81,19 +78,21 @@ def admin_edit_product(id):
     if not product:
         flash('Produk tidak ditemukan.', 'danger')
         return redirect(url_for('admin.admin_products'))
-    
+
     categories = category_service.get_all_categories()
     additional_images = product.get('additional_image_urls', [])
-    
-    return render_template('admin/product_editor.html', 
-                           product=product, 
-                           additional_images=additional_images, 
-                           categories=categories, 
-                           content=get_content())
+
+    return render_template(
+        'admin/product_editor.html',
+        product=product,
+        additional_images=additional_images,
+        categories=categories,
+        content=get_content()
+    )
+
 
 @admin_bp.route('/delete_product/<int:id>', methods=['POST'])
 @admin_required
 def delete_product(id):
-    """Menangani penghapusan produk via AJAX."""
     result = product_service.delete_product(id)
     return jsonify(result)

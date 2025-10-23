@@ -4,10 +4,10 @@ from db.db_config import get_content
 from utils.route_decorators import admin_required
 from services.products.category_service import category_service
 
+
 @admin_bp.route('/categories', methods=['GET', 'POST'])
 @admin_required
 def admin_categories():
-    """Menangani permintaan CRUD untuk kategori via AJAX."""
     if request.method == 'POST':
         action = request.form.get('action')
         name = request.form.get('name')
@@ -28,15 +28,15 @@ def admin_categories():
             if result.get('success'):
                 result['data'] = {'id': category_id, 'name': name}
                 status_code = 200
-        
+
         return jsonify(result), status_code
-    
+
     categories = category_service.get_all_categories()
     return render_template('admin/manage_categories.html', categories=categories, content=get_content())
+
 
 @admin_bp.route('/delete_category/<int:id>', methods=['POST'])
 @admin_required
 def delete_category(id):
-    """Menangani penghapusan kategori via AJAX."""
     result = category_service.delete_category(id)
     return jsonify(result)

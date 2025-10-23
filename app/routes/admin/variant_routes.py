@@ -5,10 +5,10 @@ from utils.route_decorators import admin_required
 from services.products.product_query_service import product_query_service
 from services.products.variant_service import variant_service
 
+
 @admin_bp.route('/product/<int:product_id>/variants', methods=['GET', 'POST'])
 @admin_required
 def manage_variants(product_id):
-    """Menangani permintaan CRUD untuk varian produk via AJAX."""
     if request.method == 'POST':
         action = request.form.get('action')
         result = {'success': False, 'message': 'Aksi tidak valid'}
@@ -24,7 +24,7 @@ def manage_variants(product_id):
                 html = render_template('admin/partials/_variant_row.html', variant=result['data'], product_id=product_id)
                 result['html'] = html
                 variant_service.update_total_stock_from_variants(product_id)
-        
+
         elif action == 'update':
             result = variant_service.update_variant(
                 request.form.get('variant_id'), request.form.get('size'), request.form.get('stock'),
@@ -41,14 +41,20 @@ def manage_variants(product_id):
     if not product or not product['has_variants']:
         flash('Produk tidak ditemukan atau tidak memiliki varian.', 'danger')
         return redirect(url_for('admin.admin_products'))
-    
+
     variants = variant_service.get_variants_for_product(product_id)
-    return render_template('admin/manage_variants.html', product=product, variants=variants, content=get_content(), product_id=product_id)
+    return render_template(
+        'admin/manage_variants.html',
+        product=product,
+        variants=variants,
+        content=get_content(),
+        product_id=product_id
+    )
+
 
 @admin_bp.route('/product/<int:product_id>/variant/delete/<int:variant_id>', methods=['POST'])
 @admin_required
 def delete_variant(product_id, variant_id):
-    """Menangani penghapusan varian via AJAX."""
     result = variant_service.delete_variant(variant_id)
     if result.get('success'):
         variant_service.update_total_stock_from_variants(product_id)

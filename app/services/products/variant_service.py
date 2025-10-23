@@ -1,12 +1,9 @@
 from db.db_config import get_db_connection
 
+
 class VariantService:
-    """
-    Layanan untuk mengelola semua logika bisnis terkait varian produk.
-    """
 
     def get_variants_for_product(self, product_id, conn=None):
-        """Mengambil semua varian untuk sebuah produk."""
         close_conn = False
         if conn is None:
             conn = get_db_connection()
@@ -17,9 +14,8 @@ class VariantService:
         finally:
             if close_conn:
                 conn.close()
-    
+
     def add_variant(self, product_id, size, stock, weight_grams, sku):
-        """Menambahkan varian baru ke produk dan mengembalikan datanya."""
         if not size or not stock or int(stock) < 0 or not weight_grams or int(weight_grams) < 0:
             return {'success': False, 'message': 'Ukuran, stok, dan berat harus diisi dengan benar.'}
         conn = get_db_connection()
@@ -38,7 +34,6 @@ class VariantService:
             conn.close()
 
     def update_variant(self, variant_id, size, stock, weight_grams, sku):
-        """Memperbarui detail sebuah varian."""
         if not size or not stock or int(stock) < 0 or not weight_grams or int(weight_grams) < 0:
             return {'success': False, 'message': 'Ukuran, stok, dan berat harus diisi dengan benar.'}
         conn = get_db_connection()
@@ -54,7 +49,6 @@ class VariantService:
             conn.close()
 
     def delete_variant(self, variant_id):
-        """Menghapus sebuah varian dari database."""
         conn = get_db_connection()
         try:
             conn.execute("DELETE FROM product_variants WHERE id = ?", (variant_id,))
@@ -62,13 +56,11 @@ class VariantService:
             return {'success': True, 'message': 'Varian berhasil dihapus.'}
         finally:
             conn.close()
-            
+
     def delete_all_variants_for_product(self, product_id, conn):
-        """Menghapus semua varian yang terkait dengan sebuah produk."""
         conn.execute("DELETE FROM product_variants WHERE product_id = ?", (product_id,))
 
     def update_total_stock_from_variants(self, product_id):
-        """Menghitung ulang dan memperbarui stok total di tabel produk berdasarkan variannya."""
         conn = get_db_connection()
         try:
             total_stock = conn.execute("SELECT SUM(stock) FROM product_variants WHERE product_id = ?", (product_id,)).fetchone()[0]
@@ -76,5 +68,6 @@ class VariantService:
             conn.commit()
         finally:
             conn.close()
+
 
 variant_service = VariantService()

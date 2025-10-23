@@ -4,6 +4,7 @@ from . import admin_bp
 from db.db_config import get_db_connection, get_content
 from utils.route_decorators import admin_required
 
+
 @admin_bp.route('/settings', methods=['GET', 'POST'])
 @admin_required
 def admin_settings():
@@ -19,6 +20,6 @@ def admin_settings():
         finally:
             if conn:
                 conn.close()
-    
-    content_data = get_content() 
+
+    content_data = get_content()
     return render_template('admin/site_settings.html', content=content_data)

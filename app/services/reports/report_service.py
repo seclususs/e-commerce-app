@@ -6,18 +6,10 @@ from .product_report_service import product_report_service
 from .inventory_report_service import inventory_report_service
 from .customer_report_service import customer_report_service
 
+
 class ReportService:
-    """
-    Layanan fasad yang mengoordinasikan panggilan ke layanan laporan khusus.
-    Ini menjaga satu titik masuk untuk lapisan rute sambil menjaga
-    logika pelaporan tetap modular dan terorganisir.
-    """
 
     def get_dashboard_stats(self, start_date_str, end_date_str):
-        """
-        Mengambil semua data statistik yang diperlukan untuk halaman dashboard
-        dengan memanggil layanan-layanan yang relevan.
-        """
         conn = get_db_connection()
         try:
             total_sales = conn.execute("SELECT SUM(total_amount) FROM orders WHERE status != 'Dibatalkan' AND order_date BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
@@ -25,7 +17,6 @@ class ReportService:
             new_user_count = conn.execute("SELECT COUNT(id) FROM users WHERE created_at BETWEEN ? AND ?", (start_date_str, end_date_str)).fetchone()[0]
             product_count = conn.execute('SELECT COUNT(id) FROM products').fetchone()[0]
 
-            # Panggil layanan spesifik untuk data chart
             sales_chart_data = sales_report_service.get_sales_chart_data(start_date_str, end_date_str, conn)
             top_products_chart = product_report_service.get_top_products_chart_data(start_date_str, end_date_str, conn)
             low_stock_chart = inventory_report_service.get_low_stock_chart_data(conn)
@@ -41,8 +32,7 @@ class ReportService:
             }
         finally:
             conn.close()
-    
-    # Laporan Penjualan
+
     def get_sales_summary(self, start_date, end_date):
         return sales_report_service.get_sales_summary(start_date, end_date)
 
@@ -55,31 +45,29 @@ class ReportService:
     def get_full_vouchers_data_for_export(self, start_date, end_date):
         return sales_report_service.get_full_vouchers_data_for_export(start_date, end_date)
 
-    # Laporan Produk
     def get_product_reports(self, start_date, end_date):
         return product_report_service.get_product_reports(start_date, end_date)
 
     def get_full_products_data_for_export(self, start_date, end_date):
         return product_report_service.get_full_products_data_for_export(start_date, end_date)
-        
-    # Laporan Pelanggan
+
     def get_customer_reports(self, start_date, end_date):
         return customer_report_service.get_customer_reports(start_date, end_date)
 
     def get_cart_analytics(self, start_date, end_date):
         return customer_report_service.get_cart_analytics(start_date, end_date)
-        
+
     def get_full_customers_data_for_export(self, start_date, end_date):
         return customer_report_service.get_full_customers_data_for_export(start_date, end_date)
-        
-    # Laporan Inventaris
+
     def get_inventory_reports(self, start_date, end_date):
         return inventory_report_service.get_inventory_reports(start_date, end_date)
-        
+
     def get_inventory_low_stock_for_export(self):
         return inventory_report_service.get_inventory_low_stock_for_export()
 
     def get_inventory_slow_moving_for_export(self, start_date, end_date):
         return inventory_report_service.get_inventory_slow_moving_for_export(start_date, end_date)
+
 
 report_service = ReportService()

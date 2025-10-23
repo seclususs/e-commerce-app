@@ -9,6 +9,7 @@ from services.orders.stock_service import stock_service
 from services.products.variant_service import variant_service
 from services.orders.voucher_service import voucher_service
 
+
 class OrderService:
 
     def _get_held_items(self, conn, user_id, session_id):
@@ -35,7 +36,7 @@ class OrderService:
 
         product_ids = [item['product_id'] for item in held_items]
         if not product_ids:
-             return None, None, {'success': False, 'message': 'Item yang ditahan tidak valid.'}
+            return None, None, {'success': False, 'message': 'Item yang ditahan tidak valid.'}
 
         placeholders = ', '.join(['?'] * len(product_ids))
         products_db = conn.execute(f'SELECT id, name, price, discount_price FROM products WHERE id IN ({placeholders})', product_ids).fetchall()
@@ -59,7 +60,11 @@ class OrderService:
             })
         return items_for_order, subtotal, None
 
-    def _insert_order_and_items(self, conn, cursor, user_id, subtotal, discount_amount, shipping_cost, final_total, voucher_code, initial_status, payment_method, transaction_id, shipping_details, items_for_order):
+    def _insert_order_and_items(
+        self, conn, cursor, user_id, subtotal, discount_amount, shipping_cost,
+        final_total, voucher_code, initial_status, payment_method,
+        transaction_id, shipping_details, items_for_order
+    ):
         cursor.execute("""
             INSERT INTO orders (user_id, subtotal, discount_amount, shipping_cost, total_amount, voucher_code, status, payment_method, payment_transaction_id,
                                 shipping_name, shipping_phone, shipping_address_line_1, shipping_address_line_2,
@@ -82,7 +87,6 @@ class OrderService:
             items_data
         )
 
-        # Langsung kurangi stok jika metode pembayaran COD
         if payment_method == 'COD':
             product_ids_with_variants = set()
             for item in items_for_order:
@@ -93,7 +97,7 @@ class OrderService:
                     cursor.execute('UPDATE products SET stock = stock - ? WHERE id = ?', (item['quantity'], item['id']))
 
             for pid in product_ids_with_variants:
-                 variant_service.update_total_stock_from_variants(pid, conn)
+                variant_service.update_total_stock_from_variants(pid, conn)
 
         return order_id
 
@@ -161,7 +165,6 @@ class OrderService:
             conn.close()
 
     def _restock_order_items(self, order_id, conn):
-        """Mengembalikan stok item dari pesanan yang dibatalkan."""
         order_items = conn.execute('SELECT * FROM order_items WHERE order_id = ?', (order_id,)).fetchall()
         product_ids_with_variants = set()
         for item in order_items:
@@ -191,7 +194,7 @@ class OrderService:
                     auto_generated_tracking = True
 
                 if new_status == 'Dibatalkan' and original_status in ['Diproses', 'Dikirim']:
-                     self._restock_order_items(order_id, conn)
+                    self._restock_order_items(order_id, conn)
 
                 conn.execute('UPDATE orders SET status = ?, tracking_number = ? WHERE id = ?', (new_status, tracking_number, order_id))
 
@@ -216,5 +219,6 @@ class OrderService:
             return {'success': False, 'message': f'Terjadi kesalahan: {e}'}
         finally:
             conn.close()
+
 
 order_service = OrderService()

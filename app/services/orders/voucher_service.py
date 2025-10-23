@@ -1,10 +1,9 @@
-import json
-import uuid
-import random
 from datetime import datetime
 from db.db_config import get_db_connection
 
+
 class VoucherService:
+
     def validate_and_calculate_voucher(self, code, subtotal):
         conn = get_db_connection()
         voucher = conn.execute("SELECT * FROM vouchers WHERE code = ? AND is_active = 1", (code.upper(),)).fetchone()
@@ -12,7 +11,7 @@ class VoucherService:
 
         if not voucher:
             return {'success': False, 'message': 'Kode voucher tidak valid.'}
-        
+
         now = datetime.now()
         if voucher['start_date'] and now < datetime.fromisoformat(voucher['start_date']):
             return {'success': False, 'message': 'Voucher belum berlaku.'}
@@ -28,10 +27,11 @@ class VoucherService:
             discount_amount = (voucher['value'] / 100) * subtotal
         elif voucher['type'] == 'FIXED_AMOUNT':
             discount_amount = voucher['value']
-        
+
         discount_amount = min(discount_amount, subtotal)
         final_total = subtotal - discount_amount
 
         return {'success': True, 'discount_amount': discount_amount, 'final_total': final_total, 'message': 'Voucher berhasil diterapkan!'}
+
 
 voucher_service = VoucherService()
