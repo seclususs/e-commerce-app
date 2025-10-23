@@ -9,7 +9,7 @@
             <h2 class="section-title" style="margin: 0;">Profil Saya</h2>
             <a href="{{ url_for('user.edit_profile') }}" class="cta-button-secondary">Edit Profil</a>
         </div>
-        
+
         <div class="admin-card animated-element" data-animation-delay="200">
             <div class="order-detail-grid">
                 <div>
@@ -43,17 +43,16 @@
                             <td data-label="ID Pesanan:">#{{ order.id }}</td>
                             <td data-label="Tanggal:">{{ order.order_date.split(' ')[0] }}</td>
                             <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
-                            <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status }}</span></td>
+                            <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status|status_translate }}</span></td>
                             <td data-label="No. Resi:">{{ order.tracking_number or '-' }}</td>
                             <td data-label="Aksi:">
+                                <a href="{{ url_for('user.track_order', order_id=order.id) }}" class="action-link-edit" style="margin-right: 1rem;">Lacak</a>
                                 {% if order.status in ['Menunggu Pembayaran', 'Diproses'] %}
-                                    <button class="btn-cancel ajax-cancel-order" 
-                                            data-order-id="{{ order.id }}" 
+                                    <button class="btn-cancel ajax-cancel-order"
+                                            data-order-id="{{ order.id }}"
                                             data-url="{{ url_for('purchase.cancel_order', order_id=order.id) }}">
                                         Batalkan
                                     </button>
-                                {% else %}
-                                -
                                 {% endif %}
                             </td>
                         </tr>

@@ -60,7 +60,7 @@ CREATE TABLE orders (
     shipping_cost REAL DEFAULT 0,
     total_amount REAL NOT NULL,
     voucher_code TEXT,
-    status TEXT NOT NULL CHECK(status IN ('Menunggu Pembayaran', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan')),
+    status TEXT NOT NULL CHECK(status IN ('Menunggu Pembayaran', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan', 'Pesanan Dibuat')),
     payment_method TEXT,
     payment_transaction_id TEXT,
     shipping_name TEXT,
@@ -85,6 +85,15 @@ CREATE TABLE order_items (
     FOREIGN KEY (order_id) REFERENCES orders (id),
     FOREIGN KEY (product_id) REFERENCES products (id),
     FOREIGN KEY (variant_id) REFERENCES product_variants(id)
+);
+
+CREATE TABLE order_status_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    status TEXT NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
 
 CREATE TABLE reviews (

@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta
 from flask import Flask
 
 
@@ -51,6 +52,7 @@ def status_translate_filter(status_en):
         'Dikirim': 'Dikirim',
         'Selesai': 'Selesai',
         'Dibatalkan': 'Dibatalkan',
+        'Pesanan Dibuat': 'Pesanan Dibuat',
     }
     return status_map.get(status_en, status_en)
 
@@ -66,8 +68,36 @@ def status_class_filter(status_en):
         'Dikirim': 'shipped',
         'Selesai': 'completed',
         'Dibatalkan': 'cancelled',
+        'Pesanan Dibuat': 'pending',
     }
     return class_map.get(status_en, 'pending')
+
+def datetime_from_string_filter(date_input):
+
+    if isinstance(date_input, datetime):
+        return date_input
+    
+    if not date_input or not isinstance(date_input, str):
+        return None
+    
+    date_string = str(date_input)
+
+    try:
+        return datetime.fromisoformat(date_string.split('.')[0])
+    except (ValueError, TypeError):
+         
+         try:
+             return datetime.strptime(date_string.split(' ')[0], '%Y-%m-%d')
+         except (ValueError, TypeError):
+            print(f"Error parsing date string: {date_string}")
+            return datetime.now()
+
+def add_days_filter(dt, days):
+    dt_obj = datetime_from_string_filter(dt) 
+    
+    if isinstance(dt_obj, datetime) and isinstance(days, int):
+        return dt_obj + timedelta(days=days)
+    return dt_obj 
 
 def register_template_filters(app: Flask):
     app.template_filter('rupiah')(format_rupiah)
@@ -77,3 +107,5 @@ def register_template_filters(app: Flask):
     app.template_filter('split')(split_filter)
     app.template_filter('status_translate')(status_translate_filter)
     app.template_filter('status_class')(status_class_filter)
+    app.template_filter('datetime_from_string')(datetime_from_string_filter)
+    app.template_filter('add_days')(add_days_filter)

@@ -34,6 +34,29 @@ def checkout():
             cart_data = json.loads(cart_json)
 
         if user_id:
+            conn = get_db_connection()
+            try:
+                existing_pending_order = conn.execute(
+                    "SELECT id, payment_transaction_id FROM orders WHERE user_id = ? AND status = 'Menunggu Pembayaran' ORDER BY order_date DESC LIMIT 1",
+                    (user_id,)
+                ).fetchone()
+                if existing_pending_order:
+                    
+                    held_items = stock_service.get_held_items_simple(user_id=user_id, session_id=None)
+                    if not held_items:
+                         
+                         flash("Sesi checkout Anda mungkin telah berakhir. Silakan ulangi dari keranjang.", "warning")
+                         return redirect(url_for('purchase.cart_page'))
+
+                    
+                    flash("Anda memiliki pesanan yang belum dibayar. Menyelesaikan pesanan tersebut.", "info")
+                    return redirect(url_for('purchase.payment_page', order_id=existing_pending_order['id']))
+
+            except Exception as e:
+                 print(f"Error checking existing pending order: {e}")
+            finally:
+                conn.close()
+
             if not user:
                 user = user_service.get_user_by_id(user_id)
             shipping_details = {
@@ -86,6 +109,7 @@ def checkout():
                 return redirect(url_for('purchase.payment_page', order_id=order_id))
         else:
             flash(result['message'], 'danger')
+            
             return redirect(url_for('purchase.cart_page'))
 
     if user_id:

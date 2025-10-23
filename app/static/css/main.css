@@ -23,6 +23,7 @@
 @import url("pages/profile.css");
 @import url("pages/auth.css");
 @import url("pages/about.css");
+@import url("pages/order-tracking.css");
 
 @import url("admin/layout/admin-layout.css");
 @import url("admin/components/admin-components.css");

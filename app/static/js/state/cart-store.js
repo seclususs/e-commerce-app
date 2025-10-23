@@ -22,31 +22,54 @@ const cartStore = (() => {
     };
 
     const loadGuestCart = () => {
-        return JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || {};
+        try {
+            return JSON.parse(localStorage.getItem(GUEST_CART_KEY)) || {};
+        } catch (e) {
+            console.error("Error loading guest cart from localStorage:", e);
+            localStorage.removeItem(GUEST_CART_KEY);
+            return {};
+        }
     }
 
+    const saveGuestCart = (cart) => {
+         try {
+             localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart));
+         } catch (e) {
+              console.error("Error saving guest cart to localStorage:", e);
+              showNotification("Gagal menyimpan keranjang Anda. Penyimpanan lokal mungkin penuh.", true);
+         }
+    };
+
     const refreshState = async () => {
-        if (window.IS_USER_LOGGED_IN) {
-            const data = await cartAPI.get();
-            state.items = data.items || [];
-            state.subtotal = data.subtotal || 0;
-        } else {
-            const guestCart = loadGuestCart();
-            const cartKeys = Object.keys(guestCart);
-            if (cartKeys.length === 0) {
-                state.items = [];
-                state.subtotal = 0;
+        try {
+            if (window.IS_USER_LOGGED_IN) {
+                const data = await cartAPI.get();
+                state.items = data.items || [];
+                state.subtotal = data.subtotal || 0;
             } else {
-                const detailedItems = await cartAPI.getGuestCartDetails(guestCart);
-                const subtotal = detailedItems.reduce((sum, p) => {
-                    const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
-                    return sum + (effectivePrice * p.quantity);
-                }, 0);
-                state.items = detailedItems;
-                state.subtotal = subtotal;
+                const guestCart = loadGuestCart();
+                const cartKeys = Object.keys(guestCart);
+                if (cartKeys.length === 0) {
+                    state.items = [];
+                    state.subtotal = 0;
+                } else {
+                    const detailedItems = await cartAPI.getGuestCartDetails(guestCart);
+                    const subtotal = detailedItems.reduce((sum, p) => {
+                        const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
+                        return sum + (effectivePrice * p.quantity);
+                    }, 0);
+                    state.items = detailedItems;
+                    state.subtotal = subtotal;
+                }
             }
+        } catch (error) {
+            console.error("Error refreshing cart state:", error);
+            showNotification("Gagal memuat keranjang. Coba segarkan halaman.", true);
+            state.items = [];
+            state.subtotal = 0;
+        } finally {
+             notify();
         }
-        notify();
     };
 
     return {
@@ -77,42 +100,68 @@ const cartStore = (() => {
                 const currentInCart = currentCart[cartKey]?.quantity || 0;
 
                 if (currentInCart + quantity > stock) {
-                    showNotification(`Stok tidak mencukupi. Anda sudah punya ${currentInCart} di keranjang.`, true);
+                    showNotification(`Stok tidak mencukupi. Anda sudah punya ${currentInCart} di keranjang. Sisa stok: ${stock}.`, true);
                     return false;
                 }
                 currentCart[cartKey] = { quantity: currentInCart + quantity };
-                localStorage.setItem(GUEST_CART_KEY, JSON.stringify(currentCart));
+                saveGuestCart(currentCart);
             }
             await refreshState();
             return true;
         },
         updateItem: async (productId, quantity, variantId) => {
+             let success = true;
             if (window.IS_USER_LOGGED_IN) {
                 const res = await cartAPI.update(productId, quantity, variantId);
-                if (!res.success && res.message) showNotification(res.message, true);
+                if (!res.success) {
+                     success = false;
+                     if (res.message) showNotification(res.message, true);
+                }
             } else {
                 const cartKey = variantId ? `${productId}-${variantId}` : `${productId}-null`;
                 const newCart = loadGuestCart();
                 if (quantity <= 0) {
                     delete newCart[cartKey];
                 } else {
+                    
                     const itemToUpdate = state.items.find(item => item.id == productId && (item.variant_id || 'null') == (variantId || 'null'));
                     if (itemToUpdate && quantity > itemToUpdate.stock) {
-                        showNotification(`Stok tidak mencukupi. Sisa stok: ${itemToUpdate.stock}.`, true);
+                        showNotification(`Stok tidak mencukupi. Sisa stok: ${itemToUpdate.stock}. Kuantitas tidak diubah.`, true);
+                        success = false;
+                        
                         return;
                     }
                     newCart[cartKey] = { quantity: quantity };
                 }
-                localStorage.setItem(GUEST_CART_KEY, JSON.stringify(newCart));
+                if (success) {
+                    saveGuestCart(newCart);
+                }
             }
-            await refreshState();
+            if (success) {
+               await refreshState();
+            }
         },
         syncOnLogin: async () => {
             const localCart = loadGuestCart();
+            let mergeSuccess = true;
             if (Object.keys(localCart).length > 0) {
-                await cartAPI.merge(localCart);
-                localStorage.removeItem(GUEST_CART_KEY);
+                try {
+                    const mergeResult = await cartAPI.merge(localCart);
+                    if (!mergeResult.success) {
+                        mergeSuccess = false;
+                        showNotification(mergeResult.message || "Gagal menggabungkan keranjang tamu.", true);
+                    }
+                } catch (error) {
+                     mergeSuccess = false;
+                     console.error("Error merging cart:", error);
+                     showNotification("Gagal terhubung untuk menggabungkan keranjang.", true);
+                }
             }
+
+            if (mergeSuccess && Object.keys(localCart).length > 0) {
+                 localStorage.removeItem(GUEST_CART_KEY);
+            }
+
             window.IS_USER_LOGGED_IN = true;
             await refreshState();
         }
