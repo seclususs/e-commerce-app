@@ -1,4 +1,8 @@
 from flask import Blueprint
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
+logger.debug("Menginisialisasi blueprint API")
 
 api_bp = Blueprint('api', __name__)
 

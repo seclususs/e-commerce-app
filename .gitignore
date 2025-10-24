@@ -1,10 +1,12 @@
 .venv
+.env
 venv/
 env/
 pycache/
 *.pyc
 database/database.db
 database/images/
+logs/
 .vscode/
 .DS_Store
 Thumbs.db

@@ -1,37 +1,63 @@
-from app.core.db import get_db_connection
 from datetime import datetime, timedelta
+from app.core.db import get_db_connection
+from app.utils.logging_utils import get_logger
+
+logger = get_logger(__name__)
 
 
 class SchedulerService:
 
+
     def cancel_expired_pending_orders(self):
-        conn = get_db_connection()
+        logger.info("Scheduler: Memulai tugas untuk membatalkan pesanan tertunda yang kedaluwarsa.")
+        conn = None
+        cursor = None
+
         try:
-            with conn:
-                expiration_time = datetime.now() - timedelta(hours=24)
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
 
-                expired_orders = conn.execute(
-                    "SELECT id FROM orders WHERE status = 'Menunggu Pembayaran' AND order_date < ?",
-                    (expiration_time,)
-                ).fetchall()
+            expiration_time = datetime.now() - timedelta(hours=24)
+            logger.debug(f"Scheduler: Ambang batas kedaluwarsa diatur ke {expiration_time}")
 
-                if not expired_orders:
-                    print("Scheduler: Tidak ada pesanan kedaluwarsa yang ditemukan.")
-                    return {'success': True, 'cancelled_count': 0}
+            cursor.execute(
+                """
+                SELECT id FROM orders
+                WHERE status = 'Menunggu Pembayaran' AND order_date < %s
+                """,
+                (expiration_time,)
+            )
+            expired_orders = cursor.fetchall()
 
-                cancelled_ids = [order['id'] for order in expired_orders]
+            if not expired_orders:
+                logger.info("Scheduler: Tidak ditemukan pesanan tertunda yang kedaluwarsa.")
+                return {'success': True, 'cancelled_count': 0}
 
-                placeholders = ', '.join(['?'] * len(cancelled_ids))
-                conn.execute(f"UPDATE orders SET status = 'Dibatalkan' WHERE id IN ({placeholders})", cancelled_ids)
+            cancelled_ids = [order['id'] for order in expired_orders]
+            logger.info(f"Scheduler: Ditemukan {len(cancelled_ids)} pesanan kedaluwarsa: {cancelled_ids}")
 
-                print(f"Scheduler: Berhasil membatalkan {len(cancelled_ids)} pesanan kedaluwarsa.")
-                return {'success': True, 'cancelled_count': len(cancelled_ids)}
+            placeholders = ', '.join(['%s'] * len(cancelled_ids))
+            cursor.execute(
+                f"UPDATE orders SET status = 'Dibatalkan' WHERE id IN ({placeholders})",
+                tuple(cancelled_ids)
+            )
+
+            conn.commit()
+            logger.info(f"Scheduler: Berhasil membatalkan {len(cancelled_ids)} pesanan kedaluwarsa.")
+            return {'success': True, 'cancelled_count': len(cancelled_ids)}
 
         except Exception as e:
-            print(f"ERROR saat menjalankan scheduler pembatalan pesanan: {e}")
+            logger.error(f"Scheduler: Kesalahan saat membatalkan pesanan kedaluwarsa: {e}", exc_info=True)
+            if conn and conn.is_connected():
+                conn.rollback()
             return {'success': False, 'message': 'Terjadi kesalahan internal.'}
+
         finally:
-            conn.close()
+            if cursor:
+                cursor.close()
+            if conn and conn.is_connected():
+                conn.close()
+            logger.debug("Scheduler: Koneksi database ditutup.")
 
 
 scheduler_service = SchedulerService()

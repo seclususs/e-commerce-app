@@ -1,118 +1,118 @@
 CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE,
-    email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
-    phone TEXT,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(80) NOT NULL UNIQUE,
+    email VARCHAR(120) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
     address_line_1 TEXT,
     address_line_2 TEXT,
-    city TEXT,
-    province TEXT,
-    postal_code TEXT,
-    is_admin BOOLEAN NOT NULL DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    city VARCHAR(100),
+    province VARCHAR(100),
+    postal_code VARCHAR(10),
+    is_admin TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL UNIQUE
 );
 
 CREATE TABLE products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    price REAL NOT NULL,
-    discount_price REAL,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    discount_price DECIMAL(10, 2),
     description TEXT NOT NULL,
-    category_id INTEGER,
+    category_id INT,
     colors TEXT,
-    popularity INTEGER DEFAULT 0,
-    image_url TEXT,
-    additional_image_urls TEXT,
-    stock INTEGER NOT NULL DEFAULT 10,
-    has_variants BOOLEAN DEFAULT 0,
-    weight_grams INTEGER DEFAULT 0,
-    sku TEXT UNIQUE,
-    FOREIGN KEY(category_id) REFERENCES categories(id)
+    popularity INT DEFAULT 0,
+    image_url VARCHAR(255),
+    additional_image_urls JSON,
+    stock INT NOT NULL DEFAULT 10,
+    has_variants TINYINT(1) DEFAULT 0,
+    weight_grams INT DEFAULT 0,
+    sku VARCHAR(100) UNIQUE,
+    FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
 CREATE TABLE product_variants (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    product_id INTEGER NOT NULL,
-    size TEXT NOT NULL,
-    stock INTEGER NOT NULL,
-    weight_grams INTEGER DEFAULT 0,
-    sku TEXT UNIQUE,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    size VARCHAR(50) NOT NULL,
+    stock INT NOT NULL,
+    weight_grams INT DEFAULT 0,
+    sku VARCHAR(100) UNIQUE,
     FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 CREATE TABLE content (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
+    `key` VARCHAR(100) PRIMARY KEY,
+    `value` TEXT NOT NULL
 );
 
 CREATE TABLE orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    subtotal REAL NOT NULL,
-    discount_amount REAL DEFAULT 0,
-    shipping_cost REAL DEFAULT 0,
-    total_amount REAL NOT NULL,
-    voucher_code TEXT,
-    status TEXT NOT NULL CHECK(status IN ('Menunggu Pembayaran', 'Diproses', 'Dikirim', 'Selesai', 'Dibatalkan', 'Pesanan Dibuat')),
-    payment_method TEXT,
-    payment_transaction_id TEXT,
-    shipping_name TEXT,
-    shipping_phone TEXT,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    order_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    subtotal DECIMAL(10, 2) NOT NULL,
+    discount_amount DECIMAL(10, 2) DEFAULT 0,
+    shipping_cost DECIMAL(10, 2) DEFAULT 0,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    voucher_code VARCHAR(50),
+    status VARCHAR(50) NOT NULL,
+    payment_method VARCHAR(50),
+    payment_transaction_id VARCHAR(100),
+    shipping_name VARCHAR(100),
+    shipping_phone VARCHAR(20),
     shipping_address_line_1 TEXT,
     shipping_address_line_2 TEXT,
-    shipping_city TEXT,
-    shipping_province TEXT,
-    shipping_postal_code TEXT,
-    tracking_number TEXT,
-    FOREIGN KEY(user_id) REFERENCES users(id)
+    shipping_city VARCHAR(100),
+    shipping_province VARCHAR(100),
+    shipping_postal_code VARCHAR(10),
+    tracking_number VARCHAR(100),
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE order_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL,
-    product_id INTEGER NOT NULL,
-    variant_id INTEGER,
-    quantity INTEGER NOT NULL,
-    price REAL NOT NULL,
-    size_at_order TEXT,
-    FOREIGN KEY (order_id) REFERENCES orders (id),
-    FOREIGN KEY (product_id) REFERENCES products (id),
-    FOREIGN KEY (variant_id) REFERENCES product_variants(id)
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    variant_id INT,
+    quantity INT NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    size_at_order VARCHAR(50),
+    FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE SET NULL
 );
 
 CREATE TABLE order_status_history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL,
-    status TEXT NOT NULL,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    `timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
     notes TEXT,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 );
 
 CREATE TABLE reviews (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    product_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    user_id INT NOT NULL,
+    rating INT NOT NULL,
     comment TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE user_carts (
-    user_id INTEGER NOT NULL,
-    product_id INTEGER NOT NULL,
-    variant_id INTEGER,
-    quantity INTEGER NOT NULL,
-    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    variant_id INT,
+    quantity INT NOT NULL,
+    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, product_id, variant_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
@@ -120,27 +120,30 @@ CREATE TABLE user_carts (
 );
 
 CREATE TABLE vouchers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT NOT NULL UNIQUE,
-    type TEXT NOT NULL CHECK(type IN ('PERCENTAGE', 'FIXED_AMOUNT')),
-    value REAL NOT NULL,
-    max_uses INTEGER,
-    use_count INTEGER DEFAULT 0,
-    start_date TIMESTAMP,
-    end_date TIMESTAMP,
-    min_purchase_amount REAL DEFAULT 0,
-    is_active BOOLEAN DEFAULT 1
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    type VARCHAR(20) NOT NULL,
+    value DECIMAL(10, 2) NOT NULL,
+    max_uses INT,
+    use_count INT DEFAULT 0,
+    start_date DATETIME,
+    end_date DATETIME,
+    min_purchase_amount DECIMAL(10, 2) DEFAULT 0,
+    is_active TINYINT(1) DEFAULT 1
 );
 
 CREATE TABLE stock_holds (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    session_id TEXT,
-    product_id INTEGER NOT NULL,
-    variant_id INTEGER,
-    quantity INTEGER NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    session_id VARCHAR(255),
+    product_id INT NOT NULL,
+    variant_id INT,
+    quantity INT NOT NULL,
+    expires_at DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE
+    FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_session_id (session_id),
+    INDEX idx_expires_at (expires_at)
 );

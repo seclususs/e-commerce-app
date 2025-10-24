@@ -6,5 +6,6 @@
         </div>
     </div>
     <p class="testimonial-comment">"{{ review.comment }}"</p>
-    <small class="review-date">{{ review.created_at.split(' ')[0] }}</small>
+    {# Format the datetime object to show only the date (YYYY-MM-DD) #}
+    <small class="review-date">{{ review.created_at.strftime('%Y-%m-%d') }}</small>
 </div>
