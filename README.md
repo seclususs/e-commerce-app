@@ -1,3 +1,4 @@
+```bash
 e-commerce-app/
 ├── app/
 │   ├── configs/
@@ -6,8 +7,8 @@ e-commerce-app/
 │   ├── core/
 │   │   ├── __init__.py               
 │   │   └── db.py                     # Inisialisasi & koneksi database MySQL
-
-│   ├── exceptions/                        # Modul penanganan error & exception
+│
+│   ├── exceptions/                   # Modul penanganan error & exception
 │   │   ├── __init__.py
 │   │   ├── error_handlers.py          # Handler global Flask untuk error (404, 500, dsb.)
 │   │   ├── api_exceptions.py          # Kelas error khusus API (ValidationError, AuthError)
@@ -18,7 +19,6 @@ e-commerce-app/
 │
 │   ├── routes/
 │   │   ├── __init__.py               
-│   │   │
 │   │   ├── admin/                    # Rute panel admin
 │   │   │   ├── __init__.py
 │   │   │   ├── category_routes.py    # CRUD Kategori
@@ -29,7 +29,6 @@ e-commerce-app/
 │   │   │   ├── setting_routes.py     # Pengaturan Konten Website
 │   │   │   ├── variant_routes.py     # CRUD Varian Produk
 │   │   │   └── voucher_routes.py     # CRUD Voucher Diskon
-│   │   │
 │   │   ├── api/                      # Rute API untuk frontend (AJAX)
 │   │   │   ├── __init__.py
 │   │   │   ├── auth_routes.py        # Validasi Username/Email
@@ -37,29 +36,24 @@ e-commerce-app/
 │   │   │   ├── payment_routes.py     # Webhook Pembayaran & Cron Job
 │   │   │   ├── product_routes.py     # Filter Produk (Catalog Page)
 │   │   │   └── voucher_routes.py     # Terapkan Voucher
-│   │   │
 │   │   ├── auth/                     # Rute Otentikasi
 │   │   │   ├── __init__.py
 │   │   │   ├── forgot_password_routes.py
 │   │   │   ├── login_routes.py
 │   │   │   ├── logout_routes.py
 │   │   │   └── register_routes.py
-│   │   │
 │   │   ├── common/                   # Rute umum
 │   │   │   ├── __init__.py
 │   │   │   └── image_routes.py       # Menyajikan file gambar
-│   │   │
 │   │   ├── product/                  # Rute produk publik
 │   │   │   ├── __init__.py
 │   │   │   ├── catalog_routes.py     # Halaman katalog
 │   │   │   ├── detail_routes.py      # Detail produk & submit ulasan
 │   │   │   └── general_routes.py     # Beranda & Tentang Kami
-│   │   │
 │   │   ├── purchase/                 # Rute pembelian (Cart & Checkout)
 │   │   │   ├── __init__.py
 │   │   │   ├── checkout_routes.py    # Checkout & Edit Alamat
 │   │   │   └── order_routes.py       # Pembayaran & Halaman Sukses
-│   │   │
 │   │   └── user/                     # Rute profil pengguna
 │   │       ├── __init__.py
 │   │       └── profile_routes.py     # Profil, Edit Profil, Lacak Pesanan
@@ -71,7 +65,6 @@ e-commerce-app/
 │   │   │   ├── payment_service.py    # Pemrosesan pembayaran sukses
 │   │   │   ├── stock_service.py      # Manajemen & penahanan stok
 │   │   │   └── voucher_service.py    # Validasi voucher
-│   │   │
 │   │   ├── products/
 │   │   │   ├── category_service.py   # CRUD kategori
 │   │   │   ├── product_bulk_service.py  # Aksi massal produk
@@ -79,14 +72,12 @@ e-commerce-app/
 │   │   │   ├── product_service.py    # CRUD produk utama & gambar
 │   │   │   ├── review_service.py     # CRUD ulasan
 │   │   │   └── variant_service.py    # CRUD varian produk
-│   │   │
 │   │   ├── reports/
 │   │   │   ├── customer_report_service.py  # Laporan pelanggan & cart analytics
 │   │   │   ├── inventory_report_service.py # Laporan inventaris
 │   │   │   ├── product_report_service.py   # Laporan produk (terlaris, dilihat)
 │   │   │   ├── report_service.py           # Koordinator laporan dashboard
 │   │   │   └── sales_report_service.py     # Laporan penjualan (revenue, voucher)
-│   │   │
 │   │   └── utils/
 │   │       └── scheduler_service.py  # Cron job (pembatalan pesanan kedaluwarsa)
 │
@@ -129,7 +120,6 @@ e-commerce-app/
 │   │   │   │   ├── product-detail.css
 │   │   │   │   └── profile.css
 │   │   │   └── all.min.css          # FontAwesome CSS
-│   │   │
 │   │   ├── js/
 │   │   │   ├── admin/
 │   │   │   │   ├── charts/
@@ -182,7 +172,6 @@ e-commerce-app/
 │   │   │   │   ├── theme.js             # Logika dark/light mode
 │   │   │   │   └── ui.js                # Notifikasi & modals
 │   │   │   └── main.js                  # Entry point JS publik
-│   │   │
 │   │   └── webfonts/                    # Font Awesome (woff2 files)
 │   │       ├── fa-brands-400.woff2
 │   │       ├── fa-regular-400.woff2
@@ -212,33 +201,27 @@ e-commerce-app/
 │   │   │   ├── reports.html
 │   │   │   ├── site_settings.html
 │   │   │   └── view_order.html
-│   │   │
 │   │   ├── auth/
 │   │   │   ├── forgot_password.html
 │   │   │   ├── login.html
 │   │   │   └── register.html
-│   │   │
 │   │   ├── layouts/
 │   │   │   ├── admin_layout.html
 │   │   │   └── base_layout.html
-│   │   │
 │   │   ├── partials/                   # Partial publik
 │   │   │   ├── _product_card.html
 │   │   │   └── _review.html
-│   │   │
 │   │   ├── public/
 │   │   │   ├── about.html
 │   │   │   ├── landing_page.html
 │   │   │   ├── product_catalog.html
 │   │   │   └── product_detail.html
-│   │   │
 │   │   ├── purchase/
 │   │   │   ├── cart.html
 │   │   │   ├── checkout_page.html
 │   │   │   ├── edit_address_page.html
 │   │   │   ├── payment_page.html
 │   │   │   └── success_page.html
-│   │   │
 │   │   └── user/
 │   │       ├── order_tracking.html
 │   │       ├── profile_editor.html
@@ -253,7 +236,7 @@ e-commerce-app/
 │   │   ├── route_decorators.py        # Decorator @login_required / @admin_required
 │   │   ├── template_filters.py        # Filter Jinja2 (rupiah, tojson_safe, dll)
 │   │   └── error_utils.py             # Utilitas umum error logging & format traceback
-
+│
 │   └── __init__.py                    # Pabrik aplikasi Flask (create_app)
 │
 ├── database/
@@ -267,3 +250,4 @@ e-commerce-app/
 ├── .gitignore                         # File/folder diabaikan Git
 ├── requirements.txt                   # Dependensi Python
 └── run.py                             # Entry point Flask
+```
