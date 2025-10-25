@@ -72,7 +72,10 @@ def add_review(id):
             f"Gagal menambahkan ulasan untuk produk {id} oleh pengguna {user_id}: "
             f"Rating atau komentar tidak diisi."
         )
-        flash('Rating dan komentar tidak boleh kosong.', 'danger')
+        message = 'Rating dan komentar tidak boleh kosong.'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': message}), 400
+        flash(message, 'danger')
         return redirect(url_for('product.product_detail', id=id))
 
     try:
@@ -89,7 +92,7 @@ def add_review(id):
                 review_html = render_template(
                     'partials/_review.html',
                     review=new_review
-                )
+                ) if new_review else ''
                 return jsonify({
                     'success': True,
                     'message': result['message'],
@@ -127,12 +130,12 @@ def add_review(id):
             f"Kesalahan saat menambahkan ulasan untuk produk {id} oleh pengguna {user_id}: {e}",
             exc_info=True
         )
-        flash('Terjadi kesalahan saat menambahkan ulasan.', 'danger')
-
+        message = 'Terjadi kesalahan saat menambahkan ulasan.'
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
                 'success': False,
                 'message': 'Terjadi kesalahan server.'
             }), 500
 
+        flash(message, 'danger')
         return redirect(url_for('product.product_detail', id=id))

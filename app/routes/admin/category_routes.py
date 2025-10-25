@@ -34,14 +34,13 @@ def admin_categories():
                     )
                     result['html'] = html
                     status_code = 200
-
                     logger.info(
-                        f"Kategori '{name}' berhasil ditambahkan. "
+                        f"Kategori '{name}' berhasil ditambahkan via service. "
                         f"ID: {result['data']['id']}"
                     )
                 else:
                     logger.warning(
-                        f"Gagal menambahkan kategori '{name}'. "
+                        f"Gagal menambahkan kategori '{name}' via service. "
                         f"Alasan: {result.get('message')}"
                     )
 
@@ -53,17 +52,16 @@ def admin_categories():
                         'name': name
                     }
                     status_code = 200
-
                     logger.info(
                         f"Kategori dengan ID {category_id} "
-                        f"berhasil diperbarui menjadi '{name}'."
+                        f"berhasil diperbarui menjadi '{name}' via service."
                     )
                 else:
                     logger.warning(
-                        f"Gagal memperbarui kategori ID {category_id}. "
+                        f"Gagal memperbarui kategori ID {category_id} via service. "
                         f"Alasan: {result.get('message')}"
                     )
-
+            
             return jsonify(result), status_code
 
         except Exception as e:
@@ -110,10 +108,10 @@ def delete_category(id):
         result = category_service.delete_category(id)
 
         if result.get('success'):
-            logger.info(f"Kategori dengan ID {id} berhasil dihapus.")
+            logger.info(f"Kategori dengan ID {id} berhasil dihapus via service.")
         else:
             logger.warning(
-                f"Gagal menghapus kategori dengan ID {id}. "
+                f"Gagal menghapus kategori dengan ID {id} via service. "
                 f"Alasan: {result.get('message')}"
             )
 

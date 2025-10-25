@@ -93,39 +93,31 @@ def edit_profile():
             f"Aksi: {action}"
         )
         result = {}
+        status_code = 200
 
         try:
             if action == 'update_info':
                 username = request.form['username']
                 email = request.form['email']
                 logger.info(
-                    f"Memperbarui informasi untuk pengguna {user_id}. Nama baru: {username}, Email baru: {email}"
+                    f"Memanggil service update_user_info untuk pengguna {user_id}. Nama baru: {username}, Email baru: {email}"
                 )
                 result = user_service.update_user_info(user_id, username, email)
-
                 if result.get('success'):
                     session['username'] = username
                     result['data'] = {'username': username, 'email': email}
-                    logger.info("Informasi pengguna berhasil diperbarui.")
                 else:
-                    logger.warning(
-                        f"Gagal memperbarui informasi pengguna: {result.get('message')}"
-                    )
+                    status_code = 400
 
             elif action == 'change_password':
                 current_password = request.form['current_password']
                 new_password = request.form['new_password']
-                logger.info(f"Mencoba mengganti kata sandi untuk pengguna {user_id}.")
+                logger.info(f"Memanggil service change_user_password untuk pengguna {user_id}.")
                 result = user_service.change_user_password(
                     user_id, current_password, new_password
                 )
-
-                if result.get('success'):
-                    logger.info("Kata sandi berhasil diganti.")
-                else:
-                    logger.warning(
-                        f"Gagal mengganti kata sandi: {result.get('message')}"
-                    )
+                if not result.get('success'):
+                    status_code = 400
 
             elif action == 'update_address':
                 address_data = {
@@ -137,22 +129,19 @@ def edit_profile():
                     'postal_code': request.form['postal_code']
                 }
                 logger.info(
-                    f"Memperbarui alamat untuk pengguna {user_id}. Data: {address_data}"
+                    f"Memanggil service update_user_address untuk pengguna {user_id}."
                 )
                 result = user_service.update_user_address(user_id, address_data)
-
                 if result.get('success'):
-                    result['data'] = request.form
-                    logger.info("Alamat berhasil diperbarui.")
+                    result['data'] = request.form.to_dict() # Mengirim kembali data form untuk update UI jika perlu
                 else:
-                    logger.warning(
-                        f"Gagal memperbarui alamat: {result.get('message')}"
-                    )
+                    status_code = 400
             else:
                 logger.warning(
                     f"Aksi tidak valid '{action}' diterima untuk pengguna {user_id}."
                 )
                 result = {'success': False, 'message': 'Aksi tidak dikenal.'}
+                status_code = 400
 
         except Exception as e:
             logger.error(
@@ -160,13 +149,14 @@ def edit_profile():
                 exc_info=True
             )
             result = {'success': False, 'message': 'Terjadi kesalahan server.'}
+            status_code = 500
 
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if is_ajax:
             logger.debug(
                 f"Mengirim respons JSON. Aksi: '{action}', Berhasil: {result.get('success')}"
             )
-            return jsonify(result)
+            return jsonify(result), status_code
 
         flash(
             result.get('message', 'Terjadi kesalahan.'),
@@ -177,10 +167,8 @@ def edit_profile():
     logger.debug(
         f"Mengakses halaman edit profil (GET) untuk ID pengguna: {user_id}"
     )
-
     try:
         user = user_service.get_user_by_id(user_id)
-
         if not user:
             logger.error(
                 f"Kesalahan akses halaman edit profil: ID pengguna {user_id} tidak ditemukan."
@@ -194,7 +182,6 @@ def edit_profile():
             user=user,
             content=get_content()
         )
-
     except Exception as e:
         logger.error(
             f"Kesalahan saat memuat halaman edit profil untuk pengguna {user_id}: {e}",

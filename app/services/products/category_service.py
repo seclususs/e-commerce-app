@@ -141,20 +141,22 @@ class CategoryService:
         cursor = conn.cursor()
 
         try:
+            conn.start_transaction()
             cursor.execute('UPDATE products SET category_id = NULL WHERE category_id = %s', (category_id,))
             product_update_count = cursor.rowcount
 
             cursor.execute('DELETE FROM categories WHERE id = %s', (category_id,))
             delete_count = cursor.rowcount
-            conn.commit()
-
+            
             if delete_count > 0:
+                conn.commit()
                 logger.info(
                     f"Kategori id {category_id} berhasil dihapus. "
                     f"Memperbarui {product_update_count} produk."
                 )
                 return {'success': True, 'message': 'Kategori berhasil dihapus.'}
             else:
+                conn.rollback()
                 logger.warning(f"Penghapusan kategori gagal: Kategori id {category_id} tidak ditemukan.")
                 return {'success': False, 'message': 'Kategori tidak ditemukan.'}
 

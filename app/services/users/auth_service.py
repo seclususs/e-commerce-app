@@ -52,17 +52,14 @@ class AuthService:
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
 
-            cursor.execute(
-                'SELECT id FROM users WHERE username = %s OR email = %s',
-                (username, email)
-            )
-            user = cursor.fetchone()
+            is_username_available, _ = self.validate_username_availability(username, conn)
+            is_email_available, _ = self.validate_email_availability(email, conn)
 
-            if user:
-                logger.warning(
-                    f"Pendaftaran gagal: Nama pengguna '{username}' atau Email '{email}' sudah ada."
-                )
-                return None
+            if not is_username_available or not is_email_available:
+                 logger.warning(
+                     f"Pendaftaran gagal: Nama pengguna '{username}' atau Email '{email}' sudah ada."
+                 )
+                 return None
 
             hashed_password = generate_password_hash(password)
             cursor.execute(
@@ -106,8 +103,8 @@ class AuthService:
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
 
-            cursor.execute('SELECT id FROM users WHERE email = %s', (email,))
-            if cursor.fetchone():
+            is_email_available, _ = self.validate_email_availability(email, conn)
+            if not is_email_available:
                 logger.warning(f"Pendaftaran tamu gagal: Email '{email}' sudah ada.")
                 return None
 
@@ -116,16 +113,18 @@ class AuthService:
                 if name else f"guest_{random.randint(1000, 9999)}"
             )
             username = base_username
-
-            cursor.execute('SELECT id FROM users WHERE username = %s', (username,))
             attempts = 0
+            is_username_available = False
 
-            while cursor.fetchone() and attempts < 10:
+            while attempts < 10:
+                is_username_available, _ = self.validate_username_availability(username, conn)
+                if is_username_available:
+                    break
                 username = f"{base_username}{random.randint(10, 999)}"
-                cursor.execute('SELECT id FROM users WHERE username = %s', (username,))
                 attempts += 1
 
-            if attempts >= 10:
+
+            if not is_username_available:
                 logger.error(f"Tidak dapat membuat nama pengguna unik untuk tamu berdasarkan '{base_username}'.")
                 return None
 
@@ -210,6 +209,52 @@ class AuthService:
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(f"Koneksi database ditutup untuk handle_password_reset_request (email: {email}).")
+
+
+    def validate_username_availability(self, username, conn=None):
+        logger.debug(f"Service: Memvalidasi ketersediaan username: {username}")
+        close_conn = False
+        if conn is None:
+            conn = get_db_connection()
+            close_conn = True
+
+        cursor = conn.cursor()
+        try:
+            cursor.execute('SELECT id FROM users WHERE username = %s', (username,))
+            user = cursor.fetchone()
+            is_available = user is None
+            message = 'Username tersedia.' if is_available else 'Username sudah digunakan.'
+            return is_available, message
+        except Exception as e:
+            logger.error(f"Service: Kesalahan DB saat validasi username {username}: {e}", exc_info=True)
+            return False, 'Gagal memeriksa ketersediaan username.'
+        finally:
+            cursor.close()
+            if close_conn:
+                conn.close()
+
+
+    def validate_email_availability(self, email, conn=None):
+        logger.debug(f"Service: Memvalidasi ketersediaan email: {email}")
+        close_conn = False
+        if conn is None:
+            conn = get_db_connection()
+            close_conn = True
+
+        cursor = conn.cursor()
+        try:
+            cursor.execute('SELECT id FROM users WHERE email = %s', (email,))
+            user = cursor.fetchone()
+            is_available = user is None
+            message = 'Email tersedia.' if is_available else 'Email sudah terdaftar.'
+            return is_available, message
+        except Exception as e:
+            logger.error(f"Service: Kesalahan DB saat validasi email {email}: {e}", exc_info=True)
+            return False, 'Gagal memeriksa ketersediaan email.'
+        finally:
+            cursor.close()
+            if close_conn:
+                conn.close()
 
 
 auth_service = AuthService()

@@ -41,8 +41,6 @@ def manage_variants(product_id):
                         product_id=product_id
                     )
                     result['html'] = html
-
-                    variant_service.update_total_stock_from_variants(product_id)
                     logger.info(
                         f"Varian '{size}' berhasil ditambahkan untuk produk ID {product_id}."
                     )
@@ -60,13 +58,12 @@ def manage_variants(product_id):
                 sku = request.form.get('sku')
 
                 result = variant_service.update_variant(
-                    variant_id, size, stock, weight_grams, sku
+                    product_id, variant_id, size, stock, weight_grams, sku
                 )
 
                 if result.get('success'):
                     status_code = 200
                     result['data'] = dict(request.form)
-                    variant_service.update_total_stock_from_variants(product_id)
                     logger.info(
                         f"Varian ID {variant_id} berhasil diperbarui untuk produk ID {product_id}."
                     )
@@ -130,10 +127,9 @@ def delete_variant(product_id, variant_id):
     )
 
     try:
-        result = variant_service.delete_variant(variant_id)
+        result = variant_service.delete_variant(product_id, variant_id)
 
         if result.get('success'):
-            variant_service.update_total_stock_from_variants(product_id)
             logger.info(f"Varian dengan ID {variant_id} berhasil dihapus.")
         else:
             logger.warning(

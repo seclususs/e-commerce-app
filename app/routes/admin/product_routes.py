@@ -35,11 +35,9 @@ def admin_products():
                 if result.get('success'):
                     result['ids'] = selected_ids
                     result['action'] = action
-
                     if action == 'set_category' and category_id:
                         category = category_service.get_category_by_id(category_id)
                         result['new_category_name'] = category['name'] if category else 'Tidak diketahui'
-
                     logger.info(
                         f"Aksi massal '{action}' berhasil dijalankan. Pesan: {result['message']}"
                     )
@@ -65,7 +63,6 @@ def admin_products():
                         f"Gagal menambahkan produk '{request.form.get('name')}'. "
                         f"Alasan: {result.get('message')}"
                     )
-
                 return redirect(url_for('admin.admin_products'))
 
             logger.warning(f"Jenis form tidak dikenal dikirimkan: {form_type}")
@@ -84,7 +81,7 @@ def admin_products():
                 )
             flash("Terjadi kesalahan server saat memproses permintaan.", "danger")
             return redirect(url_for('admin.admin_products'))
-
+        
     search_term = request.args.get('search', '').strip()
     category_filter = request.args.get('category')
     stock_status_filter = request.args.get('stock_status')
@@ -139,10 +136,8 @@ def admin_products():
 def admin_edit_product(id):
     if request.method == 'POST':
         logger.debug(f"Mencoba memperbarui produk dengan ID: {id}")
-
         try:
             result = product_service.update_product(id, request.form, request.files)
-
             if result.get('success'):
                 result['redirect_url'] = url_for('admin.admin_products')
                 logger.info(f"Produk dengan ID {id} berhasil diperbarui.")
@@ -162,12 +157,10 @@ def admin_edit_product(id):
                 'success': False,
                 'message': 'Terjadi kesalahan server saat memperbarui produk.',
             }), 500
-
+        
     logger.debug(f"Mengambil detail produk untuk diedit. ID Produk: {id}")
-
     try:
         product = product_query_service.get_product_by_id(id)
-
         if not product:
             logger.warning(f"Produk dengan ID {id} tidak ditemukan untuk diedit.")
             flash('Produk tidak ditemukan.', 'danger')
@@ -200,17 +193,14 @@ def admin_edit_product(id):
 @admin_required
 def delete_product(id):
     logger.debug(f"Mencoba menghapus produk dengan ID: {id}")
-
     try:
         result = product_service.delete_product(id)
-
         if result.get('success'):
             logger.info(f"Produk dengan ID {id} berhasil dihapus.")
         else:
             logger.warning(
                 f"Gagal menghapus produk ID {id}. Alasan: {result.get('message')}"
             )
-
         return jsonify(result)
 
     except Exception as e:
