@@ -1,4 +1,4 @@
-import { confirmModal } from '../utils/ui.js';
+import { confirmModal } from '../components/confirm-modal.js';
 
 export function initActionConfirmations() {
     const mainContent = document.querySelector('main.page-content-wrapper, .admin-main-content');

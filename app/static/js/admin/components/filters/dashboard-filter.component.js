@@ -1,5 +1,5 @@
-import { showNotification } from '../../utils/ui.js';
-import { updateAllCharts } from '../charts/dashboard-charts.js';
+import { showNotification } from '../../../components/notification.js';
+import { updateAllCharts } from '../charts/dashboard-charts.component.js';
 
 const formatRupiah = (num) => {
     if (typeof num !== 'number') return 'Rp 0';

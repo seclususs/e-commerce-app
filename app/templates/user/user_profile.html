@@ -41,7 +41,8 @@
                         {% for order in orders %}
                         <tr id="order-row-{{ order.id }}">
                             <td data-label="ID Pesanan:">#{{ order.id }}</td>
-                            <td data-label="Tanggal:">{{ order.order_date.split(' ')[0] }}</td>
+                            {# Fix: Format datetime object directly using strftime #}
+                            <td data-label="Tanggal:">{{ order.order_date.strftime('%Y-%m-%d') }}</td>
                             <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
                             <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status|status_translate }}</span></td>
                             <td data-label="No. Resi:">{{ order.tracking_number or '-' }}</td>

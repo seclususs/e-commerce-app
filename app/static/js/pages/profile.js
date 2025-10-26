@@ -1,4 +1,5 @@
-import { showNotification, confirmModal } from '../utils/ui.js';
+import { showNotification } from '../components/notification.js';
+import { confirmModal } from '../components/confirm-modal.js';
 
 async function handleProfileSubmit(form, button) {
     const originalButtonHTML = button.innerHTML;

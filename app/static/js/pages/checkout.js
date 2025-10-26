@@ -1,4 +1,4 @@
-import { cartStore } from '../state/cart-store.js';
+import { cartStore } from '../store/cart-store.js';
 
 const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID', { minimumFractionDigits: 0 })}`;
 
@@ -56,7 +56,7 @@ function initCheckoutForm() {
             const firstInvalidField = form.querySelector(':invalid');
             if (firstInvalidField) {
                 firstInvalidField.focus();
-                showNotification('Harap lengkapi semua field yang wajib diisi.', true);
+                console.warn('Harap lengkapi semua field yang wajib diisi.');
             }
             e.preventDefault();
             return;

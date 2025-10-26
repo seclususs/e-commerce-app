@@ -1,5 +1,6 @@
-import { showNotification, confirmModal } from '../../utils/ui.js';
-import { handleAjaxSubmit } from '../ajax-forms.js';
+import { showNotification } from '../../components/notification.js';
+import { confirmModal } from '../../components/confirm-modal.js';
+import { handleAjaxSubmit } from '../services/ajax-forms.service.js';
 
 export function initAdminCardToggle() {
     const adminTable = document.querySelector('.admin-table');

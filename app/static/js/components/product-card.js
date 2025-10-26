@@ -1,5 +1,5 @@
-import { showNotification } from '../utils/ui.js';
-import { cartStore } from '../state/cart-store.js';
+import { showNotification } from './notification.js';
+import { cartStore } from '../store/cart-store.js';
 
 async function handleAddToCart(btn) {
     if (!btn || btn.disabled || btn.classList.contains('is-added')) return;

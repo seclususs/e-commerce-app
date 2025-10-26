@@ -1,5 +1,5 @@
-import { cartStore } from '../state/cart-store.js';
-import { showNotification } from '../utils/ui.js';
+import { cartStore } from '../store/cart-store.js';
+import { showNotification } from '../components/notification.js';
 
 const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID')}`;
 

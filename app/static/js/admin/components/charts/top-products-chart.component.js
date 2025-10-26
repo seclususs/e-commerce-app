@@ -1,4 +1,4 @@
-import { commonChartOptions } from './chart-utils.js';
+import { commonChartOptions } from '../../utils/chart.util.js';
 
 
 export function createTopProductsChart(stats, chartInstances) {

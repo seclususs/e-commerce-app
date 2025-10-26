@@ -1,5 +1,5 @@
-import * as cartAPI from '../services/cart-api.js';
-import { showNotification } from '../utils/ui.js';
+import * as cartAPI from '../services/cart-api.service.js';
+import { showNotification } from '../components/notification.js';
 
 const GUEST_CART_KEY = 'hackthreadVariantCart';
 

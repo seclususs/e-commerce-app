@@ -1,17 +1,17 @@
 import { initAnimations } from '../utils/animations.js';
-import { initFlashMessages } from '../utils/ui.js';
+import { initFlashMessages } from '../utils/flash-messages.js';
 import { initThemeSwitcher } from '../utils/theme.js';
-import { initLogout } from '../shared/auth.js';
+import { initLogout } from '../services/auth.service.js';
 import { initPageTransitions } from '../utils/page-transitions.js';
-import { initAjaxAdminForms } from './ajax-forms.js';
-import { initProductForms } from './modules/product-forms.js';
-import { initAdminCardToggle, initBulkActions } from './modules/ui-handlers.js';
-import { initSettingsPage } from './modules/settings.js';
-import { initDashboardCharts } from './charts/dashboard-charts.js';
-import { initAdminProductFilter } from './filters/product-filter.js';
-import { initAdminOrderFilter } from './filters/order-filter.js';
-import { initDashboardFilter } from './filters/dashboard-filter.js';
-import { initCronButton } from './utils/cron-simulator.js';
+import { initAjaxAdminForms } from './services/ajax-forms.service.js';
+import { initProductForms } from './components/product-forms.component.js';
+import { initAdminCardToggle, initBulkActions } from './utils/ui-handlers.util.js';
+import { initSettingsPage } from './components/settings.component.js';
+import { initDashboardCharts } from './components/charts/dashboard-charts.component.js';
+import { initAdminProductFilter } from './components/filters/product-filter.component.js';
+import { initAdminOrderFilter } from './components/filters/order-filter.component.js';
+import { initDashboardFilter } from './components/filters/dashboard-filter.component.js';
+import { initCronButton } from './utils/cron-simulator.util.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     initPageTransitions('.admin-main-content');

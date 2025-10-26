@@ -1,6 +1,6 @@
-import { createSalesChart } from './sales-chart.js';
-import { createTopProductsChart } from './top-products-chart.js';
-import { createLowStockChart } from './low-stock-chart.js';
+import { createSalesChart } from './sales-chart.component.js';
+import { createTopProductsChart } from './top-products-chart.component.js';
+import { createLowStockChart } from './low-stock-chart.component.js';
 
 
 let chartInstances = {};

@@ -1,4 +1,4 @@
-import { showNotification } from '../../utils/ui.js';
+import { showNotification } from '../../../components/notification.js';
 
 export function initAdminOrderFilter() {
     const filterForm = document.getElementById('admin-order-filter-form');

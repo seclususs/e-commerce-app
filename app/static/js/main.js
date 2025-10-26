@@ -1,9 +1,9 @@
 import { initAnimations } from './utils/animations.js';
-import { initFlashMessages } from './utils/ui.js';
+import { initFlashMessages } from './utils/flash-messages.js';
 import { initThemeSwitcher } from './utils/theme.js';
-import { cartStore } from './state/cart-store.js';
-import { initLogout } from './shared/auth.js';
-import { initActionConfirmations } from './shared/confirmations.js';
+import { cartStore } from './store/cart-store.js';
+import { initLogout } from './services/auth.service.js';
+import { initActionConfirmations } from './utils/confirmations.util.js';
 import { initPageTransitions } from './utils/page-transitions.js';
 import { initGlobalAddToCart } from './components/product-card.js';
 import { initProductCatalogPage } from './pages/product-catalog.js';

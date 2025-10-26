@@ -1,4 +1,4 @@
-import { showNotification } from '../../utils/ui.js';
+import { showNotification } from '../../components/notification.js';
 
 
 async function handleReviewSubmit(form, button) {

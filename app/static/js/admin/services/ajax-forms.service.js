@@ -1,5 +1,6 @@
-import { showNotification, confirmModal } from '../utils/ui.js';
-import { handleUIUpdate } from './ajax-update-handlers.js';
+import { showNotification } from '../../components/notification.js';
+import { confirmModal } from '../../components/confirm-modal.js';
+import { handleUIUpdate } from './ajax-update-handlers.service.js';
 
 
 export async function handleAjaxSubmit(form, button) {

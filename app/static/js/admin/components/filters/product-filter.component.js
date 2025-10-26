@@ -1,5 +1,5 @@
-import { showNotification } from '../../utils/ui.js';
-import { initAnimations } from '../../utils/animations.js';
+import { showNotification } from '../../../components/notification.js';
+import { initAnimations } from '../../../utils/animations.js';
 
 let debounceTimer;
 const debounce = (callback, time) => {
