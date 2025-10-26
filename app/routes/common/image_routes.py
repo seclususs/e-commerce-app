@@ -1,33 +1,50 @@
 import os
-from flask import send_from_directory, current_app, abort
+from typing import Union
+
+from flask import Response, current_app, send_from_directory
+from werkzeug.exceptions import BadRequest, InternalServerError, NotFound
+
+from app.exceptions.file_exceptions import (
+    FileNotFoundError as CustomFileNotFoundError,
+)
 from app.utils.logging_utils import get_logger
+
 from . import image_bp
 
 logger = get_logger(__name__)
 
 
-@image_bp.route('/images/<path:filename>')
-def serve_image(filename):
-    image_dir = current_app.config.get('IMAGE_FOLDER')
+@image_bp.route("/images/<path:filename>")
+def serve_image(filename: str) -> Response:
+    image_dir: Union[str, None] = current_app.config.get("IMAGE_FOLDER")
     logger.debug(f"Mencoba menampilkan gambar: {filename}")
-
     if not image_dir:
-        logger.error("IMAGE_FOLDER tidak dikonfigurasi dalam pengaturan aplikasi.")
-        abort(404)
+        logger.error(
+            "IMAGE_FOLDER tidak dikonfigurasi dalam pengaturan aplikasi."
+        )
+        raise NotFound("Konfigurasi folder gambar hilang.")
 
-    if '..' in filename or filename.startswith('/'):
-        logger.warning(f"Upaya traversal path terdeteksi dan diblokir: {filename}")
-        abort(400)
+    if ".." in filename or filename.startswith("/"):
+        log_msg: str = (
+            f"Upaya traversal path terdeteksi dan diblokir: {filename}"
+        )
+        logger.warning(log_msg)
+        raise BadRequest("Nama file tidak valid.")
 
     try:
-        full_path = os.path.join(image_dir, filename)
+        full_path: str = os.path.join(image_dir, filename)
         logger.info(f"Menampilkan gambar dari path: {full_path}")
+        if not os.path.isfile(full_path):
+            raise CustomFileNotFoundError(
+                f"File gambar tidak ditemukan: {filename}"
+            )
         return send_from_directory(image_dir, filename)
-
-    except FileNotFoundError:
-        logger.warning(f"Gambar tidak ditemukan pada path: {full_path}")
-        abort(404)
-
+    
+    except CustomFileNotFoundError as fnfe:
+        logger.warning(f"Gambar tidak ditemukan pada path: {fnfe}")
+        raise NotFound(str(fnfe))
+    
     except Exception as e:
-        logger.error(f"Kesalahan saat menampilkan gambar {filename}: {e}", exc_info=True)
-        abort(500)
+        error_msg: str = f"Kesalahan saat menampilkan gambar: {e}"
+        logger.error(error_msg, exc_info=True)
+        raise InternalServerError(error_msg)

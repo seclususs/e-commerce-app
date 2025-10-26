@@ -1,16 +1,30 @@
-from flask import jsonify, request, abort, current_app
+from typing import Any, Dict, Tuple
+
+from flask import Response, current_app, jsonify, request
+
+from app.exceptions.api_exceptions import AuthError, ValidationError
+from app.exceptions.database_exceptions import (
+    DatabaseException,
+    RecordNotFoundError,
+)
+from app.exceptions.service_exceptions import (
+    InvalidOperationError,
+    OutOfStockError,
+    PaymentFailedError,
+    ServiceLogicError,
+)
 from app.services.orders.payment_service import payment_service
-from app.services.utils.scheduler_service import scheduler_service
 from app.utils.logging_utils import get_logger
+
 from . import api_bp
 
 logger = get_logger(__name__)
 
 
-@api_bp.route('/payment-webhook', methods=['POST'])
-def payment_webhook():
-    secret_key = current_app.config['SECRET_KEY']
-    auth_header = request.headers.get('X-API-Key')
+@api_bp.route("/payment-webhook", methods=["POST"])
+def payment_webhook() -> Tuple[Response, int]:
+    secret_key: str = current_app.config["SECRET_KEY"]
+    auth_header: str | None = request.headers.get("X-API-Key")
     logger.info(
         f"Menerima webhook pembayaran. Header otentikasi ada: "
         f"{'Ya' if auth_header else 'Tidak'}"
@@ -18,91 +32,80 @@ def payment_webhook():
 
     if auth_header != secret_key:
         logger.warning("Percobaan webhook pembayaran tidak sah.")
-        abort(401, description="Tidak diizinkan")
+        raise AuthError("Tidak diizinkan")
 
-    data = request.get_json()
+    data: Dict[str, Any] | None = request.get_json()
+
     if data is None:
         logger.error("Payload JSON tidak valid diterima pada webhook pembayaran.")
-        return jsonify({
-            'success': False, 
-            'message': 'Payload JSON tidak valid.'
-            }), 400
+        raise ValidationError("Payload JSON tidak valid.")
 
-    event_type = data.get('event')
-    transaction_id = data.get('transaction_id')
-    status = data.get('status')
-
+    event_type: str | None = data.get("event")
+    transaction_id: str | None = data.get("transaction_id")
+    status: str | None = data.get("status")
     logger.info(
         f"Memproses event webhook: {event_type}, "
         f"ID Transaksi: {transaction_id}, Status: {status}"
     )
 
     if (
-        event_type == 'payment_status_update'
-        and status == 'success'
+        event_type == "payment_status_update"
+        and status == "success"
         and transaction_id
     ):
+        
         try:
-            result = payment_service.process_successful_payment(transaction_id)
-            if result['success']:
+            result: Dict[str, Any] = (
+                payment_service.process_successful_payment(transaction_id)
+            )
+
+            if result["success"]:
                 logger.info(
-                    f"Pembayaran berhasil diproses untuk ID Transaksi: "
+                    "Pembayaran berhasil diproses untuk ID Transaksi: "
                     f"{transaction_id}. Hasil: {result['message']}"
                 )
                 return jsonify(result), 200
+            
+            else:
+                logger.warning(
+                    "Gagal memproses pembayaran untuk ID Transaksi: "
+                    f"{transaction_id}. Alasan: {result['message']}"
+                )
+                if "stok habis" in result.get("message", "").lower():
+                    raise OutOfStockError(result["message"])
+                else:
+                    raise PaymentFailedError(result["message"])
 
-            logger.warning(
-                f"Gagal memproses pembayaran untuk ID Transaksi: "
-                f"{transaction_id}. Alasan: {result['message']}"
+        except (
+            RecordNotFoundError,
+            InvalidOperationError,
+            OutOfStockError,
+            PaymentFailedError,
+            DatabaseException,
+            ServiceLogicError,
+        ) as e:
+            logger.error(
+                "Error caught processing webhook for transaction "
+                f"{transaction_id}: {e}",
+                exc_info=True,
             )
-            return jsonify(result), 500
-
+            raise e
+        
         except Exception as e:
             logger.error(
-                f"Terjadi kesalahan tak terduga saat memproses pembayaran untuk "
+                "Terjadi kesalahan tak terduga saat memproses pembayaran untuk "
                 f"ID Transaksi {transaction_id}: {e}",
-                exc_info=True
+                exc_info=True,
             )
-            return jsonify({
-                'success': False,
-                'message': 'Terjadi kesalahan internal saat memproses pembayaran.'
-            }), 500
+            raise ServiceLogicError(
+                "Terjadi kesalahan internal saat memproses pembayaran."
+            )
 
     logger.info(
-        f"Webhook diterima dan diakui, tetapi tidak ada tindakan yang diambil untuk "
-        f"event '{event_type}' dan status '{status}'."
+        "Webhook diterima dan diakui, tetapi tidak ada tindakan yang diambil "
+        f"untuk event '{event_type}' dan status '{status}'."
     )
-    return jsonify({
-        'success': True,
-        'message': 'Webhook diterima dan diakui.'
-    }), 200
-
-
-@api_bp.route('/run-scheduler-jobs', methods=['POST'])
-def run_scheduler_jobs():
-    secret_key = current_app.config['SECRET_KEY']
-    auth_header = request.headers.get('X-API-Key')
-    logger.info(
-        f"Menerima permintaan untuk menjalankan tugas scheduler. Header otentikasi ada: "
-        f"{'Ya' if auth_header else 'Tidak'}"
+    return (
+        jsonify({"success": True, "message": "Webhook diterima dan diakui."}),
+        200,
     )
-
-    if auth_header != secret_key:
-        logger.warning("Percobaan tidak sah untuk menjalankan tugas scheduler.")
-        abort(401, description="Tidak diizinkan")
-
-    try:
-        logger.info("Menjalankan layanan scheduler: cancel_expired_pending_orders")
-        result = scheduler_service.cancel_expired_pending_orders()
-        logger.info(f"Tugas scheduler selesai dijalankan. Hasil: {result}")
-        return jsonify(result), 200 if result['success'] else 500
-
-    except Exception as e:
-        logger.error(
-            f"Terjadi kesalahan saat menjalankan tugas scheduler melalui API: {e}",
-            exc_info=True
-        )
-        return jsonify({
-            'success': False,
-            'message': 'Terjadi kesalahan internal saat menjalankan tugas scheduler.'
-        }), 500

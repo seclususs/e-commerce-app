@@ -1,56 +1,79 @@
-from flask import render_template, request, flash, redirect, url_for, jsonify
+from typing import Optional, Union
+
+from flask import (
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+from werkzeug.wrappers import Response
+
 from app.core.db import get_content
-from app.services.users.auth_service import auth_service
+from app.exceptions.api_exceptions import ValidationError
+from app.exceptions.service_exceptions import ServiceLogicError
+from app.services.auth.password_reset_service import password_reset_service
 from app.utils.logging_utils import get_logger
+
 from . import auth_bp
 
 logger = get_logger(__name__)
 
 
-@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
-def forgot_password():
-    if request.method == 'POST':
-        email = request.form.get('email')
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password() -> Union[Response, str]:
+    if request.method == "POST":
+        email: Optional[str] = request.form.get("email")
         logger.info(f"Permintaan reset password untuk email: {email}")
 
+        if not email:
+            raise ValidationError("Email harus diisi.")
+
         try:
-            auth_service.handle_password_reset_request(email)
-            message = (
-                'Jika email terdaftar, link reset password telah dikirim.'
+            password_reset_service.handle_password_reset_request(email)
+            message: str = (
+                "Jika email terdaftar, link reset password telah dikirim."
             )
-            logger.info(
-                f"Simulasi reset password dimulai untuk email: {email}"
-            )
-
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            logger.info(f"Simulasi reset password dimulai untuk email: {email}")
+            
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 logger.debug(
-                    "Merespons dengan JSON untuk permintaan reset password melalui AJAX."
+                    "Merespons dengan JSON untuk permintaan reset "
+                    "password melalui AJAX."
                 )
-                return jsonify({'success': True, 'message': message})
+                return jsonify({"success": True, "message": message})
 
-            flash(f"SIMULASI: {message}", 'success')
-            return redirect(url_for('auth.login'))
+            flash(f"SIMULASI: {message}", "success")
+            return redirect(url_for("auth.login"))
 
+        except ServiceLogicError as sle:
+            logger.error(
+                f"Kesalahan service saat reset password untuk {email}: {sle}",
+                exc_info=True,
+            )
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                raise sle
+            flash("Terjadi kesalahan saat memproses permintaan.", "danger")
+            return redirect(url_for("auth.forgot_password"))
+        
         except Exception as e:
             logger.error(
-                f"Kesalahan saat menangani permintaan reset password untuk email {email}: {e}",
-                exc_info=True
+                "Kesalahan tak terduga saat menangani permintaan "
+                f"reset password untuk email {email}: {e}",
+                exc_info=True,
             )
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                raise ServiceLogicError(
+                    "Terjadi kesalahan server saat memproses permintaan."
+                )
             flash(
                 "Terjadi kesalahan saat memproses permintaan reset password.",
-                'danger'
+                "danger",
             )
-
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify(
-                    {'success': False, 'message': 'Terjadi kesalahan server.'}
-                ), 500
-
-            return redirect(url_for('auth.forgot_password'))
+            return redirect(url_for("auth.forgot_password"))
 
     logger.debug("Menampilkan halaman lupa password.")
     return render_template(
-        'auth/forgot_password.html',
-        content=get_content(),
-        hide_navbar=True
+        "auth/forgot_password.html", content=get_content(), hide_navbar=True
     )

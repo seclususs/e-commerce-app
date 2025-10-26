@@ -1,149 +1,314 @@
-from app.core.db import get_db_connection
-from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
+from app.exceptions.service_exceptions import ServiceLogicError
 from app.utils.logging_utils import get_logger
-from .sales_report_service import sales_report_service
-from .product_report_service import product_report_service
-from .inventory_report_service import inventory_report_service
+
 from .customer_report_service import customer_report_service
+from .dashboard_report_service import (
+    convert_decimals,
+    dashboard_report_service,
+)
+from .inventory_report_service import inventory_report_service
+from .product_report_service import product_report_service
+from .sales_report_service import sales_report_service
 
 logger = get_logger(__name__)
 
 
 class ReportService:
 
+    def get_dashboard_stats(
+        self, start_date_str: str, end_date_str: str
+    ) -> Dict[str, Any]:
+        logger.debug(
+            "Memanggil dashboard_report_service.get_dashboard_stats "
+            f"untuk periode: {start_date_str} hingga {end_date_str}"
+        )
+        
+        try:
+            stats = dashboard_report_service.get_dashboard_stats(
+                start_date_str, end_date_str
+            )
+            return convert_decimals(stats)
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_dashboard_stats: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(f"Gagal mengambil statistik dasbor: {e}")
 
-    def get_dashboard_stats(self, start_date_str, end_date_str):
-        logger.info(f"Mengambil statistik dasbor untuk periode: {start_date_str} hingga {end_date_str}")
-
-        conn = None
-        cursor = None
+    def get_sales_summary(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> Dict[str, Any]:
+        logger.debug(
+            "Memanggil sales_report_service.get_sales_summary untuk "
+            f"periode: {start_date} hingga {end_date}"
+        )
 
         try:
-            conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-
-            query_sales = """
-                SELECT SUM(total_amount) AS total
-                FROM orders
-                WHERE status != 'Dibatalkan'
-                AND order_date BETWEEN %s AND %s
-            """
-            cursor.execute(query_sales, (start_date_str, end_date_str))
-            total_sales = cursor.fetchone()['total'] or 0
-            logger.debug(f"Total penjualan dihitung: {total_sales}")
-
-            query_orders = """
-                SELECT COUNT(id) AS count
-                FROM orders
-                WHERE order_date BETWEEN %s AND %s
-            """
-            cursor.execute(query_orders, (start_date_str, end_date_str))
-            order_count = cursor.fetchone()['count'] or 0
-            logger.debug(f"Jumlah pesanan dihitung: {order_count}")
-
-            query_users = """
-                SELECT COUNT(id) AS count
-                FROM users
-                WHERE created_at BETWEEN %s AND %s
-            """
-            cursor.execute(query_users, (start_date_str, end_date_str))
-            new_user_count = cursor.fetchone()['count'] or 0
-            logger.debug(f"Jumlah pengguna baru dihitung: {new_user_count}")
-
-            query_products = "SELECT COUNT(id) AS count FROM products"
-            cursor.execute(query_products)
-            product_count = cursor.fetchone()['count'] or 0
-            logger.debug(f"Jumlah total produk dihitung: {product_count}")
-
-            logger.debug("Mengambil data grafik...")
-            sales_chart_data = sales_report_service.get_sales_chart_data(start_date_str, end_date_str, conn)
-            top_products_chart = product_report_service.get_top_products_chart_data(start_date_str, end_date_str, conn)
-            low_stock_chart = inventory_report_service.get_low_stock_chart_data(conn)
-            logger.debug("Data grafik diambil.")
-
-            stats = {
-                'total_sales': total_sales,
-                'order_count': order_count,
-                'new_user_count': new_user_count,
-                'product_count': product_count,
-                'sales_chart_data': sales_chart_data,
-                'top_products_chart': top_products_chart,
-                'low_stock_chart': low_stock_chart
-            }
-
-            logger.info("Pengambilan statistik dasbor selesai.")
-            return stats
-
+            return sales_report_service.get_sales_summary(start_date, end_date)
+        
         except Exception as e:
-            logger.error(f"Kesalahan saat mengambil statistik dasbor: {e}", exc_info=True)
-            raise
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_sales_summary: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(f"Gagal mengambil ringkasan penjualan: {e}")
 
-        finally:
-            if cursor:
-                cursor.close()
-            if conn and conn.is_connected():
-                conn.close()
-            logger.debug("Koneksi database ditutup untuk get_dashboard_stats.")
+    def get_voucher_effectiveness(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> List[Dict[str, Any]]:
+        logger.debug(
+            "Memanggil sales_report_service.get_voucher_effectiveness "
+            f"untuk periode: {start_date} hingga {end_date}"
+        )
 
+        try:
+            return sales_report_service.get_voucher_effectiveness(
+                start_date, end_date
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_voucher_effectiveness: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(
+                f"Gagal mengambil efektivitas voucher: {e}"
+            )
 
-    def get_sales_summary(self, start_date, end_date):
-        logger.debug(f"Memanggil sales_report_service.get_sales_summary untuk periode: {start_date} hingga {end_date}")
-        return sales_report_service.get_sales_summary(start_date, end_date)
+    def get_full_sales_data_for_export(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> List[List[Any]]:
+        logger.debug(
+            "Memanggil sales_report_service.get_full_sales_data_for_export "
+            f"untuk periode: {start_date} hingga {end_date}"
+        )
 
+        try:
+            return sales_report_service.get_full_sales_data_for_export(
+                start_date, end_date
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_full_sales_data_for_export: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(
+                f"Gagal mengambil data penjualan untuk ekspor: {e}"
+            )
 
-    def get_voucher_effectiveness(self, start_date, end_date):
-        logger.debug(f"Memanggil sales_report_service.get_voucher_effectiveness untuk periode: {start_date} hingga {end_date}")
-        return sales_report_service.get_voucher_effectiveness(start_date, end_date)
+    def get_full_vouchers_data_for_export(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> List[List[Any]]:
+        logger.debug(
+            "Memanggil "
+            "sales_report_service.get_full_vouchers_data_for_export "
+            f"untuk periode: {start_date} hingga {end_date}"
+        )
 
+        try:
+            return sales_report_service.get_full_vouchers_data_for_export(
+                start_date, end_date
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_full_vouchers_data_for_export: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(
+                f"Gagal mengambil data voucher untuk ekspor: {e}"
+            )
 
-    def get_full_sales_data_for_export(self, start_date, end_date):
-        logger.debug(f"Memanggil sales_report_service.get_full_sales_data_for_export untuk periode: {start_date} hingga {end_date}")
-        return sales_report_service.get_full_sales_data_for_export(start_date, end_date)
+    def get_product_reports(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        logger.debug(
+            "Memanggil product_report_service.get_product_reports untuk "
+            f"periode: {start_date} hingga {end_date}"
+        )
 
+        try:
+            return product_report_service.get_product_reports(
+                start_date, end_date
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_product_reports: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(f"Gagal mengambil laporan produk: {e}")
 
-    def get_full_vouchers_data_for_export(self, start_date, end_date):
-        logger.debug(f"Memanggil sales_report_service.get_full_vouchers_data_for_export untuk periode: {start_date} hingga {end_date}")
-        return sales_report_service.get_full_vouchers_data_for_export(start_date, end_date)
+    def get_full_products_data_for_export(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> List[List[Any]]:
+        logger.debug(
+            "Memanggil "
+            "product_report_service.get_full_products_data_for_export "
+            f"untuk periode: {start_date} hingga {end_date}"
+        )
 
+        try:
+            return product_report_service.get_full_products_data_for_export(
+                start_date, end_date
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_full_products_data_for_export: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(
+                f"Gagal mengambil data produk untuk ekspor: {e}"
+            )
 
-    def get_product_reports(self, start_date, end_date):
-        logger.debug(f"Memanggil product_report_service.get_product_reports untuk periode: {start_date} hingga {end_date}")
-        return product_report_service.get_product_reports(start_date, end_date)
+    def get_customer_reports(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> Dict[str, List[Dict[str, Any]]]:
+        logger.debug(
+            "Memanggil customer_report_service.get_customer_reports "
+            f"untuk periode: {start_date} hingga {end_date}"
+        )
 
+        try:
+            return customer_report_service.get_customer_reports(
+                start_date, end_date
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_customer_reports: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(f"Gagal mengambil laporan pelanggan: {e}")
 
-    def get_full_products_data_for_export(self, start_date, end_date):
-        logger.debug(f"Memanggil product_report_service.get_full_products_data_for_export untuk periode: {start_date} hingga {end_date}")
-        return product_report_service.get_full_products_data_for_export(start_date, end_date)
+    def get_cart_analytics(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> Dict[str, Any]:
+        logger.debug(
+            "Memanggil customer_report_service.get_cart_analytics "
+            f"untuk periode: {start_date} hingga {end_date}"
+        )
 
+        try:
+            return customer_report_service.get_cart_analytics(
+                start_date, end_date
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_cart_analytics: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(f"Gagal mengambil analitik keranjang: {e}")
 
-    def get_customer_reports(self, start_date, end_date):
-        logger.debug(f"Memanggil customer_report_service.get_customer_reports untuk periode: {start_date} hingga {end_date}")
-        return customer_report_service.get_customer_reports(start_date, end_date)
+    def get_full_customers_data_for_export(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> List[List[Any]]:
+        logger.debug(
+            "Memanggil "
+            "customer_report_service.get_full_customers_data_for_export "
+            f"untuk periode: {start_date} hingga {end_date}"
+        )
 
+        try:
+            return (
+                customer_report_service.get_full_customers_data_for_export(
+                    start_date, end_date
+                )
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_full_customers_data_for_export: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(
+                f"Gagal mengambil data pelanggan untuk ekspor: {e}"
+            )
 
-    def get_cart_analytics(self, start_date, end_date):
-        logger.debug(f"Memanggil customer_report_service.get_cart_analytics untuk periode: {start_date} hingga {end_date}")
-        return customer_report_service.get_cart_analytics(start_date, end_date)
+    def get_inventory_reports(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> Dict[str, Any]:
+        logger.debug(
+            "Memanggil inventory_report_service.get_inventory_reports "
+            f"untuk periode: {start_date} hingga {end_date}"
+        )
 
+        try:
+            return inventory_report_service.get_inventory_reports(
+                start_date, end_date
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_inventory_reports: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(f"Gagal mengambil laporan inventaris: {e}")
 
-    def get_full_customers_data_for_export(self, start_date, end_date):
-        logger.debug(f"Memanggil customer_report_service.get_full_customers_data_for_export untuk periode: {start_date} hingga {end_date}")
-        return customer_report_service.get_full_customers_data_for_export(start_date, end_date)
+    def get_inventory_low_stock_for_export(self) -> List[List[Any]]:
+        logger.debug(
+            "Memanggil "
+            "inventory_report_service.get_inventory_low_stock_for_export"
+        )
 
+        try:
+            return (
+                inventory_report_service.get_inventory_low_stock_for_export()
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_inventory_low_stock_for_export: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(
+                f"Gagal mengambil data stok rendah untuk ekspor: {e}"
+            )
 
-    def get_inventory_reports(self, start_date, end_date):
-        logger.debug(f"Memanggil inventory_report_service.get_inventory_reports untuk periode: {start_date} hingga {end_date}")
-        return inventory_report_service.get_inventory_reports(start_date, end_date)
+    def get_inventory_slow_moving_for_export(
+        self, start_date: Optional[str], end_date: Optional[str]
+    ) -> List[List[Any]]:
+        logger.debug(
+            "Memanggil "
+            "inventory_report_service.get_inventory_slow_moving_for_export "
+            f"untuk periode: {start_date} hingga {end_date}"
+        )
 
-
-    def get_inventory_low_stock_for_export(self):
-        logger.debug("Memanggil inventory_report_service.get_inventory_low_stock_for_export")
-        return inventory_report_service.get_inventory_low_stock_for_export()
-
-
-    def get_inventory_slow_moving_for_export(self, start_date, end_date):
-        logger.debug(f"Memanggil inventory_report_service.get_inventory_slow_moving_for_export untuk periode: {start_date} hingga {end_date}")
-        return inventory_report_service.get_inventory_slow_moving_for_export(start_date, end_date)
-
+        try:
+            return (
+                inventory_report_service
+                .get_inventory_slow_moving_for_export(
+                    start_date, end_date
+                )
+            )
+        
+        except Exception as e:
+            logger.error(
+                "Kesalahan di ReportService saat memanggil "
+                f"get_inventory_slow_moving_for_export: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(
+                "Gagal mengambil data produk lambat terjual untuk ekspor: "
+                f"{e}"
+            )
 
 report_service = ReportService()

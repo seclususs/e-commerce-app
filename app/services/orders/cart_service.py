@@ -1,5 +1,15 @@
-import json
+from typing import Any, Dict, List, Optional
+
+import mysql.connector
+
 from app.core.db import get_db_connection
+from app.exceptions.api_exceptions import ValidationError
+from app.exceptions.database_exceptions import (
+    DatabaseException, RecordNotFoundError
+)
+from app.exceptions.service_exceptions import (
+    OutOfStockError, ServiceLogicError
+)
 from app.services.orders.stock_service import stock_service
 from app.utils.logging_utils import get_logger
 
@@ -8,251 +18,428 @@ logger = get_logger(__name__)
 
 class CartService:
 
-
-    def get_cart_details(self, user_id):
+    def get_cart_details(self, user_id: int) -> Dict[str, Any]:
         logger.debug(f"Mengambil detail keranjang untuk user_id: {user_id}")
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+
+        conn: Optional[Any] = None
+        cursor: Optional[Any] = None
 
         try:
-            query = """
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            query: str = """
                 SELECT
-                    p.id, p.name, p.price, p.discount_price, p.image_url, p.has_variants,
-                    uc.quantity, uc.variant_id,
-                    pv.size
+                    p.id, p.name, p.price, p.discount_price, p.image_url,
+                    p.has_variants, uc.quantity, uc.variant_id,
+                    uc.id as cart_item_id, pv.size
                 FROM user_carts uc
                 JOIN products p ON uc.product_id = p.id
                 LEFT JOIN product_variants pv ON uc.variant_id = pv.id
                 WHERE uc.user_id = %s
             """
-            cursor.execute(query, (user_id,))
-            cart_items = cursor.fetchall()
-            logger.info(f"Berhasil mengambil {len(cart_items)} item untuk user_id: {user_id}")
 
-            subtotal = 0
-            items = []
+            cursor.execute(query, (user_id,))
+            cart_items: List[Dict[str, Any]] = cursor.fetchall()
+            logger.info(
+                f"Berhasil mengambil {len(cart_items)} item "
+                f"untuk user_id: {user_id}"
+            )
+
+            subtotal: float = 0.0
+            items: List[Dict[str, Any]] = []
 
             for item in cart_items:
-                item['stock'] = stock_service.get_available_stock(
-                    item['id'], item['variant_id'], conn
+                stock_variant_id: Optional[int] = item["variant_id"]
+                item["stock"] = stock_service.get_available_stock(
+                    item["id"], stock_variant_id, conn
                 )
-                effective_price = (
-                    item['discount_price']
-                    if item['discount_price'] and item['discount_price'] > 0
-                    else item['price']
+                effective_price: float = (
+                    item["discount_price"]
+                    if item["discount_price"] and item["discount_price"] > 0
+                    else item["price"]
                 )
-                item['line_total'] = effective_price * item['quantity']
-                subtotal += item['line_total']
+                item["line_total"] = effective_price * item["quantity"]
+                subtotal += item["line_total"]
                 items.append(item)
 
             logger.debug(
-                f"Detail keranjang dihitung untuk user_id: {user_id}. Subtotal: {subtotal}"
+                f"Detail keranjang dihitung untuk user_id: {user_id}. "
+                f"Subtotal: {subtotal}"
             )
-            return {'items': items, 'subtotal': subtotal}
+
+            return {"items": items, "subtotal": subtotal}
+
+        except mysql.connector.Error as e:
+            logger.error(
+                f"Kesalahan database saat mengambil detail keranjang "
+                f"untuk user_id {user_id}: {e}",
+                exc_info=True,
+            )
+            raise DatabaseException(
+                f"Kesalahan database saat mengambil keranjang: {e}"
+            )
 
         except Exception as e:
             logger.error(
-                f"Kesalahan saat mengambil detail keranjang untuk user_id {user_id}: {e}",
-                exc_info=True
+                f"Kesalahan saat mengambil detail keranjang "
+                f"untuk user_id {user_id}: {e}",
+                exc_info=True,
             )
-            raise
+            raise ServiceLogicError(
+                f"Kesalahan layanan saat mengambil keranjang: {e}"
+            )
 
         finally:
-            cursor.close()
-            conn.close()
+            if cursor:
+                cursor.close()
+            if conn and conn.is_connected():
+                conn.close()
             logger.debug("Koneksi database ditutup untuk get_cart_details.")
 
 
-    def add_to_cart(self, user_id, product_id, quantity, variant_id=None):
+    def add_to_cart(
+        self,
+        user_id: int,
+        product_id: int,
+        quantity: int,
+        variant_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        db_variant_id: Optional[int] = variant_id
         logger.debug(
             f"Mencoba menambahkan ke keranjang untuk user_id: {user_id}. "
-            f"Produk: {product_id}, Varian: {variant_id}, Jml: {quantity}"
+            f"Produk: {product_id}, Varian: {db_variant_id}, Jml: {quantity}"
         )
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+
+        conn: Optional[Any] = None
+        cursor: Optional[Any] = None
 
         try:
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+
             cursor.execute(
                 "SELECT name, has_variants FROM products WHERE id = %s",
                 (product_id,)
             )
-            product = cursor.fetchone()
+
+            product: Optional[Dict[str, Any]] = cursor.fetchone()
 
             if not product:
                 logger.warning(
-                    f"Gagal menambahkan ke keranjang: ID Produk {product_id} tidak ditemukan."
+                    f"Gagal menambahkan ke keranjang: ID Produk {product_id} "
+                    f"tidak ditemukan."
                 )
-                return {'success': False, 'message': 'Produk tidak ditemukan.'}
+                raise RecordNotFoundError("Produk tidak ditemukan.")
 
-            if product['has_variants'] and not variant_id:
+            if product["has_variants"] and db_variant_id is None:
                 logger.warning(
-                    f"Gagal menambahkan ke keranjang: ID Varian diperlukan untuk produk {product_id}."
+                    f"Gagal menambahkan ke keranjang: ID Varian diperlukan "
+                    f"untuk produk {product_id} tapi None diterima."
                 )
-                return {
-                    'success': False,
-                    'message': 'Silakan pilih ukuran untuk produk ini.'
-                }
+                raise ValidationError("Silakan pilih ukuran untuk produk ini.")
+            
+            elif not product["has_variants"] and db_variant_id is not None:
+                logger.warning(
+                    f"Gagal menambahkan ke keranjang: ID Varian {db_variant_id} "
+                    f"diberikan untuk produk {product_id} yang tidak "
+                    f"bervarian. Mengabaikan variant_id."
+                )
+                db_variant_id = None
 
-            available_stock = stock_service.get_available_stock(
-                product_id, variant_id, conn
+            if db_variant_id is not None:
+
+                cursor.execute(
+                    "SELECT id FROM product_variants WHERE id = %s "
+                    "AND product_id = %s",
+                    (db_variant_id, product_id),
+                )
+
+                variant_exists: Optional[Dict[str, Any]] = cursor.fetchone()
+
+                if not variant_exists:
+                    logger.warning(
+                        f"Gagal menambahkan ke keranjang: Varian ID "
+                        f"{db_variant_id} tidak valid/ditemukan untuk "
+                        f"Produk ID {product_id}."
+                    )
+                    raise RecordNotFoundError(
+                        "Varian produk yang dipilih tidak valid atau "
+                        "tidak ditemukan."
+                    )
+
+            available_stock: int = stock_service.get_available_stock(
+                product_id, db_variant_id, conn
             )
+
             logger.debug(
                 f"Stok tersedia untuk Produk {product_id}, "
-                f"Varian {variant_id}: {available_stock}"
+                f"Varian: {db_variant_id}: {available_stock}"
             )
 
-            where_clause = (
-                "user_id = %s AND product_id = %s AND variant_id = %s"
-                if variant_id
-                else "user_id = %s AND product_id = %s AND variant_id IS NULL"
-            )
-            params = (
-                (user_id, product_id, variant_id)
-                if variant_id
-                else (user_id, product_id)
-            )
+            if db_variant_id is None:
+                where_clause: str = (
+                    "user_id = %s AND product_id = %s AND variant_id IS NULL"
+                )
+                params: tuple = (user_id, product_id)
+
+            else:
+                where_clause: str = (
+                    "user_id = %s AND product_id = %s AND variant_id = %s"
+                )
+                params = (user_id, product_id, db_variant_id)
 
             cursor.execute(
-                f"SELECT quantity FROM user_carts WHERE {where_clause}",
+                f"SELECT id, quantity FROM user_carts WHERE {where_clause}",
                 params
             )
-            existing_item = cursor.fetchone()
-            current_in_cart = existing_item['quantity'] if existing_item else 0
-            total_requested = current_in_cart + quantity
 
+            existing_item: Optional[Dict[str, Any]] = cursor.fetchone()
+
+            current_in_cart: int = (
+                existing_item["quantity"] if existing_item else 0
+            )
+            existing_cart_item_id: Optional[int] = (
+                existing_item["id"] if existing_item else None
+            )
+            total_requested: int = current_in_cart + quantity
             logger.debug(
-                f"Pengguna {user_id} meminta {quantity}, sudah memiliki {current_in_cart}. "
-                f"Total diminta: {total_requested}"
+                f"Pengguna {user_id} meminta {quantity}, sudah memiliki "
+                f"{current_in_cart}. Total diminta: {total_requested}"
             )
 
             if total_requested > available_stock:
                 logger.warning(
-                    f"Gagal menambahkan ke keranjang: stok tidak mencukupi. Diminta {total_requested}, "
-                    f"tersedia {available_stock}"
+                    f"Gagal menambahkan ke keranjang: stok tidak mencukupi. "
+                    f"Diminta {total_requested}, tersedia {available_stock}"
                 )
-                return {
-                    'success': False,
-                    'message': f"Stok untuk '{product['name']}' tidak mencukupi "
-                               f"(tersisa {available_stock})."
-                }
+                raise OutOfStockError(
+                    f"Stok untuk '{product['name']}' tidak mencukupi "
+                    f"(tersisa {available_stock})."
+                )
 
-            if existing_item:
+            cursor.close()
+            cursor = conn.cursor()
+
+            if existing_cart_item_id:
                 cursor.execute(
-                    f"UPDATE user_carts SET quantity = %s WHERE {where_clause}",
-                    (total_requested, *params)
+                    "UPDATE user_carts SET quantity = %s WHERE id = %s",
+                    (total_requested, existing_cart_item_id),
                 )
                 logger.info(
-                    f"Kuantitas diperbarui untuk produk {product_id} menjadi {total_requested}"
+                    f"Kuantitas diperbarui untuk cart item ID "
+                    f"{existing_cart_item_id} menjadi {total_requested}"
                 )
+
             else:
+                insert_params: tuple = (
+                    user_id, product_id, db_variant_id, quantity
+                )
+
                 cursor.execute(
                     """
                     INSERT INTO user_carts
                     (user_id, product_id, variant_id, quantity)
                     VALUES (%s, %s, %s, %s)
                     """,
-                    (user_id, product_id, variant_id, quantity)
+                    insert_params,
                 )
                 logger.info(
-                    f"Item baru dimasukkan: produk {product_id}, jml {quantity}"
+                    f"Item baru dimasukkan: pengguna {user_id}, "
+                    f"produk {product_id}, varian {db_variant_id}, "
+                    f"jml {quantity}. ID baru: {cursor.lastrowid}"
                 )
 
             conn.commit()
-            return {'success': True, 'message': 'Item ditambahkan ke keranjang.'}
+
+            return {"success": True, "message": "Item ditambahkan ke keranjang."}
+
+        except (
+            ValidationError, RecordNotFoundError, OutOfStockError
+        ) as user_error:
+            if conn and conn.is_connected():
+                conn.rollback()
+            logger.warning(
+                f"Error adding to cart for user {user_id}, "
+                f"product {product_id}, variant {variant_id}: {user_error}"
+            )
+            return {"success": False, "message": str(user_error)}
+
+        except mysql.connector.Error as db_err:
+            if conn and conn.is_connected():
+                conn.rollback()
+
+            logger.error(
+                f"Kesalahan database saat menambahkan ke keranjang: {db_err}",
+                exc_info=True,
+            )
+
+            if db_err.errno == 1048 and 'variant_id' in str(db_err).lower():
+                logger.error(
+                    f"Integrity Error (Col cannot be null) untuk "
+                    f"variant_id terdeteksi: {db_err}"
+                )
+                raise DatabaseException(
+                    "Terjadi masalah internal saat memproses varian produk."
+                )
+            
+            elif db_err.errno == 1062:
+                logger.warning(
+                    f"Duplicate entry error adding to cart: {db_err}"
+                )
+                raise DatabaseException("Item ini sudah ada di keranjang Anda.")
+            
+            raise DatabaseException(
+                f"Kesalahan database saat menambahkan item: {db_err}"
+            )
 
         except Exception as e:
-            conn.rollback()
+            if conn and conn.is_connected():
+                conn.rollback()
             logger.error(
-                f"Kesalahan saat menambahkan item ke keranjang untuk pengguna {user_id}, produk {product_id}: {e}",
-                exc_info=True
+                f"Kesalahan saat menambahkan item ke keranjang untuk "
+                f"pengguna {user_id}, produk {product_id}: {e}",
+                exc_info=True,
             )
-            return {
-                'success': False,
-                'message': 'Gagal menambahkan item ke keranjang.'
-            }
+            raise ServiceLogicError(f"Gagal menambahkan item ke keranjang: {e}")
 
         finally:
-            cursor.close()
-            conn.close()
+            if cursor:
+                cursor.close()
+            if conn and conn.is_connected():
+                conn.close()
             logger.debug("Koneksi database ditutup untuk add_to_cart.")
 
 
-    def update_cart_item(self, user_id, product_id, quantity, variant_id=None):
+    def update_cart_item(
+        self,
+        user_id: int,
+        product_id: int,
+        quantity: int,
+        variant_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        db_variant_id: Optional[int] = variant_id
         logger.debug(
             f"Memperbarui item keranjang untuk user_id: {user_id}. "
-            f"Produk: {product_id}, Varian: {variant_id}, Jml Baru: {quantity}"
+            f"Produk: {product_id}, Varian: {db_variant_id}, "
+            f"Jml Baru: {quantity}"
         )
-        conn = get_db_connection()
-        cursor = conn.cursor()
+
+        conn: Optional[Any] = None
+        cursor: Optional[Any] = None
 
         try:
-            where_clause = (
-                "user_id = %s AND product_id = %s AND variant_id = %s"
-                if variant_id
-                else "user_id = %s AND product_id = %s AND variant_id IS NULL"
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            if db_variant_id is None:
+                where_clause: str = (
+                    "user_id = %s AND product_id = %s AND variant_id IS NULL"
+                )
+                params: tuple = (user_id, product_id)
+
+            else:
+                where_clause: str = (
+                    "user_id = %s AND product_id = %s AND variant_id = %s"
+                )
+                params = (user_id, product_id, db_variant_id)
+
+            cursor.execute(
+                f"SELECT id FROM user_carts WHERE {where_clause}", params
             )
-            params = (
-                (user_id, product_id, variant_id)
-                if variant_id
-                else (user_id, product_id)
-            )
+            existing_item: Optional[Dict[str, Any]] = cursor.fetchone()
+
+            if not existing_item:
+                logger.warning(
+                    f"Item keranjang tidak ditemukan untuk pembaruan/penghapusan: "
+                    f"user {user_id}, prod {product_id}, var {db_variant_id}"
+                )
+                raise RecordNotFoundError("Item tidak ditemukan di keranjang.")
+
+            cart_item_id: int = existing_item["id"]
+            cursor.close()
+
+            cursor = conn.cursor()
 
             if quantity <= 0:
                 cursor.execute(
-                    f"DELETE FROM user_carts WHERE {where_clause}",
-                    params
+                    "DELETE FROM user_carts WHERE id = %s", (cart_item_id,)
                 )
                 logger.info(
-                    f"Item dihapus: pengguna {user_id}, produk {product_id}"
+                    f"Item keranjang ID {cart_item_id} dihapus (pengguna "
+                    f"{user_id}, produk {product_id}, varian {db_variant_id})"
                 )
 
             else:
-                available_stock = stock_service.get_available_stock(
-                    product_id, variant_id, conn
+                available_stock: int = stock_service.get_available_stock(
+                    product_id, db_variant_id, conn
                 )
                 logger.debug(
-                    f"Pemeriksaan stok: diminta {quantity}, tersedia {available_stock}"
+                    f"Pemeriksaan stok untuk pembaruan: cart_item_id "
+                    f"{cart_item_id}, diminta {quantity}, "
+                    f"tersedia {available_stock}"
                 )
 
                 if quantity > available_stock:
                     logger.warning(
-                        f"Pembaruan gagal: stok tidak mencukupi "
-                        f"(diminta {quantity}, tersedia {available_stock})"
+                        f"Pembaruan gagal untuk cart_item_id {cart_item_id}: "
+                        f"stok tidak mencukupi (diminta {quantity}, "
+                        f"tersedia {available_stock})"
                     )
-                    return {
-                        'success': False,
-                        'message': f'Stok tidak mencukupi. '
-                                   f'Sisa stok tersedia: {available_stock}.'
-                    }
+                    raise OutOfStockError(
+                        "Stok tidak mencukupi. Sisa stok tersedia: "
+                        f"{available_stock}."
+                    )
 
                 cursor.execute(
-                    f"UPDATE user_carts SET quantity = %s WHERE {where_clause}",
-                    (quantity, *params)
+                    "UPDATE user_carts SET quantity = %s WHERE id = %s",
+                    (quantity, cart_item_id),
                 )
+
                 logger.info(
-                    f"Kuantitas diperbarui: {quantity} untuk produk {product_id}"
+                    f"Kuantitas diperbarui menjadi {quantity} untuk "
+                    f"cart item ID {cart_item_id}"
                 )
 
             conn.commit()
-            return {'success': True}
+            return {"success": True}
+
+        except (OutOfStockError, RecordNotFoundError) as user_error:
+            if conn and conn.is_connected():
+                conn.rollback()
+            return {"success": False, "message": str(user_error)}
+
+        except mysql.connector.Error as db_err:
+            if conn and conn.is_connected():
+                conn.rollback()
+            logger.error(
+                f"Kesalahan database saat memperbarui item keranjang: {db_err}",
+                exc_info=True,
+            )
+            raise DatabaseException(
+                f"Kesalahan database saat memperbarui item: {db_err}"
+            )
 
         except Exception as e:
-            conn.rollback()
+            if conn and conn.is_connected():
+                conn.rollback()
             logger.error(
-                f"Kesalahan saat memperbarui item keranjang: {e}", exc_info=True
+                f"Kesalahan saat memperbarui item keranjang: {e}",
+                exc_info=True
             )
-            return {
-                'success': False,
-                'message': 'Gagal memperbarui item keranjang.'
-            }
+            raise ServiceLogicError(f"Gagal memperbarui item keranjang: {e}")
 
         finally:
-            cursor.close()
-            conn.close()
+            if cursor:
+                cursor.close()
+            if conn and conn.is_connected():
+                conn.close()
             logger.debug("Koneksi database ditutup untuk update_cart_item.")
 
 
-    def merge_local_cart_to_db(self, user_id, local_cart):
+    def merge_local_cart_to_db(
+        self, user_id: int, local_cart: Dict[str, Any]
+    ) -> Dict[str, Any]:
         logger.debug(
             f"Menggabungkan keranjang lokal ke DB untuk user_id: {user_id}. "
             f"Kunci lokal: {list(local_cart.keys()) if isinstance(local_cart, dict) else 'Tidak Valid'}"
@@ -260,124 +447,217 @@ class CartService:
 
         if not isinstance(local_cart, dict):
             logger.error("Format keranjang yang diterima tidak valid.")
-            return {
-                'success': False,
-                'message': 'Format keranjang lokal tidak valid.'
-            }
+            raise ValidationError("Format keranjang lokal tidak valid.")
 
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        conn: Optional[Any] = None
+        cursor: Optional[Any] = None
 
         try:
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
             conn.start_transaction()
 
             for key, data in local_cart.items():
+
                 try:
-                    parts = key.split('-')
-                    product_id = int(parts[0])
-                    variant_id = (
-                        int(parts[1])
-                        if len(parts) > 1 and parts[1] != 'null'
-                        else None
+                    parts: List[str] = key.split("-")
+                    product_id: int = int(parts[0])
+                    variant_id_str: str = (
+                        parts[1] if len(parts) > 1 else "null"
                     )
-                    quantity = data.get('quantity', 0)
+                    db_variant_id: Optional[int] = (
+                        int(variant_id_str)
+                        if variant_id_str.isdigit() else None
+                    )
+                    quantity: int = data.get("quantity", 0)
 
                 except (ValueError, IndexError) as parse_err:
                     logger.warning(
-                        f"Melewatkan kunci yang tidak valid '{key}': {parse_err}"
+                        f"Melewatkan kunci yang tidak valid '{key}': "
+                        f"{parse_err}"
                     )
                     continue
 
                 if quantity <= 0:
                     continue
 
-                available_stock = stock_service.get_available_stock(
-                    product_id, variant_id, conn
+                cursor.execute(
+                    "SELECT id FROM products WHERE id = %s", (product_id,)
                 )
-                if available_stock <= 0:
+
+                if not cursor.fetchone():
+                    logger.warning(
+                        f"Melewatkan item '{key}': Produk ID {product_id} "
+                        f"tidak ditemukan."
+                    )
                     continue
 
-                where_clause = (
-                    "user_id = %s AND product_id = %s AND variant_id = %s"
-                    if variant_id
-                    else "user_id = %s AND product_id = %s AND variant_id IS NULL"
-                )
-                params = (
-                    (user_id, product_id, variant_id)
-                    if variant_id
-                    else (user_id, product_id)
+                if db_variant_id is not None:
+
+                    cursor.execute(
+                        "SELECT id FROM product_variants WHERE id = %s "
+                        "AND product_id = %s",
+                        (db_variant_id, product_id),
+                    )
+
+                    if not cursor.fetchone():
+                        logger.warning(
+                            f"Melewatkan item '{key}': Varian ID "
+                            f"{db_variant_id} tidak ditemukan untuk "
+                            f"produk {product_id}."
+                        )
+                        continue
+
+                available_stock: int = stock_service.get_available_stock(
+                    product_id, db_variant_id, conn
                 )
 
+                if available_stock <= 0:
+                    logger.info(
+                        f"Melewatkan item '{key}' karena stok habis "
+                        f"saat merge."
+                    )
+                    continue
+
+                if db_variant_id is None:
+                    where_clause: str = (
+                        "user_id = %s AND product_id = %s AND "
+                        "variant_id IS NULL"
+                    )
+                    params: tuple = (user_id, product_id)
+
+                else:
+                    where_clause: str = (
+                        "user_id = %s AND product_id = %s AND variant_id = %s"
+                    )
+                    params = (user_id, product_id, db_variant_id)
+
                 cursor.execute(
-                    f"SELECT quantity FROM user_carts WHERE {where_clause}",
+                    f"SELECT id, quantity FROM user_carts WHERE {where_clause}",
                     params
                 )
-                existing_item = cursor.fetchone()
-                current_db_quantity = (
-                    existing_item['quantity'] if existing_item else 0
+
+                existing_item: Optional[Dict[str, Any]] = cursor.fetchone()
+                current_db_quantity: int = (
+                    existing_item["quantity"] if existing_item else 0
                 )
-                new_quantity = min(
+                existing_cart_item_id: Optional[int] = (
+                    existing_item["id"] if existing_item else None
+                )
+                new_quantity: int = min(
                     current_db_quantity + quantity, available_stock
                 )
 
-                if existing_item:
-                    cursor.execute(
-                        f"UPDATE user_carts SET quantity = %s WHERE {where_clause}",
-                        (new_quantity, *params)
+                temp_cursor: Any = conn.cursor()
+
+                if existing_cart_item_id:
+                    temp_cursor.execute(
+                        "UPDATE user_carts SET quantity = %s WHERE id = %s",
+                        (new_quantity, existing_cart_item_id),
                     )
+
                 else:
-                    cursor.execute(
+                    insert_params: tuple = (
+                        user_id, product_id, db_variant_id, new_quantity
+                    )
+                    temp_cursor.execute(
                         """
-                        INSERT INTO user_carts
-                        (user_id, product_id, variant_id, quantity)
+                        INSERT INTO user_carts (user_id, product_id,
+                        variant_id, quantity)
                         VALUES (%s, %s, %s, %s)
                         """,
-                        (user_id, product_id, variant_id, new_quantity)
+                        insert_params,
                     )
+
+                temp_cursor.close()
 
             conn.commit()
             logger.info("Keranjang lokal berhasil digabungkan.")
-            return {'success': True, 'message': 'Keranjang berhasil disinkronkan.'}
+            return {"success": True, "message": "Keranjang berhasil disinkronkan."}
+
+        except mysql.connector.Error as db_err:
+
+            if conn and conn.is_connected():
+                conn.rollback()
+            logger.error(
+                f"Kesalahan database saat menggabungkan keranjang: {db_err}",
+                exc_info=True,
+            )
+
+            if db_err.errno == 1062:
+                logger.warning(
+                    f"Duplicate entry error during merge: {db_err}"
+                )
+                raise DatabaseException(
+                    "Terjadi konflik saat menggabungkan item keranjang."
+                )
+            raise DatabaseException(
+                f"Kesalahan database saat menggabungkan keranjang: {db_err}"
+            )
 
         except Exception as e:
-            conn.rollback()
+            if conn and conn.is_connected():
+                conn.rollback()
             logger.error(
                 f"Kesalahan saat menggabungkan keranjang: {e}", exc_info=True
             )
-            return {
-                'success': False,
-                'message': 'Gagal menyinkronkan keranjang.'
-            }
+            raise ServiceLogicError(f"Gagal menyinkronkan keranjang: {e}")
 
         finally:
-            cursor.close()
-            conn.close()
+            if cursor:
+                cursor.close()
+            if conn and conn.is_connected():
+                conn.close()
             logger.debug(
                 "Koneksi database ditutup untuk merge_local_cart_to_db."
             )
 
-
-    def get_guest_cart_details(self, cart_items):
+    def get_guest_cart_details(
+        self, cart_items: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         logger.debug(
             f"Mengambil detail keranjang tamu: {list(cart_items.keys())}"
         )
 
-        product_ids = set()
-        variant_ids = set()
+        product_ids: set[int] = set()
+        variant_ids: set[int] = set()
+        parsed_cart: Dict[str, Dict[str, Any]] = {}
 
-        for key in cart_items.keys():
+        for key, item_data in cart_items.items():
+
             try:
-                parts = key.split('-')
+                parts: List[str] = key.split("-")
 
-                if parts[0].isdigit():
-                    product_ids.add(int(parts[0]))
+                if not parts[0].isdigit():
+                    continue
 
-                if len(parts) > 1 and parts[1].isdigit():
-                    variant_ids.add(int(parts[1]))
+                product_id: int = int(parts[0])
+                variant_id_str: str = (
+                    parts[1] if len(parts) > 1 else "null"
+                )
+                db_variant_id: Optional[int] = (
+                    int(variant_id_str) if variant_id_str.isdigit() else None
+                )
+                quantity: int = item_data.get("quantity", 0)
 
-            except (ValueError, IndexError):
+                if quantity <= 0:
+                    continue
+
+                product_ids.add(product_id)
+
+                if db_variant_id is not None:
+                    variant_ids.add(db_variant_id)
+
+                parsed_cart[key] = {
+                    "product_id": product_id,
+                    "variant_id": db_variant_id,
+                    "quantity": quantity,
+                }
+
+            except (ValueError, IndexError) as parse_err:
                 logger.warning(
-                    f"Melewatkan kunci keranjang tamu yang tidak valid '{key}'."
+                    f"Melewatkan kunci keranjang tamu yang tidak valid "
+                    f"'{key}': {parse_err}"
                 )
                 continue
 
@@ -385,88 +665,100 @@ class CartService:
             logger.info("Keranjang tamu kosong setelah validasi.")
             return []
 
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        conn: Optional[Any] = None
+        cursor: Optional[Any] = None
 
         try:
-            placeholders = ', '.join(['%s'] * len(product_ids))
+            conn = get_db_connection()
+            cursor = conn.cursor(dictionary=True)
+            placeholders: str = ", ".join(["%s"] * len(product_ids))
             cursor.execute(
-                f"""
-                SELECT id, name, price, discount_price, image_url, has_variants
-                FROM products WHERE id IN ({placeholders})
-                """,
-                tuple(product_ids)
+                f"SELECT id, name, price, discount_price, image_url, "
+                f"has_variants FROM products WHERE id IN ({placeholders})",
+                tuple(product_ids),
             )
-            products_db = cursor.fetchall()
-            products_map = {p['id']: p for p in products_db}
+            products_db: List[Dict[str, Any]] = cursor.fetchall()
+            products_map: Dict[int, Dict[str, Any]] = {
+                p["id"]: p for p in products_db
+            }
+            variants_map: Dict[int, Dict[str, Any]] = {}
 
-            variants_map = {}
             if variant_ids:
-                placeholders_v = ', '.join(['%s'] * len(variant_ids))
+                placeholders_v: str = ", ".join(["%s"] * len(variant_ids))
                 cursor.execute(
-                    f"""
-                    SELECT id, product_id, size
-                    FROM product_variants
-                    WHERE id IN ({placeholders_v})
-                    """,
-                    tuple(variant_ids)
+                    f"SELECT id, product_id, size FROM product_variants "
+                    f"WHERE id IN ({placeholders_v})",
+                    tuple(variant_ids),
                 )
-                variants_db = cursor.fetchall()
-                variants_map = {v['id']: v for v in variants_db}
+                variants_db: List[Dict[str, Any]] = cursor.fetchall()
+                variants_map = {v["id"]: v for v in variants_db}
 
-            detailed_items = []
+            detailed_items: List[Dict[str, Any]] = []
 
-            for key, item_data in cart_items.items():
-                try:
-                    parts = key.split('-')
-                    product_id = int(parts[0])
+            for key, parsed_data in parsed_cart.items():
+                product_id: int = parsed_data["product_id"]
+                db_variant_id: Optional[int] = parsed_data["variant_id"]
+                quantity: int = parsed_data["quantity"]
+                product_info: Optional[Dict[str, Any]] = (
+                    products_map.get(product_id)
+                )
 
-                    variant_id = (
-                        int(parts[1])
-                        if len(parts) > 1 and parts[1].isdigit()
-                        else None
-                    )
-                except (ValueError, IndexError):
-                    continue
-
-                product_info = products_map.get(product_id)
                 if not product_info:
-                    logger.warning(
-                        f"ID Produk {product_id} dari keranjang tamu tidak ditemukan."
-                    )
                     continue
 
-                final_item = {**product_info}
-                final_item['stock'] = stock_service.get_available_stock(
-                    product_id, variant_id, conn
+                if (
+                    db_variant_id is not None and
+                    db_variant_id not in variants_map
+                ):
+                    continue
+
+                if product_info.get("has_variants") and db_variant_id is None:
+                    continue
+
+                final_item: Dict[str, Any] = {**product_info}
+                final_item["stock"] = stock_service.get_available_stock(
+                    product_id, db_variant_id, conn
                 )
+                final_item["variant_id"] = db_variant_id
+                final_item["size"] = (
+                    variants_map[db_variant_id]["size"]
+                    if db_variant_id is not None else None
+                )
+                final_item["quantity"] = quantity
 
-                if variant_id and variant_id in variants_map:
-                    final_item['variant_id'] = variant_id
-                    final_item['size'] = variants_map[variant_id]['size']
-
-                final_item['quantity'] = item_data.get('quantity', 0)
-
-                if final_item['quantity'] > 0:
+                if final_item["quantity"] > 0:
                     detailed_items.append(final_item)
 
             logger.info(
-                f"Detail keranjang tamu berhasil diambil. Item: {len(detailed_items)}"
+                f"Detail keranjang tamu berhasil diambil. "
+                f"Item: {len(detailed_items)}"
             )
+
             return detailed_items
+
+        except mysql.connector.Error as db_err:
+            logger.error(
+                f"Kesalahan database saat mengambil detail keranjang tamu: "
+                f"{db_err}", exc_info=True
+            )
+            raise DatabaseException(
+                f"Kesalahan database saat mengambil keranjang tamu: {db_err}"
+            )
 
         except Exception as e:
             logger.error(
-                f"Kesalahan saat mengambil detail keranjang tamu: {e}", exc_info=True
+                f"Kesalahan saat mengambil detail keranjang tamu: {e}",
+                exc_info=True
             )
-            return []
+            raise ServiceLogicError(f"Gagal mengambil detail keranjang tamu: {e}")
 
         finally:
-            cursor.close()
-            conn.close()
+            if cursor:
+                cursor.close()
+            if conn and conn.is_connected():
+                conn.close()
             logger.debug(
                 "Koneksi database ditutup untuk get_guest_cart_details."
             )
-
 
 cart_service = CartService()

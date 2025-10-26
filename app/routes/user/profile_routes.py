@@ -1,79 +1,96 @@
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import mysql.connector
-from flask import render_template, request, session, redirect, url_for, flash, jsonify, abort
-from app.core.db import get_db_connection, get_content
-from app.utils.route_decorators import login_required
+from flask import (
+    Response,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from mysql.connector.connection import MySQLConnection
+from mysql.connector.cursor import MySQLCursorDict
+
+from app.core.db import get_content, get_db_connection
+from app.exceptions.api_exceptions import AuthError, ValidationError
+from app.exceptions.database_exceptions import (
+    DatabaseException,
+    RecordNotFoundError,
+)
+from app.exceptions.service_exceptions import ServiceLogicError
 from app.services.users.user_service import user_service
 from app.utils.logging_utils import get_logger
+from app.utils.route_decorators import login_required
+
 from . import user_bp
 
 logger = get_logger(__name__)
 
 
-@user_bp.route('/profile')
+@user_bp.route("/profile")
 @login_required
-def user_profile():
-    user_id = session['user_id']
+def user_profile() -> Union[str, Response]:
+    user_id: int = session["user_id"]
     logger.debug(f"Mengakses halaman profil untuk ID pengguna: {user_id}")
-
-    conn = None
-    cursor = None
-
+    conn: Optional[MySQLConnection] = None
+    cursor: Optional[MySQLCursorDict] = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
-        cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))
-        user = cursor.fetchone()
-
+        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        user: Optional[Dict[str, Any]] = cursor.fetchone()
         if not user:
             logger.error(
-                f"Kesalahan akses profil: ID pengguna {user_id} tidak ditemukan di database."
+                f"Kesalahan akses profil: ID pengguna {user_id} tidak "
+                "ditemukan di database."
             )
             session.clear()
             flash("Sesi Anda tidak valid, silakan login kembali.", "danger")
-            return redirect(url_for('auth.login'))
+            return redirect(url_for("auth.login"))
 
         cursor.execute(
-            'SELECT * FROM orders WHERE user_id = %s ORDER BY order_date DESC',
-            (user_id,)
+            "SELECT * FROM orders WHERE user_id = %s ORDER BY order_date DESC",
+            (user_id,),
         )
-        orders = cursor.fetchall()
+        orders: List[Dict[str, Any]] = cursor.fetchall()
         logger.info(
-            f"Berhasil mengambil profil dan {len(orders)} pesanan untuk ID pengguna: {user_id}"
+            f"Berhasil mengambil profil dan {len(orders)} pesanan untuk "
+            f"ID pengguna: {user_id}"
         )
-
         return render_template(
-            'user/user_profile.html',
+            "user/user_profile.html",
             user=user,
             orders=orders,
-            content=get_content()
+            content=get_content(),
         )
-
+    
     except mysql.connector.Error as db_err:
         logger.error(
-            f"Kesalahan database saat mengambil profil untuk ID pengguna {user_id}: {db_err}",
-            exc_info=True
+            f"Kesalahan database saat mengambil profil untuk ID pengguna "
+            f"{user_id}: {db_err}",
+            exc_info=True,
         )
         flash("Gagal memuat profil Anda karena kesalahan database.", "danger")
-        return render_template(
-            'user/user_profile.html',
-            user={'username': session.get('username', 'Pengguna'), 'email': 'N/A'},
-            orders=[],
-            content=get_content()
+        raise DatabaseException(
+            f"Kesalahan database mengambil profil untuk pengguna "
+            f"{user_id}: {db_err}"
         )
-
+    
     except Exception as e:
         logger.error(
-            f"Kesalahan tak terduga saat mengambil profil untuk ID pengguna {user_id}: {e}",
-            exc_info=True
+            f"Kesalahan tak terduga saat mengambil profil untuk ID pengguna "
+            f"{user_id}: {e}",
+            exc_info=True,
         )
         flash("Gagal memuat profil Anda.", "danger")
-        return render_template(
-            'user/user_profile.html',
-            user={'username': session.get('username', 'Pengguna'), 'email': 'N/A'},
-            orders=[],
-            content=get_content()
+        raise ServiceLogicError(
+            f"Kesalahan tak terduga mengambil profil untuk pengguna "
+            f"{user_id}: {e}"
         )
-
+    
     finally:
         if cursor:
             cursor.close()
@@ -81,201 +98,160 @@ def user_profile():
             conn.close()
 
 
-@user_bp.route('/profile/edit', methods=['GET', 'POST'])
+@user_bp.route("/profile/edit", methods=["GET", "POST"])
 @login_required
-def edit_profile():
-    user_id = session['user_id']
+def edit_profile() -> Union[str, Response, Tuple[Response, int]]:
+    user_id: int = session["user_id"]
+    is_ajax: bool = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-    if request.method == 'POST':
-        action = request.form.get('form_action')
+    if request.method == "POST":
+        action: Optional[str] = request.form.get("form_action")
         logger.debug(
-            f"Memproses permintaan POST edit profil untuk ID pengguna: {user_id}. "
-            f"Aksi: {action}"
+            f"Memproses permintaan POST edit profil untuk ID pengguna: "
+            f"{user_id}. Aksi: {action}"
         )
-        result = {}
-        status_code = 200
+        result: Dict[str, Any] = {}
+        status_code: int = 200
 
         try:
-            if action == 'update_info':
-                username = request.form['username']
-                email = request.form['email']
+            if action == "update_info":
+                username: str = request.form["username"]
+                email: str = request.form["email"]
                 logger.info(
-                    f"Memanggil service update_user_info untuk pengguna {user_id}. Nama baru: {username}, Email baru: {email}"
+                    f"Memanggil service update_user_info untuk pengguna "
+                    f"{user_id}. Nama baru: {username}, Email baru: {email}"
                 )
-                result = user_service.update_user_info(user_id, username, email)
-                if result.get('success'):
-                    session['username'] = username
-                    result['data'] = {'username': username, 'email': email}
+                result = user_service.update_user_info(
+                    user_id, username, email
+                )
+
+                if result.get("success"):
+                    session["username"] = username
+                    result["data"] = {"username": username, "email": email}
                 else:
                     status_code = 400
 
-            elif action == 'change_password':
-                current_password = request.form['current_password']
-                new_password = request.form['new_password']
-                logger.info(f"Memanggil service change_user_password untuk pengguna {user_id}.")
+            elif action == "change_password":
+                current_password: str = request.form["current_password"]
+                new_password: str = request.form["new_password"]
+                logger.info(
+                    "Memanggil service change_user_password untuk pengguna "
+                    f"{user_id}."
+                )
                 result = user_service.change_user_password(
                     user_id, current_password, new_password
                 )
-                if not result.get('success'):
+
+                if not result.get("success"):
                     status_code = 400
 
-            elif action == 'update_address':
-                address_data = {
-                    'phone': request.form['phone'],
-                    'address1': request.form['address_line_1'],
-                    'address2': request.form.get('address_line_2', ''),
-                    'city': request.form['city'],
-                    'province': request.form['province'],
-                    'postal_code': request.form['postal_code']
+            elif action == "update_address":
+                address_data: Dict[str, str] = {
+                    "phone": request.form["phone"],
+                    "address1": request.form["address_line_1"],
+                    "address2": request.form.get("address_line_2", ""),
+                    "city": request.form["city"],
+                    "province": request.form["province"],
+                    "postal_code": request.form["postal_code"],
                 }
                 logger.info(
-                    f"Memanggil service update_user_address untuk pengguna {user_id}."
+                    "Memanggil service update_user_address untuk pengguna "
+                    f"{user_id}."
                 )
-                result = user_service.update_user_address(user_id, address_data)
-                if result.get('success'):
-                    result['data'] = request.form.to_dict() # Mengirim kembali data form untuk update UI jika perlu
+                result = user_service.update_user_address(
+                    user_id, address_data
+                )
+
+                if result.get("success"):
+                    result["data"] = request.form.to_dict()
                 else:
                     status_code = 400
+
             else:
                 logger.warning(
-                    f"Aksi tidak valid '{action}' diterima untuk pengguna {user_id}."
+                    f"Aksi tidak valid '{action}' diterima untuk pengguna "
+                    f"{user_id}."
                 )
-                result = {'success': False, 'message': 'Aksi tidak dikenal.'}
-                status_code = 400
+                raise ValidationError("Aksi tidak dikenal.")
+
+        except (ValidationError, AuthError) as user_error:
+            logger.warning(
+                f"Kesalahan memproses edit profil '{action}' untuk pengguna "
+                f"{user_id}: {user_error}"
+            )
+            result = {"success": False, "message": str(user_error)}
+            status_code = 401 if isinstance(user_error, AuthError) else 400
+
+        except (DatabaseException, ServiceLogicError) as service_err:
+            logger.error(
+                f"Kesalahan Service/DB memproses edit profil '{action}' untuk "
+                f"pengguna {user_id}: {service_err}",
+                exc_info=True,
+            )
+            result = {"success": False, "message": "Terjadi kesalahan server."}
+            status_code = 500
 
         except Exception as e:
             logger.error(
-                f"Kesalahan saat memproses aksi edit profil '{action}' untuk pengguna {user_id}: {e}",
-                exc_info=True
+                f"Kesalahan tak terduga memproses edit profil '{action}' untuk "
+                f"pengguna {user_id}: {e}",
+                exc_info=True,
             )
-            result = {'success': False, 'message': 'Terjadi kesalahan server.'}
+            result = {"success": False, "message": "Terjadi kesalahan server."}
             status_code = 500
 
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if is_ajax:
             logger.debug(
-                f"Mengirim respons JSON. Aksi: '{action}', Berhasil: {result.get('success')}"
+                f"Mengirim respons JSON. Aksi: '{action}', Berhasil: "
+                f"{result.get('success')}"
             )
             return jsonify(result), status_code
-
-        flash(
-            result.get('message', 'Terjadi kesalahan.'),
-            'success' if result.get('success') else 'danger'
-        )
-        return redirect(url_for('user.edit_profile'))
+        
+        else:
+            flash(
+                result.get("message", "Terjadi kesalahan."),
+                "success" if result.get("success") else "danger",
+            )
+            return redirect(url_for("user.edit_profile"))
 
     logger.debug(
         f"Mengakses halaman edit profil (GET) untuk ID pengguna: {user_id}"
     )
+
     try:
         user = user_service.get_user_by_id(user_id)
+        
         if not user:
-            logger.error(
-                f"Kesalahan akses halaman edit profil: ID pengguna {user_id} tidak ditemukan."
-            )
-            session.clear()
-            flash("Sesi Anda tidak valid, silakan login kembali.", "danger")
-            return redirect(url_for('auth.login'))
-
+            raise RecordNotFoundError(f"Pengguna {user_id} tidak ditemukan")
         return render_template(
-            'user/profile_editor.html',
-            user=user,
-            content=get_content()
+            "user/profile_editor.html", user=user, content=get_content()
         )
-    except Exception as e:
+    
+    except RecordNotFoundError:
         logger.error(
-            f"Kesalahan saat memuat halaman edit profil untuk pengguna {user_id}: {e}",
-            exc_info=True
+            f"Kesalahan akses halaman edit profil: ID pengguna {user_id} "
+            "tidak ditemukan."
+        )
+        session.clear()
+        flash("Sesi Anda tidak valid, silakan login kembali.", "danger")
+        return redirect(url_for("auth.login"))
+    
+    except (DatabaseException, ServiceLogicError) as e:
+        logger.error(
+            f"Kesalahan saat memuat halaman edit profil untuk pengguna "
+            f"{user_id}: {e}",
+            exc_info=True,
         )
         flash("Gagal memuat halaman edit profil.", "danger")
-        return redirect(url_for('user.user_profile'))
-
-
-@user_bp.route('/order/track/<int:order_id>')
-@login_required
-def track_order(order_id):
-    user_id = session['user_id']
-    logger.debug(
-        f"Pengguna {user_id} meminta pelacakan untuk ID pesanan: {order_id}"
-    )
-
-    conn = None
-    cursor = None
-
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        cursor.execute(
-            'SELECT * FROM orders WHERE id = %s AND user_id = %s',
-            (order_id, user_id)
-        )
-        order = cursor.fetchone()
-
-        if not order:
-            logger.warning(
-                f"Pesanan {order_id} tidak ditemukan atau akses ditolak untuk pengguna {user_id}."
-            )
-            abort(
-                404,
-                description="Pesanan tidak ditemukan atau Anda tidak memiliki akses."
-            )
-
-        cursor.execute(
-            """
-            SELECT oi.*, p.name
-            FROM order_items oi
-            JOIN products p ON oi.product_id = p.id
-            WHERE oi.order_id = %s
-            """,
-            (order_id,)
-        )
-        items = cursor.fetchall()
-
-        cursor.execute(
-            """
-            SELECT *
-            FROM order_status_history
-            WHERE order_id = %s
-            ORDER BY timestamp DESC
-            """,
-            (order_id,)
-        )
-        history_list = cursor.fetchall()
-
-        logger.info(
-            f"Data pelacakan berhasil diambil. {len(items)} item, {len(history_list)} riwayat status ditemukan."
-        )
-
-        return render_template(
-            'user/order_tracking.html',
-            order=order,
-            items=items,
-            history_list=history_list,
-            content=get_content()
-        )
-
-    except mysql.connector.Error as db_err:
-        logger.error(
-            f"Kesalahan database saat mengambil data pelacakan untuk pesanan {order_id}: {db_err}",
-            exc_info=True
-        )
-        flash(
-            "Gagal memuat informasi pelacakan karena kesalahan database.",
-            "danger"
-        )
-        return redirect(url_for('user.user_profile'))
-
+        raise e
+    
     except Exception as e:
         logger.error(
-            f"Kesalahan tak terduga saat mengambil data pelacakan untuk pesanan {order_id}: {e}",
-            exc_info=True
+            f"Kesalahan tak terduga saat memuat halaman edit profil untuk "
+            f"pengguna {user_id}: {e}",
+            exc_info=True,
         )
-        flash("Gagal memuat informasi pelacakan.", "danger")
-        return redirect(url_for('user.user_profile'))
-
-    finally:
-        if cursor:
-            cursor.close()
-        if conn and conn.is_connected():
-            conn.close()
+        flash("Gagal memuat halaman edit profil.", "danger")
+        raise ServiceLogicError(
+            f"Kesalahan tak terduga memuat halaman edit profil: {e}"
+        )

@@ -70,6 +70,7 @@ CREATE TABLE orders (
     shipping_city VARCHAR(100),
     shipping_province VARCHAR(100),
     shipping_postal_code VARCHAR(10),
+    shipping_email VARCHAR(120) NULL,
     tracking_number VARCHAR(100),
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -108,12 +109,13 @@ CREATE TABLE reviews (
 );
 
 CREATE TABLE user_carts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     product_id INT NOT NULL,
-    variant_id INT,
+    variant_id INT NULL,
     quantity INT NOT NULL,
     added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, product_id, variant_id),
+    UNIQUE KEY unique_cart_item (user_id, product_id, variant_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
     FOREIGN KEY (variant_id) REFERENCES product_variants(id) ON DELETE CASCADE

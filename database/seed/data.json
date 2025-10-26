@@ -16,54 +16,13 @@
   "users": [
     {"username": "admin", "email": "admin@hackthread.dev", "password": "admin123", "is_admin": 1}
   ],
-  "regular_users_count": 52,
+  "regular_users_count": 0,
   "regular_user_password": "password123",
-  "categories": [
-    {"name": "T-Shirt"},
-    {"name": "Hoodie"},
-    {"name": "Aksesoris"},
-    {"name": "Sweater"}
-  ],
-  "products": [
-    {"name": "Kaos \"Hello, World!\"", "price": 175000, "discount_price": 150000, "description": "Kaos katun premium dengan sablon klasik \"Hello, World!\". Sempurna untuk memulai hari (atau proyek coding). Bahan adem dan nyaman.", "category_id": 1, "colors": "Hitam, Putih, Biru Navy", "popularity": 55, "image_url": "kaos_hello_world.webp", "additional_image_urls": ["kaos_hello_world_2.webp"], "stock": 0, "has_variants": 1, "weight_grams": 150, "sku": null},
-    {"name": "Hoodie \"Binary Tree\"", "price": 350000, "discount_price": null, "description": "Hoodie tebal dengan desain struktur data binary tree yang artistik. Jaga kehangatanmu saat begadang debugging. Fleece 280gsm.", "category_id": 2, "colors": "Hitam, Abu-abu", "popularity": 85, "image_url": "hoodie_binary.webp", "additional_image_urls": [], "stock": 0, "has_variants": 1, "weight_grams": 500, "sku": null},
-    {"name": "Topi \"Git Commit\"", "price": 125000, "discount_price": null, "description": "Topi baseball dengan bordir command \"git commit\". Sebuah pengingat untuk selalu menyimpan progresmu.", "category_id": 3, "colors": "Hitam", "popularity": 70, "image_url": "topi_git.webp", "additional_image_urls": ["topi_git_2.webp"], "stock": 75, "has_variants": 0, "weight_grams": 100, "sku": "TOPI-GIT-HITAM"},
-    {"name": "Sweater \"Eat, Sleep, Code, Repeat\"", "price": 295000, "discount_price": 250000, "description": "Sweater ringan yang cocok untuk kerja di ruangan ber-AC. Slogan yang mewakili gaya hidup setiap developer.", "category_id": 4, "colors": "Biru Navy", "popularity": 95, "image_url": "sweater_code.webp", "additional_image_urls": ["sweater_code_2.webp"], "stock": 60, "has_variants": 0, "weight_grams": 400, "sku": "SWTR-ESCR-NAVY"}
-  ],
-  "variants": [
-    {"product_id": 1, "size": "S", "stock": 20, "weight_grams": 150, "sku": "KAOS-HW-S"},
-    {"product_id": 1, "size": "M", "stock": 30, "weight_grams": 160, "sku": "KAOS-HW-M"},
-    {"product_id": 1, "size": "L", "stock": 30, "weight_grams": 170, "sku": "KAOS-HW-L"},
-    {"product_id": 1, "size": "XL", "stock": 20, "weight_grams": 180, "sku": "KAOS-HW-XL"},
-    {"product_id": 2, "size": "M", "stock": 15, "weight_grams": 500, "sku": "HOOD-BIN-M"},
-    {"product_id": 2, "size": "L", "stock": 20, "weight_grams": 520, "sku": "HOOD-BIN-L"},
-    {"product_id": 2, "size": "XL", "stock": 15, "weight_grams": 540, "sku": "HOOD-BIN-XL"}
-  ],
-  "orders": [
-    {"id": 1, "user_id": 2, "order_date": "2025-09-10 14:30:00", "subtotal": 500000, "discount_amount": 0, "shipping_cost": 15000, "total_amount": 515000, "voucher_code": null, "status": "Selesai", "payment_method": "Bank Transfer", "payment_transaction_id": "TX1001", "shipping_name": "User 1", "shipping_phone": "081200000001", "shipping_address_line_1": "Jl. Dummy No. 1", "shipping_address_line_2": "", "shipping_city": "Depok", "shipping_province": "Jawa Barat", "shipping_postal_code": "16424", "tracking_number": "JN10001"},
-    {"id": 2, "user_id": 3, "order_date": "2025-10-01 11:00:00", "subtotal": 125000, "discount_amount": 0, "shipping_cost": 10000, "total_amount": 135000, "voucher_code": null, "status": "Dikirim", "payment_method": "E-Wallet", "payment_transaction_id": "TX1002", "shipping_name": "User 2", "shipping_phone": "081200000002", "shipping_address_line_1": "Jl. Dummy No. 2", "shipping_address_line_2": "", "shipping_city": "Jakarta", "shipping_province": "DKI Jakarta", "shipping_postal_code": "10220", "tracking_number": "SC10002"},
-    {"id": 3, "user_id": 4, "order_date": "2025-10-14 20:00:00", "subtotal": 400000, "discount_amount": 0, "shipping_cost": 20000, "total_amount": 420000, "voucher_code": null, "status": "Diproses", "payment_method": "COD", "payment_transaction_id": null, "shipping_name": "User 3", "shipping_phone": "081200000003", "shipping_address_line_1": "Jl. Dummy No. 3", "shipping_address_line_2": "", "shipping_city": "Bandung", "shipping_province": "Jawa Barat", "shipping_postal_code": "40111", "tracking_number": null},
-    {"id": 4, "user_id": 15, "order_date": "2025-10-15 09:00:00", "subtotal": 150000, "discount_amount": 15000, "shipping_cost": 15000, "total_amount": 150000, "voucher_code": "HEMAT10", "status": "Selesai", "payment_method": "E-Wallet", "payment_transaction_id": "TX1003", "shipping_name": "User 14", "shipping_phone": "081200000014", "shipping_address_line_1": "Jl. Dummy No. 14", "shipping_address_line_2": "", "shipping_city": "Surabaya", "shipping_province": "Jawa Timur", "shipping_postal_code": "60111", "tracking_number": "JN10002"},
-    {"id": 5, "user_id": 5, "order_date": "2025-10-18 10:00:00", "subtotal": 175000, "discount_amount": 0, "shipping_cost": 15000, "total_amount": 190000, "voucher_code": null, "status": "Menunggu Pembayaran", "payment_method": "Virtual Account", "payment_transaction_id": null, "shipping_name": "User 5", "shipping_phone": "081200000005", "shipping_address_line_1": "Jl. Dummy No. 5", "shipping_address_line_2": "", "shipping_city": "Yogyakarta", "shipping_province": "DIY", "shipping_postal_code": "55222", "tracking_number": null}
-  ],
-  "order_items": [
-    {"id": 1, "order_id": 1, "product_id": 1, "variant_id": 2, "quantity": 1, "price": 150000, "size_at_order": "M"},
-    {"id": 2, "order_id": 1, "product_id": 2, "variant_id": 6, "quantity": 1, "price": 350000, "size_at_order": "L"},
-    {"id": 3, "order_id": 2, "product_id": 3, "variant_id": null, "quantity": 1, "price": 125000, "size_at_order": null},
-    {"id": 4, "order_id": 3, "product_id": 4, "variant_id": null, "quantity": 1, "price": 250000, "size_at_order": null},
-    {"id": 5, "order_id": 3, "product_id": 1, "variant_id": 3, "quantity": 1, "price": 150000, "size_at_order": "L"},
-    {"id": 6, "order_id": 4, "product_id": 1, "variant_id": 1, "quantity": 1, "price": 150000, "size_at_order": "S"},
-    {"id": 7, "order_id": 5, "product_id": 1, "variant_id": 4, "quantity": 1, "price": 175000, "size_at_order": "XL"}
-  ],
-  "reviews": [
-    {"product_id": 1, "user_id": 2, "rating": 5, "comment": "Bahan kaosnya adem banget, sablonnya juga rapi. Keren!", "created_at": "2024-09-15 10:00:00"},
-    {"product_id": 2, "user_id": 2, "rating": 4, "comment": "Hoodienya tebal dan hangat, pas buat ngoding malem. Desainnya juga subtle, suka!", "created_at": "2024-09-16 12:00:00"},
-    {"product_id": 3, "user_id": 3, "rating": 5, "comment": "Topinya keren, bordirannya rapi banget.", "created_at": "2024-10-05 18:00:00"},
-    {"product_id": 1, "user_id": 15, "rating": 5, "comment": "Sama kayak user lain, kaosnya memang top!", "created_at": "2024-10-20 18:00:00"}
-  ],
-  "vouchers": [
-    {"code": "HEMAT10", "type": "PERCENTAGE", "value": 10, "max_uses": 100, "use_count": 1, "start_date": null, "end_date": null, "min_purchase_amount": 50000, "is_active": 1},
-    {"code": "POTONGAN50K", "type": "FIXED_AMOUNT", "value": 50000, "max_uses": 50, "use_count": 0, "start_date": null, "end_date": null, "min_purchase_amount": 250000, "is_active": 1},
-    {"code": "KADALUWARSA", "type": "FIXED_AMOUNT", "value": 100000, "max_uses": 10, "use_count": 0, "start_date": "2023-01-01", "end_date": "2023-12-31", "min_purchase_amount": 0, "is_active": 1}
-  ]
+  "categories": [],
+  "products": [],
+  "variants": [],
+  "orders": [],
+  "order_items": [],
+  "reviews": [],
+  "vouchers": []
 }
