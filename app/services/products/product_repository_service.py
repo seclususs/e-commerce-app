@@ -187,12 +187,13 @@ class ProductRepositoryService:
         product_id: Any,
         update_data: Dict[str, Any],
         conn: MySQLConnection
-    ) -> bool:
+    ) -> int:
         logger.debug(f"RepoService: Memperbarui produk ID: {product_id}")
         cursor: Optional[Any] = None
 
         try:
             cursor = conn.cursor()
+            additional_images_json = json.dumps(update_data.get("additional_image_urls", []))
 
             cursor.execute(
                 """
@@ -211,7 +212,7 @@ class ProductRepositoryService:
                     update_data.get("colors"),
                     update_data["stock"],
                     update_data["image_url"],
-                    json.dumps(update_data["additional_image_urls"]),
+                    additional_images_json,
                     update_data["has_variants"],
                     update_data["weight_grams"],
                     update_data.get("sku"),
@@ -219,7 +220,9 @@ class ProductRepositoryService:
                 ),
             )
 
-            return cursor.rowcount > 0
+            affected_rows = cursor.rowcount
+            logger.debug(f"RepoService: Baris terpengaruh oleh update: {affected_rows}")
+            return affected_rows
         
         except mysql.connector.Error as e:
             logger.error(

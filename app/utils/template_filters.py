@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from typing import Any, List, Optional, Union
+from decimal import Decimal, ROUND_HALF_UP
 
 from flask import Flask
 
@@ -10,14 +11,15 @@ logger = get_logger(__name__)
 
 
 def format_rupiah(value: Any) -> str:
-    
+
     try:
-        val: float = float(value)
-        return f"Rp {val:,.0f}".replace(",", ".")
-    
-    except (ValueError, TypeError, AttributeError):
+        val_decimal = Decimal(str(value)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)
+        formatted_string = f"{val_decimal:,.0f}".replace(",", ".")
+        return f"Rp {formatted_string}"
+
+    except (ValueError, TypeError, AttributeError) as e:
         logger.debug(
-            f"Tidak dapat memformat nilai sebagai Rupiah: {value}",
+            f"Tidak dapat memformat nilai sebagai Rupiah: {value}, Error: {e}",
             exc_info=False,
         )
         return "Rp 0"
@@ -31,12 +33,12 @@ def format_percentage(part: Any, whole: Any) -> int:
 
         if whole_float == 0:
             return 0
-        
+
         percentage: int = round(
             100 * (whole_float - part_float) / whole_float
         )
         return max(0, percentage)
-    
+
     except (ValueError, TypeError):
         logger.debug(
             f"Tidak dapat menghitung persentase untuk bagian={part}, "
@@ -52,7 +54,7 @@ def fromjson_safe_filter(json_str: Optional[str]) -> list:
         if not json_str:
             return []
         return json.loads(json_str)
-    
+
     except (json.JSONDecodeError, TypeError):
         logger.warning(
             f"Gagal mendekode string JSON di filter template: {json_str}",
@@ -65,7 +67,7 @@ def tojson_safe_filter(obj: Any) -> str:
 
     try:
         return json.dumps(obj)
-    
+
     except TypeError:
         logger.warning(
             f"Gagal mengkode objek ke JSON di filter template: {type(obj)}",
@@ -117,7 +119,7 @@ def status_class_filter(status_en: str) -> str:
 def datetime_from_string_filter(
     date_input: Union[str, datetime, None]
 ) -> Optional[datetime]:
-    
+
     if isinstance(date_input, datetime):
         return date_input
 
@@ -128,19 +130,18 @@ def datetime_from_string_filter(
 
     try:
         return datetime.fromisoformat(date_string.split(".")[0])
-    
+
     except (ValueError, TypeError):
 
         try:
             return datetime.strptime(date_string.split(" ")[0], "%Y-%m-%d")
-        
+
         except (ValueError, TypeError):
             logger.error(
                 f"Kesalahan saat mem-parsing string tanggal di "
                 f"filter template: {date_string}",
                 exc_info=False,
             )
-
             return datetime.now()
 
 
@@ -151,7 +152,7 @@ def add_days_filter(
 
     if isinstance(dt_obj, datetime) and isinstance(days, int):
         return dt_obj + timedelta(days=days)
-    
+
     return dt_obj
 
 

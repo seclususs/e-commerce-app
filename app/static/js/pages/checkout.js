@@ -1,6 +1,6 @@
 import { cartStore } from '../store/cart-store.js';
 
-const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID', { minimumFractionDigits: 0 })}`;
+const formatRupiah = (num) => `Rp ${Number(num).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
 function renderCheckoutSummary(state) {
     const { items, subtotal } = state;
@@ -22,13 +22,16 @@ function renderCheckoutSummary(state) {
     }
 
     summaryContainer.innerHTML = items.map(p => {
-        const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
+        const priceNum = Number(p.price) || 0;
+        const discountPriceNum = Number(p.discount_price) || 0;
+        const effectivePrice = (discountPriceNum && discountPriceNum > 0) ? discountPriceNum : priceNum;
         const sizeInfo = p.size ? ` (Ukuran: ${p.size})` : '';
         return `<div class="summary-row"><span>${p.name}${sizeInfo} (x${p.quantity})</span><span>${formatRupiah(effectivePrice * p.quantity)}</span></div>`;
     }).join('');
 
-    if (subtotalEl) subtotalEl.textContent = formatRupiah(subtotal);
-    if (totalEl) totalEl.textContent = formatRupiah(subtotal);
+    const subtotalNum = Number(subtotal) || 0;
+    if (subtotalEl) subtotalEl.textContent = formatRupiah(subtotalNum);
+    if (totalEl) totalEl.textContent = formatRupiah(subtotalNum);
 
     if (!window.IS_USER_LOGGED_IN && cartDataInput) {
         const guestCart = items.reduce((acc, item) => {
@@ -111,7 +114,7 @@ function initVoucherHandler() {
         messageEl.textContent = 'Memvalidasi...';
         messageEl.className = 'voucher-feedback';
 
-        const subtotal = cartStore.getState().subtotal;
+        const subtotal = Number(cartStore.getState().subtotal) || 0;
         if (isNaN(subtotal)) {
             applyBtn.disabled = false;
             return;
@@ -128,7 +131,6 @@ function initVoucherHandler() {
             if (result.success) {
                 messageEl.textContent = result.message;
                 messageEl.classList.add('success');
-
                 document.getElementById('checkoutDiscount').textContent = `- ${formatRupiah(result.discount_amount)}`;
                 document.querySelector('.discount-row').style.display = 'flex';
                 const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
@@ -139,6 +141,7 @@ function initVoucherHandler() {
                 resetDiscount();
             }
         } catch (error) {
+            console.error('Voucher apply error:', error);
             messageEl.textContent = 'Gagal terhubung ke server.';
             messageEl.classList.add('error');
         } finally {
@@ -158,12 +161,14 @@ function initVoucherHandler() {
     };
 
     applyBtn.addEventListener('click', applyVoucher);
+
     voucherInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             applyVoucher();
         }
     });
+
     voucherInput.addEventListener('input', () => {
         if (messageEl.textContent !== '') {
             resetDiscount();
@@ -177,7 +182,10 @@ function initStockHoldTimer(expiresAtIsoString) {
     const container = document.getElementById('stock-hold-timer-container');
     const expiryTime = expiresAtIsoString || (expiresAtInput ? expiresAtInput.value : null);
 
-    if (!expiryTime || !timerEl || !container) return;
+    if (!expiryTime || !timerEl || !container) {
+        console.warn("Timer elements not found or expiry time missing.");
+        return;
+    }
 
     const expiresAt = new Date(expiryTime).getTime();
 
@@ -269,11 +277,11 @@ function initShippingCalculation() {
             shippingCostEl.textContent = formatRupiah(0);
         }
 
-        const subtotal = cartStore.getState().subtotal || 0;
+        const subtotal = Number(cartStore.getState().subtotal) || 0;
         const discountText = discountEl.textContent || '0';
         const discount = parseFloat(discountText.replace(/[^\d.-]/g, '')) || 0;
 
-        const finalTotal = subtotal + discount + shippingCost;
+        const finalTotal = subtotal + shippingCost + discount;
         totalEl.textContent = formatRupiah(finalTotal);
         shippingCostInput.value = shippingCost;
     };
@@ -282,6 +290,7 @@ function initShippingCalculation() {
         citySelect.addEventListener('change', calculateAndUpdate);
         if (citySelect.value) setTimeout(calculateAndUpdate, 150);
     }
+
     const triggerElement = citySelect || cityDisplay || document.body;
     triggerElement.addEventListener('recalc', calculateAndUpdate);
 
@@ -317,6 +326,7 @@ async function prepareCheckout() {
             throw new Error(prepareResult.message || 'Gagal memvalidasi stok.');
         }
     } catch (error) {
+        console.error("Checkout preparation error:", error);
         if (timerContainer) {
             timerContainer.innerHTML = `${error.message} <a href="/cart" style="color: white; text-decoration: underline;">Kembali ke keranjang</a>.`;
             timerContainer.classList.add('expired');

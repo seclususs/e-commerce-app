@@ -13,6 +13,7 @@
   border-radius: 8px;
   overflow: hidden;
   transition: border-color 0.2s;
+  cursor: pointer;
 }
 
 .preview-item img {
@@ -24,19 +25,11 @@
 
 .main-image-radio {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  cursor: pointer;
-  transform: scale(1.5);
-  z-index: 2;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
-.preview-item.is-main {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 10px var(--color-shadow-primary);
-}
-
-/* Main Image Indicator */
 .main-image-indicator {
   position: absolute;
   top: 0;
@@ -53,7 +46,7 @@
   opacity: 0;
   transform: translateY(-100%);
   transition: opacity 0.3s ease, transform 0.3s ease;
-  z-index: 1;
+  z-index: 3;
 }
 
 .preview-item.is-main .main-image-indicator {
@@ -61,9 +54,9 @@
   transform: translateY(0);
 }
 
-/* Styles for deleting images in product editor */
-.preview-item.marked-for-deletion img {
-  opacity: 0.4;
+.preview-item.is-main {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 10px var(--color-shadow-primary);
 }
 
 .delete-checkbox-overlay {
@@ -78,21 +71,42 @@
   justify-content: flex-start;
   padding: 8px;
   transition: background-color 0.3s ease;
-  z-index: 1;
+  z-index: 2;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.preview-item:hover .delete-checkbox-overlay,
+.preview-item.marked-for-deletion .delete-checkbox-overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+.preview-item.marked-for-deletion img {
+  opacity: 0.4;
 }
 
 .preview-item.marked-for-deletion .delete-checkbox-overlay {
   background-color: rgba(239, 68, 68, 0.5);
 }
 
+.delete-checkbox-overlay .custom-checkbox {
+    transform: scale(0.9);
+    transform-origin: top left;
+}
 .delete-checkbox-overlay .custom-checkbox .checkbox-box {
   background-color: rgba(15, 23, 42, 0.7);
-  border-color: var(--color-text-light);
+  border-color: var(--color-white);
 }
-
-.delete-checkbox-overlay .custom-checkbox .checkbox-input:checked+.checkbox-box {
+.delete-checkbox-overlay .custom-checkbox .checkbox-input:checked + .checkbox-box {
   background-color: var(--color-danger);
   border-color: var(--color-danger);
+}
+.delete-checkbox-overlay .custom-checkbox .checkbox-box .checkmark{
+  background-color: var(--color-text-primary);
+}
+html.light-theme .delete-checkbox-overlay .custom-checkbox .checkbox-box .checkmark{
+    background-color: var(--color-white);
 }
 
 /* General Form Hint Text */
@@ -114,7 +128,7 @@
   border-bottom: 1px solid var(--color-border-default);
 }
 
-.bulk-actions-container>.form-group {
+.bulk-actions-container > .form-group {
   flex-shrink: 1;
   flex-basis: auto;
   margin-bottom: 0;

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
 import mysql.connector
@@ -46,7 +47,7 @@ class CartService:
                 f"untuk user_id: {user_id}"
             )
 
-            subtotal: float = 0.0
+            subtotal: Decimal = Decimal("0.0")
             items: List[Dict[str, Any]] = []
 
             for item in cart_items:
@@ -54,21 +55,26 @@ class CartService:
                 item["stock"] = stock_service.get_available_stock(
                     item["id"], stock_variant_id, conn
                 )
-                effective_price: float = (
-                    item["discount_price"]
-                    if item["discount_price"] and item["discount_price"] > 0
-                    else item["price"]
+
+                price = Decimal(str(item["price"])) if item["price"] is not None else Decimal("0.0")
+                discount_price = Decimal(str(item["discount_price"])) if item["discount_price"] is not None else Decimal("0.0")
+
+                effective_price: Decimal = (
+                    discount_price
+                    if discount_price and discount_price > Decimal("0.0")
+                    else price
                 )
-                item["line_total"] = effective_price * item["quantity"]
+
+                item["line_total"] = effective_price * Decimal(item["quantity"])
                 subtotal += item["line_total"]
                 items.append(item)
 
             logger.debug(
                 f"Detail keranjang dihitung untuk user_id: {user_id}. "
-                f"Subtotal: {subtotal}"
+                f"Subtotal: {float(subtotal)}"
             )
 
-            return {"items": items, "subtotal": subtotal}
+            return {"items": items, "subtotal": float(subtotal)}
 
         except mysql.connector.Error as e:
             logger.error(
@@ -138,7 +144,7 @@ class CartService:
                     f"untuk produk {product_id} tapi None diterima."
                 )
                 raise ValidationError("Silakan pilih ukuran untuk produk ini.")
-            
+
             elif not product["has_variants"] and db_variant_id is not None:
                 logger.warning(
                     f"Gagal menambahkan ke keranjang: ID Varian {db_variant_id} "
@@ -282,13 +288,13 @@ class CartService:
                 raise DatabaseException(
                     "Terjadi masalah internal saat memproses varian produk."
                 )
-            
+
             elif db_err.errno == 1062:
                 logger.warning(
                     f"Duplicate entry error adding to cart: {db_err}"
                 )
                 raise DatabaseException("Item ini sudah ada di keranjang Anda.")
-            
+
             raise DatabaseException(
                 f"Kesalahan database saat menambahkan item: {db_err}"
             )

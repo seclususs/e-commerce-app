@@ -47,7 +47,7 @@ class ProductService:
                     f"Service: Pembuatan produk gagal karena error gambar: {image_error}"
                 )
                 return {"success": False, "message": image_error}
-            
+
             has_variants: bool = "has_variants" in form_data
             stock: Any = 0 if has_variants else form_data.get("stock", 10)
             weight_grams: Any = (
@@ -64,7 +64,7 @@ class ProductService:
                 raise ValidationError(
                     "Nama, Harga, Kategori, dan Deskripsi wajib diisi."
                 )
-            
+
             product_data: Dict[str, Any] = {
                 "name": form_data["name"],
                 "price": form_data["price"],
@@ -118,7 +118,7 @@ class ProductService:
                     "success": False,
                     "message": f'SKU "{current_sku}" sudah ada. Harap gunakan SKU yang unik.',
                 }
-            
+
             elif e.errno == 1062:
                 logger.warning(
                     f"Service: Pembuatan produk gagal: Error entri duplikat (kemungkinan nama)."
@@ -127,7 +127,7 @@ class ProductService:
                     "success": False,
                     "message": f'Nama produk "{form_data["name"]}" mungkin sudah ada.',
                 }
-            
+
             logger.error(
                 f"Service: Error integritas database saat pembuatan produk: {e}",
                 exc_info=True,
@@ -135,7 +135,7 @@ class ProductService:
             raise DatabaseException(
                 f"Terjadi kesalahan database integritas: {e}"
             )
-        
+
         except ValidationError as ve:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -143,7 +143,7 @@ class ProductService:
                 f"Service: Gagal membuat produk karena validasi: {ve}"
             )
             return {"success": False, "message": str(ve)}
-        
+
         except Exception as e:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -152,7 +152,7 @@ class ProductService:
                 exc_info=True,
             )
             raise ServiceLogicError(f"Gagal menambahkan produk: {e}")
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()
@@ -168,6 +168,7 @@ class ProductService:
 
         conn: Optional[MySQLConnection] = None
         sku: Optional[str] = None
+        conversion_happened: bool = False
 
         try:
             conn = get_db_connection()
@@ -186,8 +187,8 @@ class ProductService:
             (
                 final_main,
                 final_additional,
-                _,
-                images_to_delete_marked,
+                images_physically_deleted,
+                images_marked_for_delete,
                 image_error,
             ) = image_service.handle_image_upload(files, form_data, product)
 
@@ -196,7 +197,7 @@ class ProductService:
                     f"Service: Pembaruan produk gagal untuk ID {product_id} karena error gambar: {image_error}"
                 )
                 raise ValidationError(image_error)
-            
+
             old_has_variants: bool = product.get("has_variants", False)
             new_has_variants: bool = "has_variants" in form_data
             logger.debug(
@@ -212,7 +213,7 @@ class ProductService:
                 raise ValidationError(
                     "Nama, Harga, Kategori, dan Deskripsi wajib diisi."
                 )
-            
+
             stock: Any = product.get("stock")
             weight_grams: Any = product.get("weight_grams")
             sku = product.get("sku")
@@ -223,6 +224,7 @@ class ProductService:
                         product_id, product, conn
                     )
                 )
+                conversion_happened = True
 
             elif old_has_variants and not new_has_variants:
                 stock, weight_grams, sku = (
@@ -230,6 +232,7 @@ class ProductService:
                         product_id, form_data, conn
                     )
                 )
+                conversion_happened = True
 
             else:
                 if not new_has_variants:
@@ -239,6 +242,8 @@ class ProductService:
                     )
                     sku_form: Optional[str] = form_data.get("sku") or None
                     sku = sku_form.upper().strip() if sku_form else None
+                else:
+                    pass
 
             update_data: Dict[str, Any] = {
                 "name": form_data["name"],
@@ -254,65 +259,59 @@ class ProductService:
                 "weight_grams": weight_grams,
                 "sku": sku,
             }
-            update_successful: bool = product_repository_service.update(
+
+            update_rowcount: int = product_repository_service.update(
                 product_id, update_data, conn
             )
+            update_successful = update_rowcount > 0 or conversion_happened or bool(images_marked_for_delete) or files.getlist("new_images")
 
             if update_successful:
                 conn.commit()
 
-                if new_has_variants or (
-                    old_has_variants and not new_has_variants
-                ):
+                if conversion_happened:
                     logger.debug(
-                        f"Service: Memperbarui total stok dari varian untuk produk ID {product_id} setelah update."
+                        f"Service: Memperbarui total stok dari varian untuk produk ID {product_id} setelah update utama."
                     )
 
                     update_conn_stock: Optional[MySQLConnection] = None
-
+                    
                     try:
                         update_conn_stock = get_db_connection()
+                        update_conn_stock.start_transaction()
                         variant_service.update_total_stock_from_variants(
                             product_id, update_conn_stock
                         )
                         update_conn_stock.commit()
+                        logger.info(f"Service: Total stok produk {product_id} berhasil diperbarui setelah konversi.")
 
                     except Exception as update_err:
                         logger.error(
                             f"Service: Error memperbarui total stok setelah konversi untuk {product_id}: {update_err}",
                             exc_info=True,
                         )
-
-                        if (
-                            update_conn_stock
-                            and update_conn_stock.is_connected()
-                        ):
+                        if update_conn_stock and update_conn_stock.is_connected():
                             update_conn_stock.rollback()
 
                     finally:
-                        if (
-                            update_conn_stock
-                            and update_conn_stock.is_connected()
-                        ):
+                        if update_conn_stock and update_conn_stock.is_connected():
                             update_conn_stock.close()
 
                 logger.info(
-                    f"Service: Produk ID {product_id} berhasil diperbarui."
+                    f"Service: Produk ID {product_id} berhasil diperbarui (rowcount: {update_rowcount}, konversi: {conversion_happened})."
                 )
-
                 return {
                     "success": True,
                     "message": "Produk berhasil diperbarui!"
                 }
-            
+
             else:
                 conn.rollback()
                 logger.warning(
-                    f"Service: Tidak ada baris yang terpengaruh saat memperbarui produk ID {product_id}."
+                    f"Service: Tidak ada baris yang terpengaruh saat memperbarui produk ID {product_id} DAN tidak ada konversi/perubahan gambar."
                 )
                 return {
                     "success": False,
-                    "message": "Gagal memperbarui produk (tidak ada perubahan atau error).",
+                    "message": "Gagal memperbarui produk (tidak ada perubahan data).",
                 }
 
         except mysql.connector.IntegrityError as e:
@@ -332,14 +331,14 @@ class ProductService:
                 }
             
             elif e.errno == 1062:
-                logger.warning(
+                 logger.warning(
                     f"Service: Pembaruan produk gagal: Error entri duplikat (kemungkinan nama)."
                 )
-                return {
+                 return {
                     "success": False,
                     "message": f'Nama produk "{form_data["name"]}" mungkin sudah ada.',
                 }
-            
+
             logger.error(
                 f"Service: Error integritas database saat pembaruan produk ID {product_id}: {e}",
                 exc_info=True,
@@ -347,7 +346,7 @@ class ProductService:
             raise DatabaseException(
                 f"Terjadi kesalahan database integritas: {e}"
             )
-        
+
         except (ValidationError, RecordNotFoundError) as user_error:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -355,7 +354,7 @@ class ProductService:
                 f"Service: Gagal memperbarui produk {product_id}: {user_error}"
             )
             return {"success": False, "message": str(user_error)}
-        
+
         except Exception as e:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -364,7 +363,7 @@ class ProductService:
                 exc_info=True,
             )
             raise ServiceLogicError(f"Gagal memperbarui produk: {e}")
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()
@@ -377,56 +376,47 @@ class ProductService:
         logger.debug(f"Service: Memulai penghapusan produk ID: {product_id}")
 
         conn: Optional[MySQLConnection] = None
+        product: Optional[Dict[str, Any]] = None
 
         try:
-            conn = get_db_connection()
-            conn.start_transaction()
-            product: Optional[
-                Dict[str, Any]
-            ] = product_repository_service.find_by_id(product_id, conn)
+            temp_conn_find = get_db_connection()
+
+            try:
+                product = product_repository_service.find_by_id(product_id, temp_conn_find)
+            finally:
+                if temp_conn_find and temp_conn_find.is_connected():
+                    temp_conn_find.close()
 
             if not product:
-                logger.warning(
-                    f"Service: Penghapusan produk gagal: Produk ID {product_id} tidak ditemukan."
-                )
-                raise RecordNotFoundError("Produk tidak ditemukan.")
-            
-            logger.debug(
-                f"Service: Menghapus varian untuk produk ID {product_id}"
-            )
+                 logger.warning(f"Service: Penghapusan produk gagal: Produk ID {product_id} tidak ditemukan.")
+                 raise RecordNotFoundError("Produk tidak ditemukan.")
 
+            conn = get_db_connection()
+            conn.start_transaction()
+
+            logger.debug(f"Service: Menghapus varian untuk produk ID {product_id}")
             variant_service.delete_all_variants_for_product(product_id, conn)
-            logger.debug(
-                f"Service: Menghapus produk ID {product_id} dari repository service"
-            )
-
+            logger.debug(f"Service: Menghapus produk ID {product_id} dari repository service")
             deleted: bool = product_repository_service.delete(product_id, conn)
 
             if deleted:
                 conn.commit()
-                logger.info(
-                    f"Service: Data produk untuk ID {product_id} berhasil dihapus."
-                )
-                logger.debug(
-                    f"Service: Menghapus gambar untuk produk ID {product_id}"
-                )
+                logger.info(f"Service: Data produk untuk ID {product_id} berhasil dihapus dari DB.")
+                logger.debug(f"Service: Menghapus gambar fisik untuk produk ID {product_id}")
                 image_service.delete_all_product_images(product)
+
                 return {"success": True, "message": "Produk berhasil dihapus."}
             
             else:
                 conn.rollback()
-                logger.warning(
-                    f"Service: Penghapusan produk ID {product_id} gagal di repository service."
-                )
-                raise RecordNotFoundError(
-                    "Produk tidak ditemukan saat mencoba menghapus."
-                )
+                logger.warning(f"Service: Penghapusan produk ID {product_id} gagal di repository service (mungkin sudah dihapus).")
+                raise RecordNotFoundError("Produk tidak ditemukan saat mencoba menghapus.")
 
         except RecordNotFoundError as rnfe:
             if conn and conn.is_connected():
-                conn.rollback()
+                 conn.rollback()
             return {"success": False, "message": str(rnfe)}
-        
+
         except (mysql.connector.Error, DatabaseException) as db_err:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -434,10 +424,8 @@ class ProductService:
                 f"Kesalahan database saat penghapusan produk {product_id}: {db_err}",
                 exc_info=True,
             )
-            raise DatabaseException(
-                f"Kesalahan database saat menghapus produk: {db_err}"
-            )
-        
+            raise DatabaseException(f"Kesalahan database saat menghapus produk: {db_err}")
+
         except Exception as e:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -446,12 +434,10 @@ class ProductService:
                 exc_info=True,
             )
             raise ServiceLogicError(f"Gagal menghapus produk: {e}")
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()
-                logger.debug(
-                    f"Service: Koneksi database ditutup untuk delete_product {product_id}"
-                )
+                logger.debug(f"Service: Koneksi database ditutup untuk delete_product {product_id}")
 
 product_service = ProductService()

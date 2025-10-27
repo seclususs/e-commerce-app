@@ -27,6 +27,9 @@
                 <span class="checkbox-box"><span class="checkmark"></span></span>
                 <span>Produk ini memiliki varian ukuran</span>
             </label>
+            {% if product.variants and product.variants|length > 1 %}
+            <p class="form-hint" style="color: var(--color-warning); margin-top: 0.5rem;">Hapus semua varian kecuali satu untuk menonaktifkan fitur varian.</p>
+            {% endif %}
         </div>
 
         <div id="non-variant-fields" style="display: {{ 'none' if product.has_variants else 'block' }};">
@@ -34,12 +37,10 @@
                 <label for="stock">Stok (jika tidak ada varian)</label>
                 <input type="number" id="stock" name="stock" value="{{ product.stock }}">
             </div>
-
             <div class="form-group" id="weight-input-container-edit">
                 <label for="weight_grams">Berat (gram) (jika tidak ada varian)</label>
                 <input type="number" id="weight_grams" name="weight_grams" value="{{ product.weight_grams or 150 }}">
             </div>
-
             <div class="form-group" id="sku-input-container">
                 <label for="sku">SKU (jika tidak ada varian)</label>
                 <input type="text" id="sku" name="sku" value="{{ product.sku or '' }}">
@@ -53,11 +54,14 @@
                 <li>Setelah menyimpan, Anda dapat mengedit varian ini dan menambah varian lainnya melalui halaman "Kelola Varian".</li>
             </ul>
         </div>
+        <div class="form-hint" id="non-variant-conversion-hint" style="display:none; margin-top: 1rem; padding: 1rem; background-color: rgba(239, 68, 68, 0.1); border: 1px solid var(--color-danger); border-radius: var(--border-radius-sm);">
+            <strong>Peringatan:</strong> Anda akan mengubah produk ini menjadi produk non-varian. <strong>Semua varian yang ada akan dihapus permanen.</strong> Pastikan untuk mengisi stok, berat, dan SKU di atas.
+        </div>
 
         <div class="form-hint" style="margin-top: 1rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
              {% if product.has_variants %}
                 <span>Stok dan berat total dihitung otomatis dari varian.</span>
-                <a href="{{ url_for('admin.manage_variants', product_id=product.id) }}" class="cta-button-secondary" style="padding: 0.4rem 1rem; font-size: 0.9rem;">Kelola Varian</a>
+                <a href="{{ url_for('admin.manage_variants', product_id=product.id) }}" class="cta-button-secondary" data-no-transition style="padding: 0.4rem 1rem; font-size: 0.9rem;">Kelola Varian</a>
             {% else %}
                  <span id="manage-variants-link-placeholder" style="display: none;">
                     <span style="color: var(--color-warning);">Simpan perubahan untuk mulai mengelola varian.</span>
@@ -67,27 +71,46 @@
 
         <div class="form-group" style="margin-top: 1.5rem;">
             <label>Gambar Saat Ini</label>
-            <p class="form-hint">Pilih satu gambar sebagai gambar utama. Centang untuk menghapus.</p>
+            <p class="form-hint">Klik gambar untuk menjadikannya gambar utama. Centang checkbox di pojok kiri atas untuk menandai gambar yang akan dihapus.</p>
             <div id="existing-image-previews" class="image-preview-container">
-                <div class="preview-item {% if product.image_url %}is-main{% endif %}">
+                {% if product.image_url %}
+                <div class="preview-item existing-preview {% if product.image_url == product.image_url %}is-main{% endif %}" 
+                     role="radio" 
+                     aria-checked="{{ 'true' if product.image_url == product.image_url else 'false' }}" 
+                     tabindex="0" 
+                     aria-label="Pilih {{ product.image_url }} sebagai gambar utama">
                     <img src="{{ url_for('images.serve_image', filename=product.image_url) }}" alt="{{ product.name }}">
                     <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
-                    <input type="radio" name="main_image" value="{{ product.image_url }}" class="main-image-radio" checked>
+                    <input type="radio" name="main_image" value="{{ product.image_url }}" class="main-image-radio" {% if product.image_url == product.image_url %}checked{% endif %} tabindex="-1">
                     <div class="delete-checkbox-overlay">
-                        <label class="custom-checkbox" title="Tandai untuk hapus"><input type="checkbox" name="delete_image" value="{{ product.image_url }}" class="checkbox-input delete-image-checkbox"><span class="checkbox-box"><span class="checkmark"></span></span></label>
+                        <label class="custom-checkbox" title="Tandai untuk hapus">
+                            <input type="checkbox" name="delete_image" value="{{ product.image_url }}" class="checkbox-input delete-image-checkbox">
+                            <span class="checkbox-box"><span class="checkmark"></span></span>
+                        </label>
                     </div>
                 </div>
+                {% endif %}
                 {% for image in additional_images %}
-                <div class="preview-item">
-                    <img src="{{ url_for('images.serve_image', filename=image) }}" alt="{{ product.name }}">
+                <div class="preview-item existing-preview {% if image == product.image_url %}is-main{% endif %}" 
+                     role="radio" 
+                     aria-checked="{{ 'true' if image == product.image_url else 'false' }}" 
+                     tabindex="0" 
+                     aria-label="Pilih {{ image }} sebagai gambar utama">
+                    <img src="{{ url_for('images.serve_image', filename=image) }}" alt="{{ product.name }} tambahan">
                     <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
-                    <input type="radio" name="main_image" value="{{ image }}" class="main-image-radio">
+                    <input type="radio" name="main_image" value="{{ image }}" class="main-image-radio" {% if image == product.image_url %}checked{% endif %} tabindex="-1"> 
                      <div class="delete-checkbox-overlay">
-                        <label class="custom-checkbox" title="Tandai untuk hapus"><input type="checkbox" name="delete_image" value="{{ image }}" class="checkbox-input delete-image-checkbox"><span class="checkbox-box"><span class="checkmark"></span></span></label>
+                        <label class="custom-checkbox" title="Tandai untuk hapus">
+                            <input type="checkbox" name="delete_image" value="{{ image }}" class="checkbox-input delete-image-checkbox">
+                            <span class="checkbox-box"><span class="checkmark"></span></span>
+                        </label>
                     </div>
                 </div>
                 {% endfor %}
             </div>
+            {% if not product.image_url and not additional_images %}
+            <p class="form-hint" style="color: var(--color-warning);">Tidak ada gambar untuk produk ini.</p>
+            {% endif %}
         </div>
 
         <div class="form-group">

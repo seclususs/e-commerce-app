@@ -1,7 +1,7 @@
 import { cartStore } from '../store/cart-store.js';
 import { showNotification } from '../components/notification.js';
 
-const formatRupiah = (num) => `Rp ${num.toLocaleString('id-ID')}`;
+const formatRupiah = (num) => `Rp ${Number(num).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 
 function renderCartPage(state) {
     const { items, subtotal } = state;
@@ -27,18 +27,20 @@ function renderCartPage(state) {
         if (checkoutLinkMobile) checkoutLinkMobile.classList.remove('disabled-link');
 
         container.innerHTML = items.map(p => {
-            const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
-            const hasDiscount = (p.discount_price && p.discount_price > 0);
+            const priceNum = Number(p.price) || 0;
+            const discountPriceNum = Number(p.discount_price) || 0;
+            const effectivePrice = (discountPriceNum && discountPriceNum > 0) ? discountPriceNum : priceNum;
+            const hasDiscount = (discountPriceNum && discountPriceNum > 0);
             const sizeInfo = p.size ? `<span>Ukuran: ${p.size}</span>` : '';
             const isOutOfStock = p.quantity > p.stock;
-            const imageUrl = p.image_url ? `/images/${p.image_url}` : `https://placehold.co/80x80/0f172a/f1f5f9?text=${p.name}`;
+            const imageUrl = p.image_url ? `/images/${p.image_url}` : `https://placehold.co/80x80/0f172a/f1f5f9?text=${encodeURIComponent(p.name)}`;
             return `
             <div class="cart-page-item ${isOutOfStock ? 'item-out-of-stock' : ''}">
                 <div class="cart-page-item-img"><img src="${imageUrl}" alt="${p.name}"></div>
                 <div class="cart-page-item-info">
                     <strong>${p.name}</strong>
                     ${sizeInfo}
-                    <span>${hasDiscount ? `<del style="opacity: 0.7;">${formatRupiah(p.price)}</del> ${formatRupiah(effectivePrice)}` : formatRupiah(p.price)}</span>
+                    <span>${hasDiscount ? `<del style="opacity: 0.7;">${formatRupiah(priceNum)}</del> ${formatRupiah(effectivePrice)}` : formatRupiah(priceNum)}</span>
                     ${isOutOfStock ? `<span class="stock-warning-message">Stok tidak cukup (tersisa ${p.stock})</span>` : ''}
                 </div>
                 <div class="cart-item-quantity">
@@ -50,8 +52,9 @@ function renderCartPage(state) {
                 <button class="remove-item-btn" data-id="${p.id}" data-variant-id="${p.variant_id || ''}">✕</button>
             </div>`;
         }).join('');
-        document.getElementById('cartPageSubtotal').textContent = formatRupiah(subtotal);
-        document.getElementById('cartPageTotal').textContent = formatRupiah(subtotal);
+        const subtotalNum = Number(subtotal) || 0;
+        document.getElementById('cartPageSubtotal').textContent = formatRupiah(subtotalNum);
+        document.getElementById('cartPageTotal').textContent = formatRupiah(subtotalNum);
     }
 }
 
