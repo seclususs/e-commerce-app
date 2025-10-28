@@ -1,0 +1,184 @@
+<div class="admin-card animated-element">
+    <h3>Filter Laporan</h3>
+    <form method="GET" action="{{ url_for('admin.admin_reports') }}" id="reports-filter-form">
+        <div class="form-grid" style="gap: 1.5rem;">
+            <div class="form-group">
+                <label for="start_date">Tanggal Mulai</label>
+                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.args.get('start_date') or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="end_date">Tanggal Selesai</label>
+                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.args.get('end_date') or '' }}">
+            </div>
+            <div class="form-actions" style="align-items: flex-end;">
+                <button type="submit" class="cta-button">Terapkan Filter</button>
+                <a href="{{ url_for('admin.admin_reports') }}" class="cta-button-secondary">Reset</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="admin-card animated-element" data-animation-delay="200">
+    <div class="report-header">
+        <h3>Laporan Penjualan Detail</h3>
+        <a href="{{ url_for('admin.export_report', report_name='sales', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor CSV</a>
+    </div>
+    <div class="dashboard-stats" style="margin-top: 1rem;">
+        <div class="stat-card"><h4>Total Pendapatan</h4><p>{{ reports.sales.total_revenue|rupiah }}</p></div>
+        <div class="stat-card"><h4>Jumlah Pesanan</h4><p>{{ reports.sales.total_orders }}</p></div>
+        <div class="stat-card"><h4>Produk Terjual</h4><p>{{ reports.sales.total_items_sold }}</p></div>
+    </div>
+</div>
+
+<div class="admin-card animated-element" data-animation-delay="300">
+    <div class="report-header">
+        <h3>Analitik Keranjang Belanja</h3>
+    </div>
+    <p class="form-hint">Menganalisis perilaku pengguna dari pembuatan keranjang hingga checkout.</p>
+    <div class="dashboard-stats" style="margin-top: 1rem;">
+        <div class="stat-card"><h4>Tingkat Pengabaian Keranjang</h4><p>{{ reports.cart_analytics.abandonment_rate }}%</p></div>
+        <div class="stat-card"><h4>Total Pengguna dg Keranjang</h4><p>{{ reports.cart_analytics.carts_created }}</p></div>
+        <div class="stat-card"><h4>Pengguna yg Checkout</h4><p>{{ reports.cart_analytics.orders_completed }}</p></div>
+    </div>
+</div>
+
+<div class="admin-card animated-element" data-animation-delay="400">
+     <div class="report-header">
+        <h3>Laporan Inventaris</h3>
+        <div class="report-actions" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="{{ url_for('admin.export_report', report_name='inventory_low_stock', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor Stok Menipis</a>
+            <a href="{{ url_for('admin.export_report', report_name='inventory_slow_moving', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor Kurang Laris</a>
+        </div>
+    </div>
+    <div class="dashboard-stats" style="margin-top: 1rem;">
+        <div class="stat-card" style="grid-column: 1 / -1;"><h4>Total Nilai Inventaris</h4><p>{{ reports.inventory.total_value|rupiah }}</p></div>
+    </div>
+    <div class="report-grid">
+        <div>
+            <h4>Produk Stok Menipis (Stok ≤ 5)</h4>
+            <div class="table-wrapper">
+                <table class="admin-table">
+                    <thead><tr><th>Nama Produk/Varian</th><th>Sisa Stok</th><th>Aksi</th></tr></thead>
+                    <tbody>
+                    {% for product in reports.inventory.low_stock %}
+                        <tr>
+                            <td>{{ product.name }}</td>
+                            <td><span style="color: var(--color-warning); font-weight: bold;">{{ product.stock }}</span></td>
+                            <td>
+                                <a href="{{ url_for('admin.admin_edit_product', id=product.product_id) }}" class="action-link action-link-edit">Kelola</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="3">Tidak ada produk dengan stok menipis.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div>
+            <h4>Produk Kurang Laris</h4>
+             <p class="form-hint">10 produk dengan penjualan terendah dalam rentang waktu yang dipilih.</p>
+            <div class="table-wrapper">
+                <table class="admin-table">
+                     <thead><tr><th>Nama Produk</th><th>Terjual</th><th>Sisa Stok</th></tr></thead>
+                     <tbody>
+                     {% for product in reports.inventory.slow_moving %}
+                         <tr>
+                             <td>{{ product.name }}</td>
+                             <td>{{ product.total_sold }}</td>
+                             <td>{{ product.stock }}</td>
+                        </tr>
+                     {% else %}
+                         <tr><td colspan="3">Tidak ada data penjualan.</td></tr>
+                     {% endfor %}
+                     </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="admin-card animated-element" data-animation-delay="500">
+     <div class="report-header">
+        <h3>Laporan Performa Produk</h3>
+        <a href="{{ url_for('admin.export_report', report_name='products', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor CSV</a>
+    </div>
+    <div class="report-grid">
+        <div>
+            <h4>Produk Paling Laris</h4>
+            <div class="table-wrapper">
+                <table class="admin-table">
+                    <thead><tr><th>Nama Produk</th><th>Terjual</th></tr></thead>
+                    <tbody>
+                    {% for product in reports.products.top_selling %}
+                        <tr><td>{{ product.name }}</td><td>{{ product.total_sold }}</td></tr>
+                    {% else %}
+                        <tr><td colspan="2">Tidak ada data.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div>
+            <h4>Produk Paling Sering Dilihat</h4>
+            <div class="table-wrapper">
+                <table class="admin-table">
+                     <thead><tr><th>Nama Produk</th><th>Dilihat</th></tr></thead>
+                     <tbody>
+                     {% for product in reports.products.most_viewed %}
+                         <tr><td>{{ product.name }}</td><td>{{ product.popularity }} kali</td></tr>
+                     {% else %}
+                         <tr><td colspan="2">Tidak ada data.</td></tr>
+                     {% endfor %}
+                     </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="admin-card animated-element" data-animation-delay="600">
+    <div class="report-header">
+        <h3>Laporan Pelanggan</h3>
+        <a href="{{ url_for('admin.export_report', report_name='customers', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor CSV</a>
+    </div>
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead><tr><th>Nama Pelanggan</th><th>Email</th><th>Total Belanja</th></tr></thead>
+            <tbody>
+                {% for customer in reports.customers.top_spenders %}
+                <tr>
+                    <td>{{ customer.username }}</td>
+                    <td>{{ customer.email }}</td>
+                    <td>{{ customer.total_spent|rupiah }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3">Tidak ada data.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="admin-card animated-element" data-animation-delay="700">
+    <div class="report-header">
+        <h3>Laporan Efektivitas Voucher</h3>
+        <a href="{{ url_for('admin.export_report', report_name='vouchers', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="cta-button-secondary" data-no-transition>Ekspor CSV</a>
+    </div>
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead><tr><th>Kode Voucher</th><th>Jumlah Pengguna</th><th>Total Diskon Diberikan</th></tr></thead>
+            <tbody>
+                {% for voucher in reports.voucher_effectiveness %}
+                <tr>
+                    <td><strong>{{ voucher.voucher_code }}</strong></td>
+                    <td>{{ voucher.usage_count }} kali</td>
+                    <td>{{ voucher.total_discount|rupiah }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3">Tidak ada data penggunaan voucher.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,23 +1,16 @@
 from typing import Any, Dict, List, Tuple, Union
 
 from flask import (
-    Response,
-    flash,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    url_for,
+    Response, flash, jsonify, redirect,
+    render_template, request, url_for
 )
 
 from app.core.db import get_content
 from app.exceptions.database_exceptions import (
-    DatabaseException,
-    RecordNotFoundError,
+    DatabaseException, RecordNotFoundError
 )
 from app.exceptions.service_exceptions import (
-    InvalidOperationError,
-    ServiceLogicError,
+    InvalidOperationError, ServiceLogicError
 )
 from app.services.orders.order_query_service import order_query_service
 from app.services.orders.order_update_service import order_update_service
@@ -32,17 +25,16 @@ logger = get_logger(__name__)
 @admin_bp.route("/orders")
 @admin_required
 def admin_orders() -> Union[str, Response, Tuple[Response, int]]:
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    page_title = "Manajemen Pesanan - Admin"
+    header_title = "Manajemen Pesanan"
 
     try:
         status_filter: str = request.args.get("status")
         start_date: str = request.args.get("start_date")
         end_date: str = request.args.get("end_date")
         search_query: str = request.args.get("search")
-        logger.debug(
-            "Mengambil data pesanan dengan filter - "
-            f"Status: {status_filter}, Awal: {start_date}, "
-            f"Akhir: {end_date}, Pencarian: {search_query}"
-        )
+
         orders: List[Dict[str, Any]] = (
             order_query_service.get_filtered_admin_orders(
                 status=status_filter,
@@ -51,61 +43,46 @@ def admin_orders() -> Union[str, Response, Tuple[Response, int]]:
                 search=search_query,
             )
         )
-        logger.info(
-            f"Berhasil mengambil {len(orders)} data pesanan sesuai filter."
-        )
 
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            logger.debug(
-                "Mengembalikan respon JSON untuk permintaan filter AJAX."
-            )
-            html: str = render_template(
-                "admin/partials/_order_table_body.html", orders=orders
-            )
-            return jsonify({"success": True, "html": html})
-
-        logger.info("Menampilkan halaman kelola pesanan.")
+        if is_ajax:
+            if request.args:
+                html: str = render_template(
+                    "partials/admin/_order_table_body.html", orders=orders
+                )
+                return jsonify({"success": True, "html": html})
+            else:
+                html: str = render_template(
+                    "partials/admin/_manage_orders.html",
+                    orders=orders,
+                    content=get_content(),
+                )
+                return jsonify(
+                    {
+                        "success": True,
+                        "html": html,
+                        "page_title": page_title,
+                        "header_title": header_title,
+                    }
+                )
 
         return render_template(
             "admin/manage_orders.html", orders=orders, content=get_content()
         )
 
-    except (DatabaseException, ServiceLogicError) as service_err:
-        logger.error(
-            f"Kesalahan saat mengambil data pesanan: {service_err}",
-            exc_info=True,
-        )
-        flash("Terjadi kesalahan saat mengambil data pesanan.", "danger")
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Gagal mengambil data pesanan.",
-                    }
-                ),
-                500,
-            )
+    except (DatabaseException, ServiceLogicError):
+        message = "Terjadi kesalahan saat mengambil data pesanan."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return render_template(
             "admin/manage_orders.html", orders=[], content=get_content()
         )
     
-    except Exception as e:
-        logger.error(
-            f"Kesalahan tak terduga saat mengambil data pesanan: {e}",
-            exc_info=True,
-        )
-        flash("Terjadi kesalahan saat mengambil data pesanan.", "danger")
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Gagal mengambil data pesanan.",
-                    }
-                ),
-                500,
-            )
+    except Exception:
+        message = "Terjadi kesalahan saat mengambil data pesanan."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return render_template(
             "admin/manage_orders.html", orders=[], content=get_content()
         )
@@ -113,57 +90,71 @@ def admin_orders() -> Union[str, Response, Tuple[Response, int]]:
 
 @admin_bp.route("/order/<int:id>")
 @admin_required
-def admin_order_detail(id: int) -> Union[str, Response]:
-    logger.debug(f"Mengambil detail pesanan dengan ID: {id}")
+def admin_order_detail(id: int) -> Union[str, Response, Tuple[Response, int]]:
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
     try:
         order: Dict[str, Any]
         items: List[Dict[str, Any]]
         order, items = order_query_service.get_order_details_for_admin(id)
-        logger.info(
-            f"Detail pesanan berhasil diambil untuk ID {id}. "
-            f"Jumlah item: {len(items)}"
-        )
-        return render_template(
-            "admin/view_order.html",
-            order=order,
-            items=items,
-            content=get_content(),
-        )
-    
+
+        page_title = f"Detail Pesanan #{id} - Admin"
+        header_title = f"Detail Pesanan #{id}"
+
+        if is_ajax:
+            html = render_template(
+                "partials/admin/_view_order.html",
+                order=order,
+                items=items,
+                content=get_content(),
+            )
+            return jsonify(
+                {
+                    "success": True,
+                    "html": html,
+                    "page_title": page_title,
+                    "header_title": header_title,
+                }
+            )
+        else:
+            return render_template(
+                "admin/view_order.html",
+                order=order,
+                items=items,
+                content=get_content(),
+            )
+
     except RecordNotFoundError:
-        logger.warning(f"Pesanan dengan ID {id} tidak ditemukan.")
-        flash("Pesanan tidak ditemukan.", "danger")
+        message = "Pesanan tidak ditemukan."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 404
+        flash(message, "danger")
         return redirect(url_for("admin.admin_orders"))
     
-    except (DatabaseException, ServiceLogicError) as service_err:
-        logger.error(
-            f"Kesalahan saat mengambil detail pesanan untuk ID {id}: "
-            f"{service_err}",
-            exc_info=True,
-        )
-        flash("Terjadi kesalahan saat mengambil detail pesanan.", "danger")
+    except (DatabaseException, ServiceLogicError):
+        message = "Terjadi kesalahan saat mengambil detail pesanan."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return redirect(url_for("admin.admin_orders"))
     
-    except Exception as e:
-        logger.error(
-            "Kesalahan tak terduga saat mengambil detail pesanan ID "
-            f"{id}: {e}",
-            exc_info=True,
-        )
-        flash("Terjadi kesalahan saat mengambil detail pesanan.", "danger")
+    except Exception:
+        message = "Terjadi kesalahan saat mengambil detail pesanan."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return redirect(url_for("admin.admin_orders"))
 
 
 @admin_bp.route("/order/invoice/<int:id>")
 @admin_required
 def admin_order_invoice(id: int) -> Union[str, Tuple[str, int]]:
-    logger.debug(f"Menghasilkan invoice untuk pesanan ID: {id}")
 
     try:
         order: Dict[str, Any]
         items: List[Dict[str, Any]]
         order, items = order_query_service.get_order_details_for_invoice(id)
-        logger.info(f"Data invoice berhasil diambil untuk pesanan ID: {id}")
+
         return render_template(
             "admin/invoice.html",
             order=order,
@@ -172,25 +163,12 @@ def admin_order_invoice(id: int) -> Union[str, Tuple[str, int]]:
         )
     
     except RecordNotFoundError:
-        logger.warning(
-            f"Pesanan dengan ID {id} tidak ditemukan saat membuat invoice."
-        )
         return "Pesanan tidak ditemukan", 404
     
-    except (DatabaseException, ServiceLogicError) as service_err:
-        logger.error(
-            "Kesalahan saat membuat invoice untuk pesanan ID "
-            f"{id}: {service_err}",
-            exc_info=True,
-        )
+    except (DatabaseException, ServiceLogicError):
         return "Gagal membuat invoice", 500
     
-    except Exception as e:
-        logger.error(
-            "Kesalahan tak terduga saat membuat invoice untuk pesanan ID "
-            f"{id}: {e}",
-            exc_info=True,
-        )
+    except Exception:
         return "Gagal membuat invoice", 500
 
 
@@ -199,10 +177,6 @@ def admin_order_invoice(id: int) -> Union[str, Tuple[str, int]]:
 def update_order_status(id: int) -> Tuple[Response, int]:
     status: str = request.form.get("status")
     tracking_number: str = request.form.get("tracking_number")
-    logger.debug(
-        f"Memperbarui pesanan ID: {id}. Status baru: {status}, "
-        f"Nomor resi: {tracking_number}"
-    )
 
     try:
         result: Dict[
@@ -212,17 +186,11 @@ def update_order_status(id: int) -> Tuple[Response, int]:
         )
 
         if result.get("success"):
-            logger.info(
-                f"Pesanan ID {id} berhasil diperbarui. Status: {status}, "
-                f"Resi: {tracking_number}. Pesan: {result.get('message')}"
-            )
             if "data" in result and "status_class" in result["data"]:
+                result["data"]["status"] = status
+                result["data"]["tracking_number"] = tracking_number
                 return jsonify(result), 200
             else:
-                logger.error(
-                    "Data status_class hilang dari respons service untuk "
-                    f"pesanan {id}"
-                )
                 return (
                     jsonify(
                         {
@@ -233,10 +201,6 @@ def update_order_status(id: int) -> Tuple[Response, int]:
                     500,
                 )
         else:
-            logger.warning(
-                f"Gagal memperbarui pesanan ID {id}. "
-                f"Alasan: {result.get('message')}"
-            )
             status_code: int = 400
             message = result.get("message", "")
             if "tidak ditemukan" in message.lower():
@@ -246,24 +210,12 @@ def update_order_status(id: int) -> Tuple[Response, int]:
             return jsonify(result), status_code
 
     except RecordNotFoundError as rnfe:
-        logger.warning(
-            f"Pembaruan gagal: Pesanan ID {id} tidak ditemukan: {rnfe}"
-        )
         return jsonify({"success": False, "message": str(rnfe)}), 404
     
     except InvalidOperationError as ioe:
-        logger.warning(
-            "Pembaruan gagal: Operasi tidak valid untuk pesanan ID "
-            f"{id}: {ioe}"
-        )
         return jsonify({"success": False, "message": str(ioe)}), 400
     
-    except (DatabaseException, ServiceLogicError) as service_err:
-        logger.error(
-            "Kesalahan saat memperbarui status pesanan untuk ID "
-            f"{id}: {service_err}",
-            exc_info=True,
-        )
+    except (DatabaseException, ServiceLogicError):
         return (
             jsonify(
                 {
@@ -274,12 +226,7 @@ def update_order_status(id: int) -> Tuple[Response, int]:
             500,
         )
     
-    except Exception as e:
-        logger.error(
-            "Kesalahan tak terduga saat memperbarui status pesanan ID "
-            f"{id}: {e}",
-            exc_info=True,
-        )
+    except Exception:
         return (
             jsonify(
                 {

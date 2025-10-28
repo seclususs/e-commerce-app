@@ -26,7 +26,7 @@ def filter_products() -> Response:
             filters
         )
         html: str = render_template(
-            "partials/_product_card.html", products=products
+            "partials/public/_product_card.html", products=products
         )
         logger.info(f"Produk berhasil difilter. Jumlah: {len(products)}")
         return jsonify({"success": True, "html": html})

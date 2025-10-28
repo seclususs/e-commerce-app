@@ -1,0 +1,112 @@
+<section class="checkout-page-section">
+    <div class="checkout-page-container animated-element">
+        <h2 class="section-title">Checkout</h2>
+        <form id="checkout-form" method="POST" action="{{ url_for('purchase.checkout') }}">
+            <div class="cart-layout">
+                <div class="admin-card checkout-details-card animated-element" data-animation-delay="200">
+                    {% if session.user_id and user %}
+                        <h3>Alamat Pengiriman</h3>
+                        <div class="address-display-box">
+                            {% if user.address_line_1 and user.phone %}
+                                <p><strong>{{ user.username }}</strong> ({{ user.phone }})</p>
+                                <p>{{ user.address_line_1 }}<br>
+                                   {% if user.address_line_2 %}{{ user.address_line_2 }}<br>{% endif %}
+                                   {{ user.city }}, {{ user.province }} {{ user.postal_code }}
+                                </p>
+                            {% else %}
+                                <p class="text-warning">Alamat pengiriman Anda belum lengkap.</p>
+                            {% endif %}
+                            <a href="{{ url_for('purchase.edit_address') }}" class="cta-button-secondary edit-address-btn">Ubah Alamat</a>
+                        </div>
+                    {% else %}
+                        <!-- Form untuk tamu -->
+                        <h3>Kontak & Pengiriman</h3>
+                        <div class="form-group"><label for="email">Alamat Email</label><input type="email" id="email" name="email" required></div>
+                        <div class="form-group"><label for="full_name">Nama Lengkap Penerima</label><input type="text" id="full_name" name="full_name" required></div>
+                        <div class="form-group"><label for="phone">Nomor Telepon</label><input type="tel" id="phone" name="phone" required></div>
+                        <div class="form-group"><label for="address_line_1">Alamat Lengkap</label><input type="text" id="address_line_1" name="address_line_1" placeholder="Nama jalan, nomor rumah, RT/RW" required></div>
+                        <div class="form-group"><label for="address_line_2">Detail Alamat (Opsional)</label><input type="text" id="address_line_2" name="address_line_2" placeholder="Contoh: Apartemen, lantai, unit"></div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="city">Kota/Kabupaten</label>
+                                <select id="city" name="city" class="form-control" required>
+                                    <option value="" disabled selected>Pilih Kota</option>
+                                    <option value="Jakarta">Jakarta</option>
+                                    <option value="Bogor">Bogor</option>
+                                    <option value="Depok">Depok</option>
+                                    <option value="Tangerang">Tangerang</option>
+                                    <option value="Bekasi">Bekasi</option>
+                                    <option value="Bandung">Bandung</option>
+                                    <option value="Surabaya">Surabaya</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label for="province">Provinsi</label><input type="text" id="province" name="province" required></div>
+                        </div>
+                        <div class="form-group"><label for="postal_code">Kode Pos</label><input type="text" id="postal_code" name="postal_code" required></div>
+                    {% endif %}
+
+                    <h3 style="margin-top: 2rem;">Metode Pembayaran</h3>
+                    <div class="form-group">
+                        <select name="payment_method" class="form-control" required>
+                            <option value="" disabled selected>Pilih Metode Pembayaran</option>
+                            <option value="Virtual Account">Virtual Account (Simulasi)</option>
+                            <option value="E-Wallet">E-Wallet (Simulasi)</option>
+                            <option value="COD">Bayar di Tempat (COD)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="cart-summary admin-card animated-element" data-animation-delay="400">
+                    <h3>Ringkasan Pesanan</h3>
+                    <div id="checkout-summary-items"><p>Memuat item...</p></div>
+
+                    <div class="summary-row"><span>Subtotal</span><span id="checkoutSubtotal">Rp 0</span></div>
+
+                    <div class="summary-row shipping-row" style="display: none;">
+                        <span>Biaya Pengiriman</span>
+                        <span id="checkoutShipping">Rp 0</span>
+                    </div>
+
+                    <div class="voucher-form-container">
+                        <div class="form-group">
+                            <label for="voucher_code" style="font-size: 0.9em;">Punya Kode Voucher?</label>
+                            <div class="voucher-input-group">
+                                <input type="text" id="voucher_code" name="voucher_code" placeholder="Masukkan kode di sini" class="form-control">
+                                <button type="button" id="applyVoucherBtn" class="cta-button-secondary">Terapkan</button>
+                            </div>
+                        </div>
+                        <div id="voucher-message" class="voucher-feedback"></div>
+                    </div>
+
+                    <div class="summary-row discount-row" style="display: none;">
+                        <span>Diskon</span>
+                        <span id="checkoutDiscount" style="color: var(--color-success);">- Rp 0</span>
+                    </div>
+
+                    <div class="summary-total"><span>Total</span><span id="checkoutTotal">Rp 0</span></div>
+
+                    <div id="stock-hold-timer-container" class="stock-hold-timer">
+                        Stok Anda ditahan selama: <strong id="timer">10:00</strong>
+                    </div>
+
+                    <input type="hidden" name="cart_data" id="cart_data_input">
+                    <input type="hidden" name="shipping_cost" id="shipping_cost_input" value="0">
+                    <input type="hidden" id="stock_hold_expires_at" value="{{ stock_hold_expires }}">
+
+                    <div class="hide-on-mobile-cta">
+                        <button id="placeOrderBtn" type="submit" class="cta-button cta-button-prominent" style="width: 100%;" disabled>
+                            <span>Buat Pesanan</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<div class="mobile-cta-bar">
+    <button id="placeOrderBtnMobile" type="button" class="cta-button cta-button-prominent" disabled>
+        <span>Buat Pesanan</span>
+    </button>
+</div>

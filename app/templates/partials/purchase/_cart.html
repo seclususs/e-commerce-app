@@ -1,0 +1,32 @@
+<section class="cart-page-section" data-products-url="{{ url_for('product.products_page') }}">
+    <div class="cart-page-container animated-element">
+        <h2 class="section-title">Keranjang Belanja Anda</h2>
+        <div class="cart-layout">
+            <div class="cart-items-list">
+                <div id="cartPageItems" class="cart-items-container">
+                    <div class="cart-empty-container">
+                        <p>Memuat keranjang Anda...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="cart-summary admin-card animated-element" data-animation-delay="200">
+                <h3>Ringkasan</h3>
+                <div class="summary-row"><span>Subtotal</span><span id="cartPageSubtotal">Rp 0</span></div>
+                <div class="summary-row"><span>Pengiriman</span><span style="font-size: 0.9em; color: var(--color-text-med);">Dihitung di checkout</span></div>
+                <div class="summary-total"><span>Total</span><span id="cartPageTotal">Rp 0</span></div>
+
+                <div class="hide-on-mobile-cta">
+                    <a href="{{ url_for('purchase.checkout') }}" id="checkout-link" class="cta-button" style="width: 100%; text-align:center; margin-top: 1rem;">
+                        Lanjutkan ke Checkout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="mobile-cta-bar">
+    <a href="{{ url_for('purchase.checkout') }}" id="checkout-link-mobile" class="cta-button">
+        Lanjutkan ke Checkout
+    </a>
+</div>

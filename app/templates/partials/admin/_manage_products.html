@@ -1,9 +1,3 @@
-{% extends "layouts/admin_layout.html" %}
-
-{% block admintitle %}Manajemen Produk{% endblock %}
-{% block adminheader %}Manajemen Produk{% endblock %}
-
-{% block admincontent %}
 <div class="admin-card animated-element">
     <h3>Tambah Produk Baru</h3>
     <form id="add-product-form" method="POST" action="{{ url_for('admin.admin_products') }}" enctype="multipart/form-data" data-ajax="true" data-update-target="#products-table-body" data-update-action="prepend" data-reset-on-success="true">
@@ -133,4 +127,3 @@
         </div>
     </form>
 </div>
-{% endblock %}

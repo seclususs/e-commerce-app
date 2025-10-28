@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Tuple, Union
 
-from flask import Response, flash, render_template, request
+from flask import Response, flash, jsonify, render_template, request
 
 from app.core.db import get_content
 from app.exceptions.database_exceptions import DatabaseException
@@ -17,12 +17,12 @@ logger = get_logger(__name__)
 
 @admin_bp.route("/reports")
 @admin_required
-def admin_reports() -> str:
+def admin_reports() -> Union[str, Response, Tuple[Response, int]]:
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
     start_date: str = request.args.get("start_date")
     end_date: str = request.args.get("end_date")
-    logger.debug(
-        f"Menghasilkan laporan untuk periode: Awal={start_date}, Akhir={end_date}"
-    )
+    page_title = "Laporan & Analitik - Admin"
+    header_title = "Laporan & Analitik"
 
     try:
         sales_summary: Dict[str, Any] = report_service.get_sales_summary(
@@ -43,7 +43,7 @@ def admin_reports() -> str:
         inventory_reports: Dict[str, Any] = (
             report_service.get_inventory_reports(start_date, end_date)
         )
-        logger.info("Semua data laporan berhasil diambil.")
+
         reports_data: Dict[str, Any] = {
             "sales": sales_summary,
             "products": product_reports,
@@ -53,26 +53,41 @@ def admin_reports() -> str:
             "inventory": inventory_reports,
         }
 
-        return render_template(
-            "admin/reports.html", reports=reports_data, content=get_content()
-        )
-    
-    except (DatabaseException, ServiceLogicError) as service_err:
-        logger.error(
-            f"Kesalahan saat memuat halaman laporan: {service_err}",
-            exc_info=True,
-        )
-        flash("Gagal memuat data laporan.", "danger")
+        if is_ajax:
+            html = render_template(
+                "partials/admin/_reports.html",
+                reports=reports_data,
+                content=get_content(),
+            )
+            return jsonify(
+                {
+                    "success": True,
+                    "html": html,
+                    "page_title": page_title,
+                    "header_title": header_title,
+                }
+            )
+        else:
+            return render_template(
+                "admin/reports.html",
+                reports=reports_data,
+                content=get_content(),
+            )
+
+    except (DatabaseException, ServiceLogicError):
+        message = "Gagal memuat data laporan."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return render_template(
             "admin/reports.html", reports={}, content=get_content()
         )
     
-    except Exception as e:
-        logger.error(
-            f"Kesalahan tak terduga saat memuat halaman laporan: {e}",
-            exc_info=True,
-        )
-        flash("Gagal memuat data laporan.", "danger")
+    except Exception:
+        message = "Gagal memuat data laporan."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return render_template(
             "admin/reports.html", reports={}, content=get_content()
         )
@@ -83,10 +98,6 @@ def admin_reports() -> str:
 def export_report(report_name: str) -> Union[Response, Tuple[str, int]]:
     start_date: str = request.args.get("start_date")
     end_date: str = request.args.get("end_date")
-    logger.debug(
-        f"Mengekspor laporan: {report_name}. Periode: Awal={start_date}, Akhir={end_date}"
-    )
-
     data: List[Dict[str, Any]] = []
     headers: List[str] = []
 
@@ -108,9 +119,6 @@ def export_report(report_name: str) -> Union[Response, Tuple[str, int]]:
             data = report_service.get_full_sales_data_for_export(
                 start_date, end_date
             )
-            logger.info(
-                f"Mengekspor laporan penjualan. Ditemukan {len(data)} data."
-            )
 
         elif report_name == "products":
             headers = [
@@ -127,9 +135,6 @@ def export_report(report_name: str) -> Union[Response, Tuple[str, int]]:
             data = report_service.get_full_products_data_for_export(
                 start_date, end_date
             )
-            logger.info(
-                f"Mengekspor laporan produk. Ditemukan {len(data)} data."
-            )
 
         elif report_name == "customers":
             headers = [
@@ -142,9 +147,6 @@ def export_report(report_name: str) -> Union[Response, Tuple[str, int]]:
             data = report_service.get_full_customers_data_for_export(
                 start_date, end_date
             )
-            logger.info(
-                f"Mengekspor laporan pelanggan. Ditemukan {len(data)} data."
-            )
 
         elif report_name == "inventory_low_stock":
             headers = [
@@ -156,18 +158,11 @@ def export_report(report_name: str) -> Union[Response, Tuple[str, int]]:
                 "SKU",
             ]
             data = report_service.get_inventory_low_stock_for_export()
-            logger.info(
-                f"Mengekspor laporan stok rendah. Ditemukan {len(data)} data."
-            )
 
         elif report_name == "inventory_slow_moving":
             headers = ["Nama Produk", "Stok Saat Ini", "Total Terjual (periode)"]
             data = report_service.get_inventory_slow_moving_for_export(
                 start_date, end_date
-            )
-            logger.info(
-                f"Mengekspor laporan produk dengan pergerakan lambat. "
-                f"Ditemukan {len(data)} data."
             )
 
         elif report_name == "vouchers":
@@ -181,28 +176,14 @@ def export_report(report_name: str) -> Union[Response, Tuple[str, int]]:
             data = report_service.get_full_vouchers_data_for_export(
                 start_date, end_date
             )
-            logger.info(
-                f"Mengekspor laporan voucher. Ditemukan {len(data)} data."
-            )
-            
+
         else:
-            logger.warning(
-                f"Nama laporan tidak valid diminta untuk diekspor: {report_name}"
-            )
             return "Nama laporan tidak valid.", 404
 
         return generate_csv_response(data, headers, report_name)
     
-    except (DatabaseException, ServiceLogicError) as service_err:
-        logger.error(
-            f"Kesalahan saat mengekspor laporan '{report_name}': {service_err}",
-            exc_info=True,
-        )
+    except (DatabaseException, ServiceLogicError):
         return "Gagal mengekspor laporan.", 500
     
-    except Exception as e:
-        logger.error(
-            f"Kesalahan tak terduga saat mengekspor laporan '{report_name}': {e}",
-            exc_info=True,
-        )
+    except Exception:
         return "Gagal mengekspor laporan.", 500

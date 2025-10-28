@@ -1,9 +1,3 @@
-{% extends "layouts/admin_layout.html" %}
-
-{% block admintitle %}Manajemen Kategori{% endblock %}
-{% block adminheader %}Manajemen Kategori Produk{% endblock %}
-
-{% block admincontent %}
 <div class="admin-card animated-element">
     <h3>Tambah Kategori Baru</h3>
     <form id="add-category-form" method="POST" action="{{ url_for('admin.admin_categories') }}" class="form-actions" data-ajax="true" data-update-target="#categories-table-body" data-update-action="prepend">
@@ -27,9 +21,8 @@
                 </tr>
             </thead>
             <tbody id="categories-table-body">
-                {% include '/partials/admin/_category_table_body.html' %}
+                {% include 'partials/admin/_category_table_body.html' %}
             </tbody>
         </table>
     </div>
 </div>
-{% endblock %}

@@ -5,6 +5,7 @@ import { cartStore } from './store/cart-store.js';
 import { initLogout } from './services/auth.service.js';
 import { initActionConfirmations } from './utils/confirmations.util.js';
 import { initPageTransitions } from './utils/page-transitions.js';
+import { initAjaxNavigationPublic } from './utils/ajax-navigation.js';
 import { initGlobalAddToCart } from './components/product-card.js';
 import { initProductCatalogPage } from './pages/product-catalog.js';
 import { initProductDetailPage } from './pages/product-detail.js';
@@ -15,21 +16,12 @@ import { initCartPage } from './pages/cart.js';
 import { initRegisterPage } from './pages/auth/register.js';
 import { initForgotPasswordPage } from './pages/auth/forgot-password.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-    initPageTransitions('.page-content-wrapper');
+function initializePageScripts() {
     initAnimations();
     initFlashMessages();
-    initLogout();
-    initActionConfirmations();
     initThemeSwitcher();
     initGlobalAddToCart();
-
-    await cartStore.init();
-
-    const justLoggedInFlag = document.getElementById('just-logged-in-flag');
-    if (justLoggedInFlag) {
-        await cartStore.syncOnLogin();
-    }
+    initActionConfirmations();
 
     if (document.querySelector('.products-page-section')) {
         initProductCatalogPage();
@@ -46,16 +38,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (document.querySelector('.payment-page-section')) {
         initPaymentPage();
     }
-    if (document.querySelector('.profile-container form')) {
+     if (document.querySelector('.profile-container form')) {
         initProfileEditor();
     }
     if (document.querySelector('.user-profile-section #orders-list')) {
         initUserProfile();
     }
-    if (document.getElementById('register-form')) {
+     if (document.getElementById('register-form')) {
         initRegisterPage();
     }
     if (document.getElementById('forgot-password-form')) {
         initForgotPasswordPage();
     }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    initLogout();
+    initAjaxNavigationPublic();
+    initPageTransitions('main.page-content-wrapper');
+
+    await cartStore.init();
+
+    const justLoggedInFlag = document.getElementById('just-logged-in-flag');
+    if (justLoggedInFlag) {
+        await cartStore.syncOnLogin();
+    }
+
+    initializePageScripts();
+
 });

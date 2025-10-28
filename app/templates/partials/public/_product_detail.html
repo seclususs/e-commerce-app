@@ -1,0 +1,196 @@
+{# Add data-ajax-nav="true" to the "Back to Collection" link #}
+<section class="product-detail-section">
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary" data-ajax-nav="true">&larr; Kembali ke Koleksi</a>
+    </div>
+
+    <div class="product-detail-container">
+        <div class="product-image-gallery animated-element">
+            <div class="gallery-slider-container">
+                <div class="gallery-slider" id="gallerySlider">
+                    {% for image_file in product.all_images %}
+                    <div class="gallery-slide">
+                        <img src="{{ url_for('images.serve_image', filename=image_file) if image_file else 'https://placehold.co/600x600/0f172a/f1f5f9?text=' + product.name }}" alt="Gambar produk {{ product.name }} {{ loop.index }}">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if product.all_images|length > 1 %}
+            <div class="thumbnail-gallery">
+                {% for image_file in product.all_images %}
+                <div class="thumbnail-item {% if loop.first %}active{% endif %}">
+                    <img src="{{ url_for('images.serve_image', filename=image_file) }}" alt="Thumbnail {{ product.name }} {{ loop.index }}">
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="product-info-details animated-element" data-animation-delay="200">
+            <h1 class="product-title">{{ product.name }}</h1>
+            <p class="product-category-detail">{{ product.category_name or 'N/A' }}</p>
+            <div class="product-price-detail-container">
+                 {% if product.discount_price and product.discount_price > 0 %}
+                    <span class="product-price-detail discount-price">{{ product.discount_price|rupiah }}</span>
+                    <del class="original-price-detail">{{ product.price|rupiah }}</del>
+                    <span class="discount-badge">Hemat {{ product.discount_price|percentage(product.price) }}%</span>
+                {% else %}
+                    <span class="product-price-detail">{{ product.price|rupiah }}</span>
+                {% endif %}
+            </div>
+
+            <div class="product-details-static">
+                <h3 class="details-title description-title">Deskripsi</h3>
+                <div class="details-content description-content">
+                    <p>{{ product.description | safe }}</p>
+                </div>
+
+                <h3 class="details-title">Spesifikasi</h3>
+                <div class="details-content">
+                    <ul>
+                        {% if product.colors %}<li><strong>Warna Tersedia:</strong> {{ product.colors }}</li>{% endif %}
+                        <li><strong>Stok:</strong>
+                            <span id="stock-display">
+                                {% if product.stock > 10 %}<span style="color: #22c55e;">Tersedia</span>
+                                {% elif product.stock > 0 %}<span style="color: #f59e0b;">Tersisa {{ product.stock }}</span>
+                                {% else %}<span style="color: #ef4444;">Habis</span>{% endif %}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+
+                {% if product.has_variants and product.variants %}
+                <div class="product-size-selector">
+                    <h3 class="details-title">Pilih Ukuran</h3>
+                    <div class="size-options-wrapper" id="size-selector">
+                        {% for variant in product.variants %}
+                            <button class="size-option-btn" data-variant-id="{{ variant.id }}" data-stock="{{ variant.stock }}" {% if variant.stock == 0 %}disabled{% endif %}>{{ variant.size }}</button>
+                        {% endfor %}
+                    </div>
+                    <div id="size-warning" class="stock-warning-message"></div>
+                </div>
+                {% endif %}
+
+                {% if product.stock > 0 %}
+                <div class="product-quantity-selector">
+                    <h3 class="details-title">Jumlah</h3>
+                    <div class="quantity-input-wrapper">
+                        <button type="button" class="quantity-btn" id="quantity-minus">-</button>
+                        <input type="number" id="quantity-input" value="1" min="1" max="{{ product.stock }}" class="form-control quantity-input-field" readonly>
+                        <button type="button" class="quantity-btn" id="quantity-plus">+</button>
+                    </div>
+                    <div id="stock-warning" class="stock-warning-message"></div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="hide-on-mobile-cta" style="margin-top: 2rem;">
+                <button class="cta-button add-to-cart-btn"
+                        data-id="{{ product.id }}"
+                        data-name="{{ product.name }}"
+                        data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
+                        {% if product.stock == 0 %}disabled{% endif %}>
+                    <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
+                </button>
+            </div>
+
+
+            <div class="social-share-container animated-element" data-animation-delay="300">
+                <h3 class="details-title">Bagikan Produk Ini</h3>
+                <div class="social-share-buttons" id="social-share-links">
+                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}" class="social-share-btn facebook" aria-label="Bagikan ke Facebook" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                    <a href="https://api.whatsapp.com/send?text=Lihat produk keren ini: {{ product.name }} - {{ request.url }}" class="social-share-btn whatsapp" aria-label="Bagikan ke WhatsApp" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    {% if related_products %}
+    <div class="related-products-section animated-element" data-animation-delay="300" style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid var(--color-background-light);">
+        <h2 class="section-title">Produk Terkait yang Mungkin Anda Suka</h2>
+        <div class="products-grid">
+            {% for p in related_products %}
+            {# Related product cards might link to other product details - add data-ajax-nav #}
+            <div class="product-card animated-element {% if p.stock == 0 %}out-of-stock{% endif %}" data-animation-delay="{{ (loop.index0 % 4) * 100 }}">
+                <a href="{{ url_for('product.product_detail', id=p.id) }}" class="product-card-link" data-ajax-nav="true"></a>
+                <div class="product-image">
+                    {% if p.discount_price and p.discount_price > 0 %}
+                        <span class="discount-badge">Hemat {{ p.discount_price|percentage(p.price) }}%</span>
+                    {% endif %}
+                    <img loading="lazy" src="{{ url_for('images.serve_image', filename=p.image_url) if p.image_url and p.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + p.name }}" alt="{{ p.name }}">
+                    {% if p.stock == 0 %}<div class="stock-overlay">Stok Habis</div>{% endif %}
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">{{ p.name }}</h3>
+                    <p class="product-category">{{ p.category_name or 'N/A' }}</p>
+                    <div class="product-price-container">
+                        {% if p.discount_price and p.discount_price > 0 %}
+                            <span class="product-price discount-price">{{ p.discount_price|rupiah }}</span>
+                            <del class="original-price">{{ p.price|rupiah }}</del>
+                        {% else %}
+                            <span class="product-price">{{ p.price|rupiah }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="reviews-section animated-element" data-animation-delay="400">
+        <h2 class="section-title">Ulasan Pelanggan</h2>
+        <div id="review-form-container">
+            {% if session.user_id and can_review %}
+                <div class="admin-card add-review-form">
+                    <h3>Bagikan Pendapat Anda</h3>
+                    <form action="{{ url_for('product.add_review', id=product.id) }}" method="POST" id="add-review-form"> {# Review form submits via JS #}
+                        <div class="form-group">
+                            <label for="rating">Rating Anda</label>
+                            <div class="star-rating">
+                                <input type="radio" id="5-stars" name="rating" value="5" required/><label for="5-stars" class="star">&#9733;</label>
+                                <input type="radio" id="4-stars" name="rating" value="4" /><label for="4-stars" class="star">&#9733;</label>
+                                <input type="radio" id="3-stars" name="rating" value="3" /><label for="3-stars" class="star">&#9733;</label>
+                                <input type="radio" id="2-stars" name="rating" value="2" /><label for="2-stars" class="star">&#9733;</label>
+                                <input type="radio" id="1-star" name="rating" value="1" /><label for="1-star" class="star">&#9733;</label>
+                            </div>
+                        </div>
+                        <div class="form-group"><label for="comment">Komentar</label><textarea name="comment" id="comment" rows="4" placeholder="Tulis ulasan Anda di sini..." required></textarea></div>
+                        <button type="submit" class="cta-button form-button">Kirim Ulasan</button>
+                    </form>
+                </div>
+            {% elif session.user_id %}
+                 <div class="admin-card add-review-form form-disabled">
+                    <h3>Bagikan Pendapat Anda</h3>
+                    <p class="form-hint" style="text-align: center; margin-top: 1rem; color: var(--color-text-med);">Anda bisa memberi ulasan setelah membeli produk ini.</p>
+                </div>
+            {% else %}
+                <div class="admin-card add-review-form" style="text-align: center;">
+                    <p style="color: #94a3b8; margin:0;"><a href="{{ url_for('auth.login', next=request.url) }}" style="color: var(--color-primary);">Login</a> untuk memberikan ulasan.</p> {# Login link should be standard nav #}
+                </div>
+            {% endif %}
+        </div>
+        <div class="reviews-grid" id="reviews-grid">
+            {% if reviews %}
+                {% for review in reviews %}
+                {% include 'partials/public/_review.html' %}
+                {% endfor %}
+            {% else %}
+                <p id="no-reviews-message" style="text-align: center; color: #94a3b8;">Jadilah yang pertama mengulas produk ini!</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<div class="mobile-cta-bar">
+    <button class="cta-button add-to-cart-btn"
+            data-id="{{ product.id }}"
+            data-name="{{ product.name }}"
+            data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
+            {% if product.stock == 0 %}disabled{% endif %}>
+        <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
+    </button>
+</div>

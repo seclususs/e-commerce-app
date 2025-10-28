@@ -1,9 +1,3 @@
-{% extends "layouts/admin_layout.html" %}
-
-{% block admintitle %}Kelola Varian - {{ product.name }}{% endblock %}
-{% block adminheader %}Kelola Varian untuk: {{ product.name }}{% endblock %}
-
-{% block admincontent %}
 <div style="margin-bottom: 2rem;">
     <a href="{{ url_for('admin.admin_products') }}" class="cta-button-secondary">&larr; Kembali ke Daftar Produk</a>
 </div>
@@ -53,4 +47,3 @@
         </table>
     </div>
 </div>
-{% endblock %}

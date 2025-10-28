@@ -1,9 +1,3 @@
-{% extends "layouts/admin_layout.html" %}
-
-{% block admintitle %}Manajemen Voucher{% endblock %}
-{% block adminheader %}Manajemen Voucher Diskon{% endblock %}
-
-{% block admincontent %}
 <div class="admin-card animated-element">
     <h3>Tambah Voucher Baru</h3>
     <form id="add-voucher-form" method="POST" action="{{ url_for('admin.admin_vouchers') }}" data-ajax="true" data-update-target="#vouchers-table-body" data-update-action="prepend">
@@ -51,4 +45,3 @@
         </table>
     </div>
 </div>
-{% endblock %}

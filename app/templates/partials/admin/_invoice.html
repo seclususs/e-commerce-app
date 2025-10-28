@@ -1,0 +1,71 @@
+<div class="invoice-box">
+    <div class="invoice-header">
+        <div class="title">{{ content.app_name }}</div>
+        <div class="invoice-details">
+            <table>
+                <tr><td><strong>Invoice #:</strong></td><td>{{ order.id }}</td></tr>
+                <tr><td><strong>Tanggal Pesan:</strong></td><td>{{ order.order_date.strftime('%Y-%m-%d') }}</td></tr>
+                <tr><td><strong>Status:</strong></td><td>{{ order.status }}</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="address-section">
+        <div>
+            <strong>Ditagih Kepada:</strong><br>
+            {{ order.shipping_name }}<br>
+            {{ (order.email or 'Email tidak tersedia') }}<br>
+            {{ order.shipping_phone }}
+        </div>
+        <div>
+            <strong>Dikirim Ke:</strong><br>
+            {{ order.shipping_address_line_1 }}<br>
+            {% if order.shipping_address_line_2 %}{{ order.shipping_address_line_2 }}<br>{% endif %}
+            {{ order.shipping_city }}, {{ order.shipping_province }} {{ order.shipping_postal_code }}
+        </div>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th style="text-align: center;">Jumlah</th>
+                <th style="text-align: right;">Harga</th>
+                <th style="text-align: right;">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td style="text-align: center;">{{ item.quantity }}</td>
+                <td style="text-align: right;">{{ item.price|rupiah }}</td>
+                <td style="text-align: right;">{{ (item.price * item.quantity)|rupiah }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" style="text-align: right;">Subtotal</td>
+                <td style="text-align: right;">{{ order.subtotal|rupiah }}</td>
+            </tr>
+            {% if order.discount_amount and order.discount_amount > 0 %}
+            <tr>
+                <td colspan="3" style="text-align: right;">Diskon {% if order.voucher_code %}({{ order.voucher_code }}){% endif %}</td>
+                <td style="text-align: right;">- {{ order.discount_amount|rupiah }}</td>
+            </tr>
+            {% endif %}
+             {% if order.shipping_cost and order.shipping_cost > 0 %}
+            <tr>
+                <td colspan="3" style="text-align: right;">Ongkos Kirim</td>
+                <td style="text-align: right;">{{ order.shipping_cost|rupiah }}</td>
+            </tr>
+             {% endif %}
+            <tr class="total">
+                <td colspan="3"><strong>Total</strong></td>
+                <td><strong>{{ order.total_amount|rupiah }}</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+     <a href="#" onclick="window.print(); return false;" class="print-button">Cetak</a>
+</div>

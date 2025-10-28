@@ -1,8 +1,6 @@
 from typing import Any, Dict, List, Tuple, Union
 
-from flask import (
-    Response, flash, jsonify, render_template, request
-)
+from flask import Response, flash, jsonify, render_template, request
 
 from app.core.db import get_content
 from app.exceptions.api_exceptions import ValidationError
@@ -22,16 +20,14 @@ logger = get_logger(__name__)
 @admin_bp.route("/vouchers", methods=["GET", "POST"])
 @admin_required
 def admin_vouchers() -> Union[str, Response, Tuple[Response, int]]:
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
     if request.method == "POST":
         code: str = (request.form.get("code") or "").upper().strip()
         voucher_type: str = request.form.get("type")
         value: str = request.form.get("value")
         min_purchase: str = request.form.get("min_purchase_amount")
         max_uses: str = request.form.get("max_uses")
-        logger.debug(
-            f"Route: Menerima permintaan POST untuk menambah voucher. "
-            f"Kode (standardized): {code}"
-        )
 
         try:
             result: Dict[str, Any] = voucher_service.add_voucher(
@@ -39,111 +35,91 @@ def admin_vouchers() -> Union[str, Response, Tuple[Response, int]]:
             )
 
             if result.get("success"):
-                voucher_id = result.get("data", {}).get("id")
-                logger.info(
-                    f"Route: Voucher '{code}' berhasil ditambahkan via "
-                    f"service. ID: {voucher_id}"
-                )
                 html: str = render_template(
-                    "admin/partials/_voucher_row.html",
-                    voucher=result["data"]
+                    "partials/admin/_voucher_row.html",
+                    voucher=result["data"],
                 )
                 result["html"] = html
                 return jsonify(result), 200
-            
             else:
-                logger.warning(
-                    f"Route: Gagal menambahkan voucher '{code}' via service. "
-                    f"Alasan: {result.get('message')}"
-                )
                 status_code: int = (
-                    409 if "sudah terdaftar" in
-                    result.get("message", "").lower() else 400
+                    409
+                    if "sudah terdaftar" in result.get("message", "").lower()
+                    else 400
                 )
                 return jsonify(result), status_code
 
         except ValidationError as ve:
-            logger.warning(
-                f"Kesalahan validasi saat menambahkan voucher '{code}': {ve}"
-            )
             return jsonify({"success": False, "message": str(ve)}), 400
         
-        except DatabaseException as de:
-            logger.error(
-                f"Kesalahan database saat menambahkan voucher '{code}': {de}",
-                exc_info=True,
-            )
+        except DatabaseException:
             return (
-                jsonify({
-                    "success": False,
-                    "message": "Terjadi kesalahan database."
-                }),
+                jsonify(
+                    {"success": False, "message": "Terjadi kesalahan database."}
+                ),
                 500,
             )
         
-        except ServiceLogicError as sle:
-            logger.error(
-                f"Kesalahan logika servis saat menambahkan voucher '{code}': "
-                f"{sle}",
-                exc_info=True,
-            )
+        except ServiceLogicError:
             return (
-                jsonify({
-                    "success": False,
-                    "message": "Terjadi kesalahan pada server."
-                }),
+                jsonify(
+                    {"success": False, "message": "Terjadi kesalahan pada server."}
+                ),
                 500,
             )
         
-        except Exception as e:
-            logger.error(
-                f"Route: Terjadi kesalahan tak terduga saat memanggil "
-                f"service add_voucher untuk kode '{code}': {e}",
-                exc_info=True,
-            )
+        except Exception:
             return (
-                jsonify({
-                    "success": False,
-                    "message": "Gagal menambahkan voucher karena kesalahan server.",
-                }),
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Gagal menambahkan voucher karena kesalahan server.",
+                    }
+                ),
                 500,
             )
 
-    logger.debug(
-        "Route: Permintaan GET ke /vouchers. Mengambil data voucher "
-        "via service..."
-    )
+    page_title = "Manajemen Voucher - Admin"
+    header_title = "Manajemen Voucher Diskon"
 
     try:
         vouchers: List[Dict[str, Any]] = voucher_service.get_all_vouchers()
-        logger.info(
-            f"Route: Berhasil mengambil {len(vouchers)} data voucher "
-            f"dari service."
-        )
-        return render_template(
-            "admin/manage_vouchers.html",
-            vouchers=vouchers,
-            content=get_content()
-        )
-    
-    except (DatabaseException, ServiceLogicError) as service_err:
-        logger.error(
-            f"Route: Kesalahan saat mengambil voucher dari service: "
-            f"{service_err}",
-            exc_info=True,
-        )
-        flash("Gagal memuat halaman voucher.", "danger")
+
+        if is_ajax:
+            html = render_template(
+                "partials/admin/_manage_vouchers.html",
+                vouchers=vouchers,
+                content=get_content(),
+            )
+            return jsonify(
+                {
+                    "success": True,
+                    "html": html,
+                    "page_title": page_title,
+                    "header_title": header_title,
+                }
+            )
+        else:
+            return render_template(
+                "admin/manage_vouchers.html",
+                vouchers=vouchers,
+                content=get_content(),
+            )
+
+    except (DatabaseException, ServiceLogicError):
+        message = "Gagal memuat halaman voucher."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return render_template(
             "admin/manage_vouchers.html", vouchers=[], content=get_content()
         )
     
-    except Exception as e:
-        logger.error(
-            f"Route: Kesalahan tak terduga saat mengambil voucher dari "
-            f"service: {e}",
-            exc_info=True,
-        )
-        flash("Gagal memuat halaman voucher.", "danger")
+    except Exception:
+        message = "Gagal memuat halaman voucher."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return render_template(
             "admin/manage_vouchers.html", vouchers=[], content=get_content()
         )
@@ -152,70 +128,47 @@ def admin_vouchers() -> Union[str, Response, Tuple[Response, int]]:
 @admin_bp.route("/vouchers/delete/<int:id>", methods=["POST"])
 @admin_required
 def delete_voucher(id: int) -> Tuple[Response, int]:
-    logger.debug(
-        f"Route: Menerima permintaan POST untuk menghapus voucher ID: {id}"
-    )
+
     try:
         result: Dict[str, Any] = voucher_service.delete_voucher_by_id(id)
 
         if result.get("success"):
-            logger.info(
-                f"Route: Voucher ID {id} berhasil dihapus via service."
-            )
             return jsonify(result), 200
-        
         else:
-            logger.warning(
-                f"Route: Gagal menghapus voucher ID {id} via service. "
-                f"Alasan: {result.get('message')}"
-            )
             status_code: int = (
-                404 if "tidak ditemukan" in
-                result.get("message", "").lower() else 500
+                404
+                if "tidak ditemukan" in result.get("message", "").lower()
+                else 500
             )
             return jsonify(result), status_code
         
     except RecordNotFoundError as rnfe:
-        logger.warning(f"Hapus gagal: Voucher ID {id} tidak ditemukan: {rnfe}")
         return jsonify({"success": False, "message": str(rnfe)}), 404
     
-    except DatabaseException as de:
-        logger.error(
-            f"Kesalahan database saat menghapus voucher ID {id}: {de}",
-            exc_info=True,
-        )
+    except DatabaseException:
         return (
-            jsonify({
-                "success": False,
-                "message": "Terjadi kesalahan database."
-            }),
+            jsonify(
+                {"success": False, "message": "Terjadi kesalahan database."}
+            ),
             500,
         )
     
-    except ServiceLogicError as sle:
-        logger.error(
-            f"Kesalahan logika servis saat menghapus voucher ID {id}: {sle}",
-            exc_info=True,
-        )
+    except ServiceLogicError:
         return (
-            jsonify({
-                "success": False,
-                "message": "Terjadi kesalahan pada server."
-            }),
+            jsonify(
+                {"success": False, "message": "Terjadi kesalahan pada server."}
+            ),
             500,
         )
     
-    except Exception as e:
-        logger.error(
-            f"Route: Terjadi kesalahan tak terduga saat memanggil "
-            f"service delete_voucher_by_id untuk ID {id}: {e}",
-            exc_info=True,
-        )
+    except Exception:
         return (
-            jsonify({
-                "success": False,
-                "message": "Gagal menghapus voucher karena kesalahan server.",
-            }),
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Gagal menghapus voucher karena kesalahan server.",
+                }
+            ),
             500,
         )
 
@@ -223,74 +176,47 @@ def delete_voucher(id: int) -> Tuple[Response, int]:
 @admin_bp.route("/vouchers/toggle/<int:id>", methods=["POST"])
 @admin_required
 def toggle_voucher(id: int) -> Tuple[Response, int]:
-    logger.debug(
-        f"Route: Menerima permintaan POST untuk mengubah status voucher ID: {id}"
-    )
 
     try:
         result: Dict[str, Any] = voucher_service.toggle_voucher_status(id)
 
         if result.get("success"):
-            logger.info(
-                f"Route: Status voucher ID {id} berhasil diubah via service."
-            )
+            result["data"] = {"is_active": result.get("is_active")}
             return jsonify(result), 200
-        
         else:
-            logger.warning(
-                f"Route: Gagal mengubah status voucher ID {id} via service. "
-                f"Alasan: {result.get('message')}"
-            )
             status_code: int = (
-                404 if "tidak ditemukan" in
-                result.get("message", "").lower() else 500
+                404
+                if "tidak ditemukan" in result.get("message", "").lower()
+                else 500
             )
             return jsonify(result), status_code
         
     except RecordNotFoundError as rnfe:
-        logger.warning(
-            f"Toggle gagal: Voucher ID {id} tidak ditemukan: {rnfe}"
-        )
         return jsonify({"success": False, "message": str(rnfe)}), 404
     
-    except DatabaseException as de:
-        logger.error(
-            f"Kesalahan database saat mengubah status voucher ID {id}: {de}",
-            exc_info=True,
-        )
+    except DatabaseException:
         return (
-            jsonify({
-                "success": False,
-                "message": "Terjadi kesalahan database."
-            }),
+            jsonify(
+                {"success": False, "message": "Terjadi kesalahan database."}
+            ),
             500,
         )
     
-    except ServiceLogicError as sle:
-        logger.error(
-            f"Kesalahan logika servis saat mengubah status voucher ID {id}: "
-            f"{sle}",
-            exc_info=True,
-        )
+    except ServiceLogicError:
         return (
-            jsonify({
-                "success": False,
-                "message": "Terjadi kesalahan pada server."
-            }),
+            jsonify(
+                {"success": False, "message": "Terjadi kesalahan pada server."}
+            ),
             500,
         )
     
-    except Exception as e:
-        logger.error(
-            f"Route: Terjadi kesalahan tak terduga saat memanggil "
-            f"service toggle_voucher_status untuk ID {id}: {e}",
-            exc_info=True,
-        )
+    except Exception:
         return (
-            jsonify({
-                "success": False,
-                "message": "Gagal mengubah status voucher karena "
-                           "kesalahan server.",
-            }),
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Gagal mengubah status voucher karena kesalahan server.",
+                }
+            ),
             500,
         )

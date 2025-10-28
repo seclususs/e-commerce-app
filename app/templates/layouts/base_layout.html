@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ content.app_name }} - {{ content.short_description }}{% endblock %}</title>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}?v=2.0">
@@ -41,23 +41,23 @@
 
     {% if not hide_navbar %}
     <nav class="navbar">
-        <a href="{{ url_for('product.index') }}" class="logo">{{ content.app_name }}</a>
-        
+        <a href="{{ url_for('product.index') }}" class="logo" data-ajax-nav="true">{{ content.app_name }}</a>
+
         <ul class="nav-menu">
             {% if session.user_id %}
-                <li><a href="{{ url_for('product.products_page') }}">Produk</a></li>
+                <li><a href="{{ url_for('product.products_page') }}" data-ajax-nav="true">Produk</a></li>
                 {% if session.is_admin %}
-                    <li><a href="{{ url_for('admin.admin_dashboard') }}">Admin</a></li>
+                    <li><a href="{{ url_for('admin.admin_dashboard') }}">Admin</a></li> {# Keep standard link for Admin #}
                 {% else %}
-                     <li><a href="{{ url_for('user.user_profile') }}" class="nav-link-secondary">Profil Saya</a></li>
+                     <li><a href="{{ url_for('user.user_profile') }}" class="nav-link-secondary" data-ajax-nav="true">Profil Saya</a></li>
                 {% endif %}
-                <li><a href="{{ url_for('auth.logout') }}" id="logoutLink" class="nav-link-secondary">Logout</a></li>
+                <li><a href="{{ url_for('auth.logout') }}" id="logoutLink" class="nav-link-secondary">Logout</a></li> {# Logout remains standard #}
             {% else %}
-                <li><a href="{{ url_for('product.index') }}">Beranda</a></li>
-                <li><a href="{{ url_for('product.products_page') }}">Produk</a></li>
-                <li><a href="{{ url_for('product.about') }}">Tentang</a></li>
-                <li><a href="{{ url_for('auth.login') }}" class="nav-link-secondary">Login</a></li>
-                <li><a href="{{ url_for('auth.register') }}" class="cta-button nav-cta">Daftar</a></li>
+                <li><a href="{{ url_for('product.index') }}" data-ajax-nav="true">Beranda</a></li>
+                <li><a href="{{ url_for('product.products_page') }}" data-ajax-nav="true">Produk</a></li>
+                <li><a href="{{ url_for('product.about') }}" data-ajax-nav="true">Tentang</a></li>
+                <li><a href="{{ url_for('auth.login') }}" class="nav-link-secondary">Login</a></li> {# Auth remains standard #}
+                <li><a href="{{ url_for('auth.register') }}" class="cta-button nav-cta">Daftar</a></li> {# Auth remains standard #}
             {% endif %}
 
             <li class="theme-toggle-wrapper">
@@ -69,7 +69,7 @@
 
             {% if not session.is_admin %}
             <li class="cart-icon-wrapper">
-                <a href="{{ url_for('purchase.cart_page') }}" class="cart-icon" id="cartIconLink" aria-label="Lihat Keranjang">
+                <a href="{{ url_for('purchase.cart_page') }}" class="cart-icon" id="cartIconLink" aria-label="Lihat Keranjang" data-ajax-nav="true">
                     <i class="fas fa-shopping-cart"></i>
                     <span class="cart-count" id="cartCount">0</span>
                 </a>
@@ -136,33 +136,33 @@
         </div>
     </footer>
     {% endif %}
-    
+
     {% if not hide_navbar and not session.is_admin %}
     <nav class="bottom-navbar">
         {% if session.user_id %}
-            <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'product' in request.endpoint and 'admin' not in request.endpoint }}">
+            <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'product' in request.endpoint and 'admin' not in request.endpoint }}" data-ajax-nav="true">
                 <i class="fas fa-store"></i> <span>Produk</span>
             </a>
-            <a href="{{ url_for('purchase.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
+            <a href="{{ url_for('purchase.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}" data-ajax-nav="true">
                 <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
             </a>
-            <a href="{{ url_for('user.user_profile') }}" class="bottom-nav-item {{ 'active' if 'profile' in request.endpoint }}">
+            <a href="{{ url_for('user.user_profile') }}" class="bottom-nav-item {{ 'active' if 'profile' in request.endpoint }}" data-ajax-nav="true">
                 <i class="fas fa-user"></i> <span>Profil</span>
             </a>
-            <a href="{{ url_for('auth.logout') }}" id="mobileLogoutLink" class="bottom-nav-item">
+            <a href="{{ url_for('auth.logout') }}" id="mobileLogoutLink" class="bottom-nav-item"> {# Logout remains standard #}
                 <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
             </a>
         {% else %}
-            <a href="{{ url_for('product.index') }}" class="bottom-nav-item {{ 'active' if 'index' in request.endpoint }}">
+            <a href="{{ url_for('product.index') }}" class="bottom-nav-item {{ 'active' if 'index' in request.endpoint }}" data-ajax-nav="true">
                 <i class="fas fa-home"></i> <span>Beranda</span>
             </a>
-            <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'products_page' in request.endpoint }}">
+            <a href="{{ url_for('product.products_page') }}" class="bottom-nav-item {{ 'active' if 'products_page' in request.endpoint }}" data-ajax-nav="true">
                 <i class="fas fa-store"></i> <span>Produk</span>
             </a>
-            <a href="{{ url_for('purchase.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}">
+            <a href="{{ url_for('purchase.cart_page') }}" id="bottomCartIconContainer" class="bottom-nav-item {{ 'active' if 'cart_page' in request.endpoint or 'checkout' in request.endpoint }}" data-ajax-nav="true">
                 <i class="fas fa-shopping-cart"></i> <span>Keranjang</span>
             </a>
-            <a href="{{ url_for('auth.login') }}" class="bottom-nav-item {{ 'active' if 'login' in request.endpoint or 'register' in request.endpoint }}">
+            <a href="{{ url_for('auth.login') }}" class="bottom-nav-item {{ 'active' if 'login' in request.endpoint or 'register' in request.endpoint }}"> {# Auth remains standard #}
                 <i class="fas fa-sign-in-alt"></i> <span>Login</span>
             </a>
         {% endif %}
@@ -181,5 +181,6 @@
     </div>
 
     <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block additional_scripts %}{% endblock %}
 </body>
 </html>

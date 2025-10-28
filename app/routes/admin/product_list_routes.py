@@ -1,13 +1,7 @@
 from typing import Any, Dict, List, Tuple, Union
 
 from flask import (
-    Response,
-    flash,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    url_for,
+    Response, flash, jsonify, render_template, request
 )
 
 from app.core.db import get_content
@@ -30,150 +24,149 @@ logger = get_logger(__name__)
 @admin_bp.route("/products", methods=["GET", "POST"])
 @admin_required
 def admin_products() -> Union[str, Response, Tuple[Response, int]]:
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+    action = f"{request.method} /admin/products (AJAX: {is_ajax})"
+    logger.debug(f"Memulai {action}")
+
     if request.method == "POST":
         form_type: str = request.form.get("form_type")
-        logger.debug(f"Permintaan POST ke /products. Jenis form: {form_type}")
+        logger.debug(f"Menerima POST request dengan form_type: {form_type}")
 
         try:
             if form_type == "bulk_action":
-                action: str = request.form.get("bulk_action")
+                action_bulk: str = request.form.get("bulk_action")
                 selected_ids: List[str] = request.form.getlist("product_ids")
                 category_id: str = request.form.get("bulk_category_id")
                 logger.info(
-                    f"Menjalankan aksi massal: {action} pada produk "
-                    f"dengan ID: {selected_ids}. Kategori ID: {category_id}"
+                    f"Memproses bulk action: {action_bulk} "
+                    f"untuk IDs: {selected_ids}, Kategori: {category_id}"
                 )
+
                 result: Dict[str, Any] = (
                     product_bulk_service.handle_bulk_product_action(
-                        action, selected_ids, category_id
+                        action_bulk, selected_ids, category_id
                     )
                 )
 
                 if result.get("success"):
+                    logger.info(
+                        f"Bulk action '{action_bulk}' berhasil. Data: {result}"
+                    )
                     result["ids"] = selected_ids
-                    result["action"] = action
+                    result["action"] = action_bulk
 
-                    if action == "set_category" and category_id:
+                    if action_bulk == "set_category" and category_id:
                         category: Dict[str, Any] = (
                             category_service.get_category_by_id(category_id)
                         )
                         result["new_category_name"] = (
                             category["name"] if category else "Tidak diketahui"
                         )
-                    logger.info(
-                        f"Aksi massal '{action}' berhasil dijalankan. "
-                        f"Pesan: {result['message']}"
-                    )
-                    return jsonify(result), 200
-                
-                logger.warning(
-                    f"Aksi massal '{action}' gagal dijalankan. "
-                    f"Alasan: {result.get('message')}"
-                )
 
+                    return jsonify(result), 200
+
+                logger.warning(
+                    f"Bulk action '{action_bulk}' gagal. Pesan: {result.get('message')}"
+                )
                 return jsonify(result), 400
 
-            if form_type == "add_product":
-                logger.info("Menambahkan produk baru.")
+            elif form_type == "add_product":
+                logger.info("Memproses penambahan produk baru.")
                 result: Dict[str, Any] = product_service.create_product(
                     request.form, request.files
                 )
 
                 if result.get("success"):
-                    flash(
-                        result.get("message", "Produk berhasil ditambahkan!"),
-                        "success",
-                    )
+                    product_id = result.get("product_id")
                     logger.info(
-                        f"Produk '{request.form.get('name')}' "
-                        f"berhasil ditambahkan."
+                        f"Produk baru berhasil ditambahkan dengan ID: {product_id}"
                     )
+                    new_product_data = (
+                        product_query_service.get_product_row_data(
+                            product_id
+                        )
+                    ) if product_id else None
 
+                    if new_product_data:
+                        html = render_template(
+                            "partials/admin/_product_row.html",
+                            product=new_product_data,
+                        )
+                        return (
+                            jsonify(
+                                {
+                                    "success": True,
+                                    "message": result.get(
+                                        "message", "Produk berhasil ditambahkan!"
+                                    ),
+                                    "html": html,
+                                }
+                            ),
+                            200,
+                        )
+                    else:
+                        logger.error(f"Gagal mengambil data untuk produk baru ID: {product_id}")
+                        return (
+                           jsonify(
+                                {
+                                    "success": False,
+                                    "message": "Produk ditambahkan tapi gagal memuat ulang data.",
+                                }
+                            ),
+                            500,
+                        )
                 else:
-                    flash(
-                        result.get("message", "Gagal menambahkan produk."),
-                        "danger",
-                    )
                     logger.warning(
-                        f"Gagal menambahkan produk "
-                        f"'{request.form.get('name')}'. "
-                        f"Alasan: {result.get('message')}"
+                        f"Gagal menambahkan produk baru. Pesan: {result.get('message')}"
                     )
+                    return jsonify(result), 400
 
-                return redirect(url_for("admin.admin_products"))
-
-            logger.warning(
-                f"Jenis form tidak dikenal dikirimkan: {form_type}"
-            )
-            flash("Jenis form tidak dikenal.", "danger")
-
-            return redirect(url_for("admin.admin_products"))
+            else:
+                logger.warning(f"Form type tidak dikenal: {form_type}")
+                return (
+                    jsonify(
+                        {"success": False, "message": "Jenis form tidak dikenal."}
+                    ),
+                    400,
+                )
 
         except ValidationError as ve:
-            logger.warning(
-                f"Kesalahan validasi saat memproses permintaan POST "
-                f"untuk form_type '{form_type}': {ve}"
-            )
-            if form_type == "bulk_action":
-                return jsonify({"success": False, "message": str(ve)}), 400
-            flash(str(ve), "danger")
-            return redirect(url_for("admin.admin_products"))
+            logger.warning(f"Error validasi saat {action}: {ve}")
+            return jsonify({"success": False, "message": str(ve)}), 400
 
-        except (
-            DatabaseException,
-            ServiceLogicError,
-            FileOperationError,
-        ) as service_err:
-            logger.error(
-                f"Kesalahan Service/DB/File saat memproses permintaan POST "
-                f"untuk form_type '{form_type}': {service_err}",
-                exc_info=True,
+        except (DatabaseException, ServiceLogicError, FileOperationError) as service_err:
+            logger.error(f"Error service/DB/File saat {action}: {service_err}", exc_info=True)
+            return (
+                jsonify(
+                    {"success": False, "message": "Terjadi kesalahan pada server saat memproses permintaan."}
+                ),
+                500,
             )
-            if form_type == "bulk_action":
-                return (
-                    jsonify(
-                        {
-                            "success": False,
-                            "message": "Terjadi kesalahan pada server.",
-                        }
-                    ),
-                    500,
-                )
-            flash(
-                "Terjadi kesalahan server saat memproses permintaan.", "danger"
-            )
-            return redirect(url_for("admin.admin_products"))
 
         except Exception as e:
-            logger.error(
-                f"Kesalahan tak terduga saat memproses permintaan POST "
-                f"untuk form_type '{form_type}': {e}",
-                exc_info=True,
+            logger.exception(f"Error tidak terduga saat {action}: {e}")
+            return (
+                jsonify(
+                    {"success": False, "message": "Terjadi kesalahan tidak terduga pada server."}
+                ),
+                500,
             )
-            if form_type == "bulk_action":
-                return (
-                    jsonify(
-                        {
-                            "success": False,
-                            "message": "Terjadi kesalahan pada server.",
-                        }
-                    ),
-                    500,
-                )
-            flash(
-                "Terjadi kesalahan server saat memproses permintaan.", "danger"
-            )
-            return redirect(url_for("admin.admin_products"))
-
+        
     search_term: str = request.args.get("search", "").strip()
     category_filter: str = request.args.get("category")
     stock_status_filter: str = request.args.get("stock_status")
-    logger.debug(
-        f"Mengambil daftar produk dengan filter - Pencarian: {search_term}, "
-        f"Kategori: {category_filter}, Status Stok: {stock_status_filter}"
-    )
+    page_title = "Manajemen Produk - Admin"
+    header_title = "Manajemen Produk"
+    logger.debug(f"Mengambil daftar produk dengan filter - Search: '{search_term}', Cat: {category_filter}, Stock: {stock_status_filter}")
 
     try:
+        logger.debug("Mencoba mengambil semua kategori...")
+        categories: List[Dict[str, Any]] = (
+            category_service.get_all_categories()
+        )
+        logger.debug(f"Berhasil mengambil {len(categories)} kategori.")
+
+        logger.debug("Mencoba mengambil produk yang difilter...")
         products: List[Dict[str, Any]] = (
             product_query_service.get_all_products_with_category(
                 search=search_term,
@@ -181,25 +174,35 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
                 stock_status=stock_status_filter,
             )
         )
-        logger.info(
-            f"Berhasil mengambil {len(products)} produk sesuai filter."
-        )
+        logger.debug(f"Berhasil mengambil {len(products)} produk.")
 
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            logger.debug(
-                "Mengembalikan respon JSON untuk "
-                "permintaan filter produk AJAX."
-            )
-            html: str = render_template(
-                "admin/partials/_product_table_body.html", products=products
-            )
-            return jsonify({"success": True, "html": html})
-        
-        categories: List[Dict[str, Any]] = (
-            category_service.get_all_categories()
-        )
-        logger.info("Menampilkan halaman kelola produk.")
-        
+        if is_ajax:
+            if request.args:
+                logger.debug("Merender _product_table_body.html untuk respons AJAX filter")
+                html: str = render_template(
+                    "partials/admin/_product_table_body.html",
+                    products=products,
+                )
+                return jsonify({"success": True, "html": html})
+            else:
+                logger.debug("Merender _manage_products.html untuk respons AJAX load awal")
+                html: str = render_template(
+                    "partials/admin/_manage_products.html",
+                    products=products,
+                    categories=categories,
+                    content=get_content(),
+                    search_term=search_term,
+                )
+                return jsonify(
+                    {
+                        "success": True,
+                        "html": html,
+                        "page_title": page_title,
+                        "header_title": header_title,
+                    }
+                )
+            
+        logger.debug("Merender manage_products.html untuk respons GET biasa")
         return render_template(
             "admin/manage_products.html",
             products=products,
@@ -210,10 +213,13 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
 
     except (DatabaseException, ServiceLogicError) as service_err:
         logger.error(
-            f"Kesalahan saat mengambil data produk atau kategori: {service_err}",
-            exc_info=True,
-        )
-        flash("Gagal memuat daftar produk atau kategori.", "danger")
+            f"Error service/DB saat GET /admin/products: {service_err}",
+            exc_info=True
+            )
+        message = "Gagal memuat daftar produk atau kategori."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return render_template(
             "admin/manage_products.html",
             products=[],
@@ -223,11 +229,11 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
         )
 
     except Exception as e:
-        logger.error(
-            f"Kesalahan tak terduga saat mengambil data produk atau kategori: {e}",
-            exc_info=True,
-        )
-        flash("Gagal memuat daftar produk atau kategori.", "danger")
+        logger.exception(f"Error tidak terduga saat GET /admin/products: {e}")
+        message = "Terjadi kesalahan tidak terduga saat memuat halaman produk."
+        if is_ajax:
+            return jsonify({"success": False, "message": message}), 500
+        flash(message, "danger")
         return render_template(
             "admin/manage_products.html",
             products=[],

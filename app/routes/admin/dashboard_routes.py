@@ -34,20 +34,13 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
     period: str = request.args.get("period", "last_7_days")
     custom_start: str = request.args.get("custom_start")
     custom_end: str = request.args.get("custom_end")
-    logger.debug(
-        f"Mengakses halaman dashboard dengan periode: {period}, "
-        f"tanggal awal: {custom_start}, tanggal akhir: {custom_end}"
-    )
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
     try:
         start_date_str: str
         end_date_str: str
         start_date_str, end_date_str = get_date_range(
             period, custom_start, custom_end
-        )
-        logger.info(
-            f"Rentang tanggal yang dihitung: {start_date_str} "
-            f"hingga {end_date_str}"
         )
 
         if custom_start and custom_end:
@@ -57,19 +50,50 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
             start_date_str, end_date_str
         )
         stats_converted: Dict[str, Any] = convert_decimals(stats)
-        logger.info("Statistik dashboard berhasil diambil dan dikonversi.")
 
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            logger.debug("Menanggapi permintaan AJAX dengan JSON.")
+        page_title = "Dashboard - Admin"
+        header_title = "Dashboard Ringkasan"
+
+        if is_ajax:
+            sales_chart_data: Dict[str, Any] = stats_converted[
+                "sales_chart_data"
+            ]
+            top_products_chart: Dict[str, Any] = stats_converted[
+                "top_products_chart"
+            ]
+            low_stock_chart: Dict[str, Any] = stats_converted["low_stock_chart"]
+            chart_labels: str = json.dumps(sales_chart_data["labels"])
+            chart_data: str = json.dumps(sales_chart_data["data"])
+            top_products_chart_labels: str = json.dumps(
+                top_products_chart["labels"]
+            )
+            top_products_chart_data: str = json.dumps(
+                top_products_chart["data"]
+            )
+            low_stock_chart_labels: str = json.dumps(low_stock_chart["labels"])
+            low_stock_chart_data: str = json.dumps(low_stock_chart["data"])
+
+            html = render_template(
+                "partials/admin/_dashboard.html",
+                stats=stats_converted,
+                content=get_content(),
+                chart_labels=chart_labels,
+                chart_data=chart_data,
+                top_products_chart_labels=top_products_chart_labels,
+                top_products_chart_data=top_products_chart_data,
+                low_stock_chart_labels=low_stock_chart_labels,
+                low_stock_chart_data=low_stock_chart_data,
+                selected_period=period,
+                custom_start=custom_start,
+                custom_end=custom_end,
+            )
             return jsonify(
                 {
                     "success": True,
-                    "data": {
-                        "stats": stats_converted,
-                        "selected_period": period,
-                        "custom_start": custom_start,
-                        "custom_end": custom_end,
-                    },
+                    "html": html,
+                    "page_title": page_title,
+                    "header_title": header_title,
+                    "stats": stats_converted,
                 }
             )
 
@@ -90,7 +114,6 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
         )
         low_stock_chart_labels: str = json.dumps(low_stock_chart["labels"])
         low_stock_chart_data: str = json.dumps(low_stock_chart["data"])
-        logger.info("Menampilkan template dashboard.")
 
         return render_template(
             "admin/dashboard.html",
@@ -107,11 +130,15 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
             custom_end=custom_end,
         )
 
-    except (DatabaseException, ServiceLogicError) as service_err:
-        logger.error(
-            f"Kesalahan saat memuat dashboard: {service_err}", exc_info=True
-        )
+    except (DatabaseException, ServiceLogicError):
         flash("Gagal memuat data dashboard.", "danger")
+        if is_ajax:
+            return (
+                jsonify(
+                    {"success": False, "message": "Gagal memuat data dashboard."}
+                ),
+                500,
+            )
         return render_template(
             "admin/dashboard.html",
             stats={},
@@ -124,12 +151,15 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
             low_stock_chart_data="[]",
         )
 
-    except Exception as e:
-        logger.error(
-            f"Terjadi kesalahan tak terduga saat memuat dashboard: {e}",
-            exc_info=True,
-        )
+    except Exception:
         flash("Gagal memuat data dashboard.", "danger")
+        if is_ajax:
+            return (
+                jsonify(
+                    {"success": False, "message": "Kesalahan server internal."}
+                ),
+                500,
+            )
         return render_template(
             "admin/dashboard.html",
             stats={},
@@ -146,8 +176,7 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
 @admin_bp.route("/run-scheduler", methods=["POST"])
 @admin_required
 def run_scheduler() -> Tuple[Response, int]:
-    logger.info("Menjalankan scheduler secara manual oleh admin.")
-
+    
     try:
         result: Dict[str, Any] = (
             scheduler_service.cancel_expired_pending_orders()
@@ -159,27 +188,14 @@ def run_scheduler() -> Tuple[Response, int]:
                 f"Tugas harian selesai. {count} pesanan "
                 f"kedaluwarsa berhasil dibatalkan."
             )
-            logger.info(
-                f"Scheduler manual berhasil dijalankan. "
-                f"{count} pesanan dibatalkan."
-            )
-            
         else:
             result["message"] = result.get(
                 "message", "Gagal menjalankan tugas harian."
             )
-            logger.warning(
-                f"Scheduler manual gagal dijalankan. "
-                f"Alasan: {result.get('message')}"
-            )
 
         return jsonify(result), 200
 
-    except (DatabaseException, ServiceLogicError) as service_err:
-        logger.error(
-            f"Kesalahan saat menjalankan scheduler secara manual: {service_err}",
-            exc_info=True,
-        )
+    except (DatabaseException, ServiceLogicError):
         return (
             jsonify(
                 {
@@ -191,12 +207,7 @@ def run_scheduler() -> Tuple[Response, int]:
             500,
         )
 
-    except Exception as e:
-        logger.error(
-            f"Terjadi kesalahan tak terduga saat menjalankan "
-            f"scheduler manual: {e}",
-            exc_info=True,
-        )
+    except Exception:
         return (
             jsonify(
                 {
