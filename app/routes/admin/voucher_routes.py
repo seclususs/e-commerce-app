@@ -1,12 +1,13 @@
 from typing import Any, Dict, List, Tuple, Union
 
-from flask import Response, flash, jsonify, render_template, request
+from flask import (
+    Response, flash, jsonify, render_template, request
+)
 
 from app.core.db import get_content
 from app.exceptions.api_exceptions import ValidationError
 from app.exceptions.database_exceptions import (
-    DatabaseException,
-    RecordNotFoundError,
+    DatabaseException, RecordNotFoundError
 )
 from app.exceptions.service_exceptions import ServiceLogicError
 from app.services.orders.voucher_service import voucher_service
@@ -22,26 +23,30 @@ logger = get_logger(__name__)
 @admin_required
 def admin_vouchers() -> Union[str, Response, Tuple[Response, int]]:
     if request.method == "POST":
-        code: str = request.form.get("code")
-        v_type: str = request.form.get("type")
+        code: str = (request.form.get("code") or "").upper().strip()
+        voucher_type: str = request.form.get("type")
         value: str = request.form.get("value")
         min_purchase: str = request.form.get("min_purchase_amount")
         max_uses: str = request.form.get("max_uses")
         logger.debug(
-            f"Route: Menerima permintaan POST untuk menambah voucher. Kode: {code}"
+            f"Route: Menerima permintaan POST untuk menambah voucher. "
+            f"Kode (standardized): {code}"
         )
 
         try:
             result: Dict[str, Any] = voucher_service.add_voucher(
-                code, v_type, value, min_purchase, max_uses
+                code, voucher_type, value, min_purchase, max_uses
             )
 
             if result.get("success"):
+                voucher_id = result.get("data", {}).get("id")
                 logger.info(
-                    f"Route: Voucher '{code}' berhasil ditambahkan via service."
+                    f"Route: Voucher '{code}' berhasil ditambahkan via "
+                    f"service. ID: {voucher_id}"
                 )
                 html: str = render_template(
-                    "admin/partials/_voucher_row.html", voucher=result["data"]
+                    "admin/partials/_voucher_row.html",
+                    voucher=result["data"]
                 )
                 result["html"] = html
                 return jsonify(result), 200
@@ -52,12 +57,15 @@ def admin_vouchers() -> Union[str, Response, Tuple[Response, int]]:
                     f"Alasan: {result.get('message')}"
                 )
                 status_code: int = (
-                    409 if "sudah terdaftar" in result.get("message", "") else 400
+                    409 if "sudah terdaftar" in
+                    result.get("message", "").lower() else 400
                 )
                 return jsonify(result), status_code
 
         except ValidationError as ve:
-            logger.warning(f"Kesalahan validasi saat menambahkan voucher '{code}': {ve}")
+            logger.warning(
+                f"Kesalahan validasi saat menambahkan voucher '{code}': {ve}"
+            )
             return jsonify({"success": False, "message": str(ve)}), 400
         
         except DatabaseException as de:
@@ -66,21 +74,24 @@ def admin_vouchers() -> Union[str, Response, Tuple[Response, int]]:
                 exc_info=True,
             )
             return (
-                jsonify(
-                    {"success": False, "message": "Terjadi kesalahan database."}
-                ),
+                jsonify({
+                    "success": False,
+                    "message": "Terjadi kesalahan database."
+                }),
                 500,
             )
         
         except ServiceLogicError as sle:
             logger.error(
-                f"Kesalahan logika servis saat menambahkan voucher '{code}': {sle}",
+                f"Kesalahan logika servis saat menambahkan voucher '{code}': "
+                f"{sle}",
                 exc_info=True,
             )
             return (
-                jsonify(
-                    {"success": False, "message": "Terjadi kesalahan pada server."}
-                ),
+                jsonify({
+                    "success": False,
+                    "message": "Terjadi kesalahan pada server."
+                }),
                 500,
             )
         
@@ -91,32 +102,34 @@ def admin_vouchers() -> Union[str, Response, Tuple[Response, int]]:
                 exc_info=True,
             )
             return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Gagal menambahkan voucher karena "
-                        "kesalahan server.",
-                    }
-                ),
+                jsonify({
+                    "success": False,
+                    "message": "Gagal menambahkan voucher karena kesalahan server.",
+                }),
                 500,
             )
 
     logger.debug(
-        "Route: Permintaan GET ke /vouchers. Mengambil data voucher via service..."
+        "Route: Permintaan GET ke /vouchers. Mengambil data voucher "
+        "via service..."
     )
 
     try:
         vouchers: List[Dict[str, Any]] = voucher_service.get_all_vouchers()
         logger.info(
-            f"Route: Berhasil mengambil {len(vouchers)} data voucher dari service."
+            f"Route: Berhasil mengambil {len(vouchers)} data voucher "
+            f"dari service."
         )
         return render_template(
-            "admin/manage_vouchers.html", vouchers=vouchers, content=get_content()
+            "admin/manage_vouchers.html",
+            vouchers=vouchers,
+            content=get_content()
         )
     
     except (DatabaseException, ServiceLogicError) as service_err:
         logger.error(
-            f"Route: Kesalahan saat mengambil voucher dari service: {service_err}",
+            f"Route: Kesalahan saat mengambil voucher dari service: "
+            f"{service_err}",
             exc_info=True,
         )
         flash("Gagal memuat halaman voucher.", "danger")
@@ -126,7 +139,8 @@ def admin_vouchers() -> Union[str, Response, Tuple[Response, int]]:
     
     except Exception as e:
         logger.error(
-            f"Route: Kesalahan tak terduga saat mengambil voucher dari service: {e}",
+            f"Route: Kesalahan tak terduga saat mengambil voucher dari "
+            f"service: {e}",
             exc_info=True,
         )
         flash("Gagal memuat halaman voucher.", "danger")
@@ -156,7 +170,8 @@ def delete_voucher(id: int) -> Tuple[Response, int]:
                 f"Alasan: {result.get('message')}"
             )
             status_code: int = (
-                404 if "tidak ditemukan" in result.get("message", "") else 500
+                404 if "tidak ditemukan" in
+                result.get("message", "").lower() else 500
             )
             return jsonify(result), status_code
         
@@ -170,9 +185,10 @@ def delete_voucher(id: int) -> Tuple[Response, int]:
             exc_info=True,
         )
         return (
-            jsonify(
-                {"success": False, "message": "Terjadi kesalahan database."}
-            ),
+            jsonify({
+                "success": False,
+                "message": "Terjadi kesalahan database."
+            }),
             500,
         )
     
@@ -181,11 +197,11 @@ def delete_voucher(id: int) -> Tuple[Response, int]:
             f"Kesalahan logika servis saat menghapus voucher ID {id}: {sle}",
             exc_info=True,
         )
-
         return (
-            jsonify(
-                {"success": False, "message": "Terjadi kesalahan pada server."}
-            ),
+            jsonify({
+                "success": False,
+                "message": "Terjadi kesalahan pada server."
+            }),
             500,
         )
     
@@ -196,13 +212,10 @@ def delete_voucher(id: int) -> Tuple[Response, int]:
             exc_info=True,
         )
         return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Gagal menghapus voucher karena "
-                    "kesalahan server.",
-                }
-            ),
+            jsonify({
+                "success": False,
+                "message": "Gagal menghapus voucher karena kesalahan server.",
+            }),
             500,
         )
 
@@ -229,7 +242,8 @@ def toggle_voucher(id: int) -> Tuple[Response, int]:
                 f"Alasan: {result.get('message')}"
             )
             status_code: int = (
-                404 if "tidak ditemukan" in result.get("message", "") else 500
+                404 if "tidak ditemukan" in
+                result.get("message", "").lower() else 500
             )
             return jsonify(result), status_code
         
@@ -245,21 +259,24 @@ def toggle_voucher(id: int) -> Tuple[Response, int]:
             exc_info=True,
         )
         return (
-            jsonify(
-                {"success": False, "message": "Terjadi kesalahan database."}
-            ),
+            jsonify({
+                "success": False,
+                "message": "Terjadi kesalahan database."
+            }),
             500,
         )
     
     except ServiceLogicError as sle:
         logger.error(
-            f"Kesalahan logika servis saat mengubah status voucher ID {id}: {sle}",
+            f"Kesalahan logika servis saat mengubah status voucher ID {id}: "
+            f"{sle}",
             exc_info=True,
         )
         return (
-            jsonify(
-                {"success": False, "message": "Terjadi kesalahan pada server."}
-            ),
+            jsonify({
+                "success": False,
+                "message": "Terjadi kesalahan pada server."
+            }),
             500,
         )
     
@@ -270,12 +287,10 @@ def toggle_voucher(id: int) -> Tuple[Response, int]:
             exc_info=True,
         )
         return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Gagal mengubah status voucher karena "
-                    "kesalahan server.",
-                }
-            ),
+            jsonify({
+                "success": False,
+                "message": "Gagal mengubah status voucher karena "
+                           "kesalahan server.",
+            }),
             500,
         )

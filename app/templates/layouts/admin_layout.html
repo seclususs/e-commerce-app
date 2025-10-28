@@ -47,54 +47,61 @@
                  </div>
                  <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Tutup Sidebar">&times;</button>
              </div>
-            <nav class="admin-nav">
-                <a href="{{ url_for('admin.admin_dashboard') }}" class="{{ 'active' if 'dashboard' in request.endpoint }}"><i class="fas fa-tachometer-alt fa-fw"></i><span>Dashboard</span></a>
-                <a href="{{ url_for('admin.admin_products') }}" class="{{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint or 'manage_variants' in request.endpoint }}"><i class="fas fa-box-open fa-fw"></i><span>Produk</span></a>
-                <a href="{{ url_for('admin.admin_categories') }}" class="{{ 'active' if 'categories' in request.endpoint }}"><i class="fas fa-tags fa-fw"></i><span>Kategori</span></a>
-                <a href="{{ url_for('admin.admin_orders') }}" class="{{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}"><i class="fas fa-receipt fa-fw"></i><span>Pesanan</span></a>
-                <a href="{{ url_for('admin.admin_vouchers') }}" class="{{ 'active' if 'vouchers' in request.endpoint }}"><i class="fas fa-ticket-alt fa-fw"></i><span>Voucher</span></a>
-                <a href="{{ url_for('admin.admin_reports') }}" class="{{ 'active' if 'reports' in request.endpoint }}"><i class="fas fa-chart-line fa-fw"></i><span>Laporan</span></a>
-                <a href="{{ url_for('admin.admin_settings') }}" class="{{ 'active' if 'settings' in request.endpoint }}"><i class="fas fa-cog fa-fw"></i><span>Pengaturan</span></a>
+            <nav class="admin-nav" id="adminNav">
+                <a href="{{ url_for('admin.admin_dashboard') }}" class="ajax-link {{ 'active' if 'dashboard' in request.endpoint }}" data-endpoint="admin.admin_dashboard"><i class="fas fa-tachometer-alt fa-fw"></i><span>Dashboard</span></a>
+                <a href="{{ url_for('admin.admin_products') }}" class="ajax-link {{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint or 'manage_variants' in request.endpoint }}" data-endpoint="admin.admin_products"><i class="fas fa-box-open fa-fw"></i><span>Produk</span></a>
+                <a href="{{ url_for('admin.admin_categories') }}" class="ajax-link {{ 'active' if 'categories' in request.endpoint }}" data-endpoint="admin.admin_categories"><i class="fas fa-tags fa-fw"></i><span>Kategori</span></a>
+                <a href="{{ url_for('admin.admin_orders') }}" class="ajax-link {{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}" data-endpoint="admin.admin_orders"><i class="fas fa-receipt fa-fw"></i><span>Pesanan</span></a>
+                <a href="{{ url_for('admin.admin_vouchers') }}" class="ajax-link {{ 'active' if 'vouchers' in request.endpoint }}" data-endpoint="admin.admin_vouchers"><i class="fas fa-ticket-alt fa-fw"></i><span>Voucher</span></a>
+                <a href="{{ url_for('admin.admin_reports') }}" class="ajax-link {{ 'active' if 'reports' in request.endpoint }}" data-endpoint="admin.admin_reports"><i class="fas fa-chart-line fa-fw"></i><span>Laporan</span></a>
+                <a href="{{ url_for('admin.admin_settings') }}" class="ajax-link {{ 'active' if 'settings' in request.endpoint }}" data-endpoint="admin.admin_settings"><i class="fas fa-cog fa-fw"></i><span>Pengaturan</span></a>
                 <a href="{{ url_for('auth.logout') }}" id="logoutLink" class="logout-link"><i class="fas fa-sign-out-alt fa-fw"></i><span>Logout</span></a>
             </nav>
         </aside>
 
-        <main class="admin-main-content page-content-wrapper">
-            <div class="admin-main-header">
+        <main class="admin-main-content page-content-wrapper" id="adminMainContent">
+             <div class="admin-main-header">
                  <button class="sidebar-toggle-btn mobile-toggle" id="mobileSidebarToggleBtn" aria-label="Toggle Sidebar">
                     <i class="fas fa-bars"></i>
                  </button>
-                <h2>{% block adminheader %}{% endblock %}</h2>
+                 <h2 id="adminHeaderTitle">{% block adminheader %}{% endblock %}</h2>
+             </div>
+             <div id="flashMessagesContainer">
+                 {% with messages = get_flashed_messages(with_categories=true) %}
+                     {% if messages %}
+                         <div class="flash-messages">
+                         {% for category, message in messages %}
+                             <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                         {% endfor %}
+                         </div>
+                     {% endif %}
+                 {% endwith %}
             </div>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
-                    {% endfor %}
-                    </div>
-                {% endif %}
-            {% endwith %}
-            <div class="admin-content-area">
+            <div class="admin-content-area" id="adminContentArea">
                 {% block admincontent %}{% endblock %}
             </div>
+             <!-- Loading indicator -->
+             <div id="loadingIndicator" style="display: none; text-align: center; padding: 2rem;">
+                 <span class="spinner" style="width: 3rem; height: 3rem; border-width: 4px;"></span>
+                 <p style="margin-top: 1rem; color: var(--color-text-secondary);">Memuat...</p>
+             </div>
         </main>
     </div>
 
     <nav class="bottom-navbar">
-        <a href="{{ url_for('admin.admin_dashboard') }}" class="bottom-nav-item {{ 'active' if 'dashboard' in request.endpoint }}">
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="bottom-nav-item ajax-link {{ 'active' if 'dashboard' in request.endpoint }}" data-endpoint="admin.admin_dashboard">
             <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
         </a>
-        <a href="{{ url_for('admin.admin_products') }}" class="bottom-nav-item {{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint or 'manage_variants' in request.endpoint or 'categories' in request.endpoint }}">
+        <a href="{{ url_for('admin.admin_products') }}" class="bottom-nav-item ajax-link {{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint or 'manage_variants' in request.endpoint or 'categories' in request.endpoint }}" data-endpoint="admin.admin_products">
             <i class="fas fa-box-open"></i> <span>Produk</span>
         </a>
-        <a href="{{ url_for('admin.admin_orders') }}" class="bottom-nav-item {{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}">
+        <a href="{{ url_for('admin.admin_orders') }}" class="bottom-nav-item ajax-link {{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}" data-endpoint="admin.admin_orders">
             <i class="fas fa-receipt"></i> <span>Pesanan</span>
         </a>
-         <a href="{{ url_for('admin.admin_reports') }}" class="bottom-nav-item {{ 'active' if 'reports' in request.endpoint }}">
+         <a href="{{ url_for('admin.admin_reports') }}" class="bottom-nav-item ajax-link {{ 'active' if 'reports' in request.endpoint }}" data-endpoint="admin.admin_reports">
             <i class="fas fa-chart-line"></i> <span>Laporan</span>
         </a>
-        <a href="{{ url_for('admin.admin_settings') }}" class="bottom-nav-item {{ 'active' if 'settings' in request.endpoint }}">
+        <a href="{{ url_for('admin.admin_settings') }}" class="bottom-nav-item ajax-link {{ 'active' if 'settings' in request.endpoint }}" data-endpoint="admin.admin_settings">
             <i class="fas fa-cog"></i> <span>Atur</span>
         </a>
     </nav>
@@ -112,7 +119,12 @@
 
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block additional_scripts %}{% endblock %}
     <script type="module" src="{{ url_for('static', filename='js/admin/admin-main.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/admin/admin_ajax.js') }}"></script>
+    <script>
+      document.documentElement.dataset.currentEndpoint = "{{ request.endpoint }}";
+    </script>
 </body>
 </html>
