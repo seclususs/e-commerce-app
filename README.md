@@ -8,6 +8,7 @@ e-commerce-app/
 ├── run.py                   # Titik masuk (entry point)
 │
 ├── app/                     # Folder utama yang berisi semua kode aplikasi
+│   │
 │   ├── __init__.py         # Titik masuk aplikasi, menggunakan pola factory (create_app)
 │   │
 │   ├── configs/            # Konfigurasi aplikasi
@@ -186,10 +187,12 @@ e-commerce-app/
 │   │   │   │
 │   │   │   ├── admin/      # Admin panel scripts
 │   │   │   │   ├── admin-main.js
+│   │   │   │   ├── admin_ajax.js
 │   │   │   │   │
 │   │   │   │   ├── components/
 │   │   │   │   │   ├── product-forms.component.js
-│   │   │   │   │   └── settings.component.js
+│   │   │   │   │   ├── settings.component.js
+│   │   │   │   │   └── sidebar-toggle.component.js
 │   │   │   │   │
 │   │   │   │   ├── charts/
 │   │   │   │   │   ├── dashboard-charts.component.js
@@ -244,6 +247,7 @@ e-commerce-app/
 │   │   │   │   └── cart-store.js
 │   │   │   │
 │   │   │   └── utils/      # Utility functions
+│   │   │       ├── ajax-navigation.js
 │   │   │       ├── animations.js
 │   │   │       ├── confirmations.util.js
 │   │   │       ├── flash-messages.js
@@ -269,18 +273,7 @@ e-commerce-app/
 │   │   │   ├── product_editor.html
 │   │   │   ├── reports.html
 │   │   │   ├── site_settings.html
-│   │   │   ├── view_order.html
-│   │   │   │
-│   │   │   └── partials/   # Komponen HTML admin yang dapat digunakan kembali
-│   │   │       ├── _category_row.html
-│   │   │       ├── _category_table_body.html
-│   │   │       ├── _order_table_body.html
-│   │   │       ├── _product_row.html
-│   │   │       ├── _product_table_body.html
-│   │   │       ├── _variant_row.html
-│   │   │       ├── _variant_table_body.html
-│   │   │       ├── _voucher_row.html
-│   │   │       └── _voucher_table_body.html
+│   │   │   └── view_order.html
 │   │   │
 │   │   ├── auth/           # Template untuk login, register, dll.
 │   │   │   ├── forgot_password.html
@@ -291,9 +284,49 @@ e-commerce-app/
 │   │   │   ├── admin_layout.html
 │   │   │   └── base_layout.html
 │   │   │
-│   │   ├── partials/       # Komponen HTML publik yang dapat digunakan kembali
-│   │   │   ├── _product_card.html
-│   │   │   └── _review.html
+│   │   ├── partials/       # Komponen HTML yang dapat digunakan kembali
+│   │   │   │
+│   │   │   ├── admin/      # Komponen HTML admin yang dapat digunakan kembali
+│   │   │   │   ├── _category_row.html
+│   │   │   │   ├── _category_table_body.html
+│   │   │   │   ├── _dashboard.html
+│   │   │   │   ├── _invoice.html
+│   │   │   │   ├── _manage_categories.html
+│   │   │   │   ├── _manage_orders.html
+│   │   │   │   ├── _manage_products.html
+│   │   │   │   ├── _manage_variants.html
+│   │   │   │   ├── _manage_vouchers.html
+│   │   │   │   ├── _order_table_body.html
+│   │   │   │   ├── _product_editor.html
+│   │   │   │   ├── _product_row.html
+│   │   │   │   ├── _product_table_body.html
+│   │   │   │   ├── _reports.html
+│   │   │   │   ├── _site_settings.html
+│   │   │   │   ├── _variant_row.html
+│   │   │   │   ├── _variant_table_body.html
+│   │   │   │   ├── _view_order.html
+│   │   │   │   ├── _voucher_row.html
+│   │   │   │   └── _voucher_table_body.html
+│   │   │   │
+│   │   │   ├── public/     # Komponen HTML publik
+│   │   │   │   ├── _about.html
+│   │   │   │   ├── _landing.html
+│   │   │   │   ├── _product_card.html
+│   │   │   │   ├── _product_catalog.html
+│   │   │   │   ├── _product_detail.html
+│   │   │   │   └── _review.html
+│   │   │   │
+│   │   │   ├── purchase/   # Komponen alur pembelian
+│   │   │   │   ├── _cart.html
+│   │   │   │   ├── _checkout_page.html
+│   │   │   │   ├── _edit_address_page.html
+│   │   │   │   ├── _payment_page.html
+│   │   │   │   └── _success_page.html
+│   │   │   │
+│   │   │   └── user/       # Komponen profil pengguna
+│   │   │       ├── _order_tracking.html
+│   │   │       ├── _profile_editor.html
+│   │   │       └── _user_profile.html
 │   │   │
 │   │   ├── public/         # Template halaman publik
 │   │   │   ├── about.html
