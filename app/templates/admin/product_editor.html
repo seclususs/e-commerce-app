@@ -71,17 +71,18 @@
 
         <div class="form-group" style="margin-top: 1.5rem;">
             <label>Gambar Saat Ini</label>
-            <p class="form-hint">Klik gambar untuk menjadikannya gambar utama. Centang checkbox di pojok kiri atas untuk menandai gambar yang akan dihapus.</p>
+            <p class="form-hint">Klik gambar untuk menjadikannya gambar utama (ditandai bintang). Centang checkbox di pojok kiri atas untuk menandai gambar yang akan dihapus.</p>
             <div id="existing-image-previews" class="image-preview-container">
+                
                 {% if product.image_url %}
-                <div class="preview-item existing-preview {% if product.image_url == product.image_url %}is-main{% endif %}" 
+                <div class="preview-item existing-preview is-main" 
                      role="radio" 
-                     aria-checked="{{ 'true' if product.image_url == product.image_url else 'false' }}" 
+                     aria-checked="true"
                      tabindex="0" 
                      aria-label="Pilih {{ product.image_url }} sebagai gambar utama">
                     <img src="{{ url_for('images.serve_image', filename=product.image_url) }}" alt="{{ product.name }}">
                     <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
-                    <input type="radio" name="main_image" value="{{ product.image_url }}" class="main-image-radio" {% if product.image_url == product.image_url %}checked{% endif %} tabindex="-1">
+                    <input type="radio" name="main_image" value="{{ product.image_url }}" class="main-image-radio" checked tabindex="-1">
                     <div class="delete-checkbox-overlay">
                         <label class="custom-checkbox" title="Tandai untuk hapus">
                             <input type="checkbox" name="delete_image" value="{{ product.image_url }}" class="checkbox-input delete-image-checkbox">
@@ -90,15 +91,16 @@
                     </div>
                 </div>
                 {% endif %}
+                
                 {% for image in additional_images %}
-                <div class="preview-item existing-preview {% if image == product.image_url %}is-main{% endif %}" 
+                <div class="preview-item existing-preview" 
                      role="radio" 
-                     aria-checked="{{ 'true' if image == product.image_url else 'false' }}" 
+                     aria-checked="false"
                      tabindex="0" 
                      aria-label="Pilih {{ image }} sebagai gambar utama">
                     <img src="{{ url_for('images.serve_image', filename=image) }}" alt="{{ product.name }} tambahan">
                     <div class="main-image-indicator"><i class="fas fa-star"></i> Utama</div>
-                    <input type="radio" name="main_image" value="{{ image }}" class="main-image-radio" {% if image == product.image_url %}checked{% endif %} tabindex="-1"> 
+                    <input type="radio" name="main_image" value="{{ image }}" class="main-image-radio" tabindex="-1"> 
                      <div class="delete-checkbox-overlay">
                         <label class="custom-checkbox" title="Tandai untuk hapus">
                             <input type="checkbox" name="delete_image" value="{{ image }}" class="checkbox-input delete-image-checkbox">

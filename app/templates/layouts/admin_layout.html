@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block admintitle %}{% endblock %} - Admin {{ content.app_name }}</title>
+    <title>{% block admintitle %}{% endblock %} - Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
@@ -20,8 +20,12 @@
                     themeClass = 'dark-theme';
                 }
                 document.documentElement.classList.add(themeClass);
+
+                var sidebarState = localStorage.getItem('sidebarState');
+                if (sidebarState === 'collapsed' && window.innerWidth > 767) {
+                    document.documentElement.classList.add('sidebar-collapsed');
+                }
             } catch (e) {
-                // Failsafe
                 document.documentElement.classList.add('dark-theme');
             }
         })();
@@ -30,27 +34,36 @@
 <body>
     <div class="admin-wrapper">
         <aside class="admin-sidebar" id="adminSidebar">
+             <div class="sidebar-header">
+                 <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle Sidebar">
+                    <i class="fas fa-chevron-left"></i>
+                 </button>
+                 <div class="theme-toggle-wrapper header-theme-toggle">
+                     <button id="adminThemeToggle" class="theme-toggle-btn" aria-label="Ganti tema">
+                         <i class="fas fa-sun" id="theme-toggle-sun"></i>
+                         <i class="fas fa-moon" id="theme-toggle-moon"></i>
+                     </button>
+                     <span class="theme-toggle-label">Ganti Tema</span>
+                 </div>
+                 <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Tutup Sidebar">&times;</button>
+             </div>
             <nav class="admin-nav">
-                <a href="{{ url_for('admin.admin_dashboard') }}" class="{{ 'active' if 'dashboard' in request.endpoint }}">Dashboard</a>
-                <a href="{{ url_for('admin.admin_products') }}" class="{{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint or 'manage_variants' in request.endpoint }}">Produk</a>
-                <a href="{{ url_for('admin.admin_categories') }}" class="{{ 'active' if 'categories' in request.endpoint }}">Kategori</a>
-                <a href="{{ url_for('admin.admin_orders') }}" class="{{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}">Pesanan</a>
-                <a href="{{ url_for('admin.admin_vouchers') }}" class="{{ 'active' if 'vouchers' in request.endpoint }}">Voucher</a>
-                <a href="{{ url_for('admin.admin_reports') }}" class="{{ 'active' if 'reports' in request.endpoint }}">Laporan</a>
-                <a href="{{ url_for('admin.admin_settings') }}" class="{{ 'active' if 'settings' in request.endpoint }}">Pengaturan</a>
-                <a href="{{ url_for('auth.logout') }}" id="logoutLink">Logout</a>
-
-                <div class="theme-toggle-wrapper">
-                    <button id="adminThemeToggle" class="theme-toggle-btn" aria-label="Ganti tema">
-                        <i class="fas fa-sun" id="theme-toggle-sun"></i>
-                        <i class="fas fa-moon" id="theme-toggle-moon"></i>
-                    </button>
-                </div>
+                <a href="{{ url_for('admin.admin_dashboard') }}" class="{{ 'active' if 'dashboard' in request.endpoint }}"><i class="fas fa-tachometer-alt fa-fw"></i><span>Dashboard</span></a>
+                <a href="{{ url_for('admin.admin_products') }}" class="{{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint or 'manage_variants' in request.endpoint }}"><i class="fas fa-box-open fa-fw"></i><span>Produk</span></a>
+                <a href="{{ url_for('admin.admin_categories') }}" class="{{ 'active' if 'categories' in request.endpoint }}"><i class="fas fa-tags fa-fw"></i><span>Kategori</span></a>
+                <a href="{{ url_for('admin.admin_orders') }}" class="{{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}"><i class="fas fa-receipt fa-fw"></i><span>Pesanan</span></a>
+                <a href="{{ url_for('admin.admin_vouchers') }}" class="{{ 'active' if 'vouchers' in request.endpoint }}"><i class="fas fa-ticket-alt fa-fw"></i><span>Voucher</span></a>
+                <a href="{{ url_for('admin.admin_reports') }}" class="{{ 'active' if 'reports' in request.endpoint }}"><i class="fas fa-chart-line fa-fw"></i><span>Laporan</span></a>
+                <a href="{{ url_for('admin.admin_settings') }}" class="{{ 'active' if 'settings' in request.endpoint }}"><i class="fas fa-cog fa-fw"></i><span>Pengaturan</span></a>
+                <a href="{{ url_for('auth.logout') }}" id="logoutLink" class="logout-link"><i class="fas fa-sign-out-alt fa-fw"></i><span>Logout</span></a>
             </nav>
         </aside>
-        
+
         <main class="admin-main-content page-content-wrapper">
             <div class="admin-main-header">
+                 <button class="sidebar-toggle-btn mobile-toggle" id="mobileSidebarToggleBtn" aria-label="Toggle Sidebar">
+                    <i class="fas fa-bars"></i>
+                 </button>
                 <h2>{% block adminheader %}{% endblock %}</h2>
             </div>
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -67,7 +80,7 @@
             </div>
         </main>
     </div>
-    
+
     <nav class="bottom-navbar">
         <a href="{{ url_for('admin.admin_dashboard') }}" class="bottom-nav-item {{ 'active' if 'dashboard' in request.endpoint }}">
             <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
@@ -85,7 +98,7 @@
             <i class="fas fa-cog"></i> <span>Atur</span>
         </a>
     </nav>
-    
+
     <div class="confirm-modal" id="confirmModal">
         <div class="confirm-modal-content">
             <h3 id="confirmModalTitle">Konfirmasi Tindakan</h3>
@@ -96,6 +109,8 @@
             </div>
         </div>
     </div>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     {% block additional_scripts %}{% endblock %}
     <script type="module" src="{{ url_for('static', filename='js/admin/admin-main.js') }}"></script>

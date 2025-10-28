@@ -10,12 +10,12 @@ export function initAdminImagePreviews() {
 
         imageInput.addEventListener('change', function(event) {
             previewContainer.querySelectorAll('.new-preview').forEach(el => el.remove());
-            
+
             const files = Array.from(event.target.files);
 
             if (files.length === 0) {
                 if (fileDisplay) fileDisplay.textContent = 'Belum ada file baru dipilih';
-                setTimeout(ensureMainImageSelection, 10);
+                ensureMainImageSelection();
                 return;
             }
 
@@ -58,6 +58,7 @@ export function initAdminImagePreviews() {
                 }
                 reader.readAsDataURL(file);
             });
+            ensureMainImageSelection();
         });
     };
 
@@ -72,26 +73,28 @@ export function initAdminImagePreviews() {
             if (parentItem && !parentItem.classList.contains('marked-for-deletion')) {
                 parentItem.classList.add('is-main');
                 parentItem.setAttribute('aria-checked', 'true');
-            } else if (parentItem && parentItem.classList.contains('marked-for-deletion')) {
+            } else {
                  radioInput.checked = false;
                  ensureMainImageSelection();
-            } else if (!parentItem) {
-                ensureMainImageSelection();
             }
         }
     };
 
-    const ensureMainImageSelection = (showWarning = false) => {
+    const ensureMainImageSelection = () => {
          const checkedRadio = document.querySelector('input[name="main_image"]:checked');
-         const allImages = document.querySelectorAll('.preview-item:not(.marked-for-deletion)');
-         
+         const allAvailableImages = document.querySelectorAll('.preview-item:not(.marked-for-deletion)');
+
          let isCheckedValid = false;
          if (checkedRadio) {
              const parentItem = checkedRadio.closest('.preview-item');
              if (parentItem && !parentItem.classList.contains('marked-for-deletion')) {
                  isCheckedValid = true;
+             } else if (parentItem) {
+                 checkedRadio.checked = false;
+                 isCheckedValid = false;
              } else {
                  checkedRadio.checked = false;
+                 isCheckedValid = false;
              }
          }
 
@@ -101,17 +104,17 @@ export function initAdminImagePreviews() {
              if (firstAvailableRadio) {
                  firstAvailableRadio.checked = true;
                  handleMainImageChange(firstAvailableRadio);
-                 return;
              } else {
-                 if (showWarning && allImages.length === 0) {
-                     showNotification('Peringatan: Tidak ada gambar yang tersisa untuk dijadikan gambar utama.', true);
-                 }
                  document.querySelectorAll('.preview-item').forEach(item => {
                      item.classList.remove('is-main');
                      item.setAttribute('aria-checked', 'false');
                  });
+                 const anyImageExists = document.querySelector('.preview-item');
+                 if (anyImageExists) {
+                    showNotification('Peringatan: Tidak ada gambar yang tersisa untuk dijadikan gambar utama.', true);
+                 }
              }
-         } else if (checkedRadio) {
+         } else if (checkedRadio){
              handleMainImageChange(checkedRadio);
          }
     };
@@ -131,19 +134,20 @@ export function initAdminImagePreviews() {
             if (e.target.matches('input[name="main_image"].main-image-radio')) {
                 handleMainImageChange(e.target);
             }
-
             if (e.target.matches('.delete-image-checkbox')) {
                 const previewItem = e.target.closest('.preview-item');
                 if (previewItem) {
-                    previewItem.classList.toggle('marked-for-deletion', e.target.checked);
-                    ensureMainImageSelection(true); 
+                    const isDeleting = e.target.checked;
+                    previewItem.classList.toggle('marked-for-deletion', isDeleting);
+                    ensureMainImageSelection();
                 }
             }
         });
 
         formArea.addEventListener('click', function(e) {
             const previewItem = e.target.closest('.preview-item');
-            if (previewItem && !e.target.closest('.delete-checkbox-overlay')) {
+            
+            if (previewItem && !e.target.closest('.custom-checkbox')) {
                 const radio = previewItem.querySelector('.main-image-radio');
                 if (radio && !radio.checked && !radio.disabled && !previewItem.classList.contains('marked-for-deletion')) {
                     radio.checked = true;
@@ -154,14 +158,13 @@ export function initAdminImagePreviews() {
 
         formArea.addEventListener('keydown', function(e) {
             const previewItem = e.target.closest('.preview-item');
-            if (previewItem && (e.key === 'Enter' || e.key === ' ') && !e.target.matches('.delete-image-checkbox')) {
+            
+            if (previewItem && (e.key === 'Enter' || e.key === ' ') && !e.target.closest('.custom-checkbox')) {
                  e.preventDefault();
-                 if (!e.target.closest('.delete-checkbox-overlay')) {
-                     const radio = previewItem.querySelector('.main-image-radio');
-                     if (radio && !radio.checked && !radio.disabled && !previewItem.classList.contains('marked-for-deletion')) {
-                         radio.checked = true;
-                         handleMainImageChange(radio);
-                     }
+                 const radio = previewItem.querySelector('.main-image-radio');
+                 if (radio && !radio.checked && !radio.disabled && !previewItem.classList.contains('marked-for-deletion')) {
+                     radio.checked = true;
+                     handleMainImageChange(radio);
                  }
             }
         });
@@ -173,16 +176,15 @@ export function initAdminImagePreviews() {
             }
         });
 
-        const initiallyChecked = formArea.querySelector('.preview-item.is-main .main-image-radio');
-        if (initiallyChecked) {
-             initiallyChecked.checked = true;
-             handleMainImageChange(initiallyChecked);
+        const initiallyCheckedRadio = formArea.querySelector('.preview-item.is-main .main-image-radio');
+        if (initiallyCheckedRadio) {
+             initiallyCheckedRadio.checked = true;
         }
 
-        setTimeout(ensureMainImageSelection, 100);
+        ensureMainImageSelection();
+
     }
 }
-
 
 export function initAdminPriceFormatting() {
     const productForms = document.querySelectorAll('form[action*="/admin/products"], form[action*="/admin/edit_product"]');
@@ -194,7 +196,7 @@ export function initAdminPriceFormatting() {
         return parseInt(numStr, 10).toLocaleString('id-ID');
     };
 
-    const unformatPrice = (value) => String(value).replace(/[^0-9.]/g, '');
+    const unformatPrice = (value) => String(value).replace(/[^0-9]/g, '');
 
     productForms.forEach(form => {
         const priceInputs = form.querySelectorAll('input[name="price"], input[name="discount_price"]');
@@ -263,7 +265,9 @@ function initVariantCheckbox() {
         }
 
         if (manageVariantsPlaceholder) {
-            manageVariantsPlaceholder.style.display = !isInitiallyVariant && isChecked ? 'inline' : 'none';
+            const form = checkbox.closest('form');
+            const showManageVariants = (!isInitiallyVariant && isChecked) || (isChecked && form && form.action.includes('/admin/products'));
+            manageVariantsPlaceholder.style.display = showManageVariants ? 'inline' : 'none';
         }
     };
 

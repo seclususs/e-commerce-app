@@ -34,9 +34,17 @@
               data-name="{{ product.name }}"
               data-stock="{{ product.stock }}"
               data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
-              {% if product.stock == 0 %}disabled{% endif %}>
+              {% if product.stock == 0 or product.has_variants %}disabled{% endif %}>
         <i class="fas fa-shopping-cart"></i>
-        <span>{% if product.stock > 0 %}Tambah ke Keranjang{% else %}Stok Habis{% endif %}</span>
+        <span>
+          {% if product.has_variants %}
+            Pilih Ukuran
+          {% elif product.stock > 0 %}
+            Tambah ke Keranjang
+          {% else %}
+            Stok Habis
+          {% endif %}
+        </span>
       </button>
     </div>
   </div>

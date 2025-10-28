@@ -35,26 +35,27 @@
         <div class="admin-card animated-element" data-animation-delay="400">
             <h3>Riwayat Pesanan</h3>
             <div class="table-wrapper">
-                <table class="admin-table">
+                <table class="admin-table user-profile-orders">
                     <thead><tr><th>ID Pesanan</th><th>Tanggal</th><th>Total</th><th>Status</th><th>No. Resi</th><th>Aksi</th></tr></thead>
                     <tbody id="orders-list">
                         {% for order in orders %}
                         <tr id="order-row-{{ order.id }}">
                             <td data-label="ID Pesanan:">#{{ order.id }}</td>
-                            {# Fix: Format datetime object directly using strftime #}
                             <td data-label="Tanggal:">{{ order.order_date.strftime('%Y-%m-%d') }}</td>
                             <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
                             <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status|status_translate }}</span></td>
                             <td data-label="No. Resi:">{{ order.tracking_number or '-' }}</td>
-                            <td data-label="Aksi:">
-                                <a href="{{ url_for('user.track_order', order_id=order.id) }}" class="action-link-edit" style="margin-right: 1rem;">Lacak</a>
-                                {% if order.status in ['Menunggu Pembayaran', 'Diproses'] %}
-                                    <button class="btn-cancel ajax-cancel-order"
-                                            data-order-id="{{ order.id }}"
-                                            data-url="{{ url_for('purchase.cancel_order', order_id=order.id) }}">
-                                        Batalkan
-                                    </button>
-                                {% endif %}
+                            <td data-label="Aksi:" class="profile-order-actions">
+                                <div class="action-buttons-container">
+                                    <a href="{{ url_for('user.track_order', order_id=order.id) }}" class="cta-button-secondary action-btn">Lacak</a>
+                                    {% if order.status in ['Menunggu Pembayaran', 'Diproses'] %}
+                                        <button class="btn-cancel ajax-cancel-order action-btn"
+                                                data-order-id="{{ order.id }}"
+                                                data-url="{{ url_for('purchase.cancel_order', order_id=order.id) }}">
+                                            Batalkan
+                                        </button>
+                                    {% endif %}
+                                </div>
                             </td>
                         </tr>
                         {% else %}

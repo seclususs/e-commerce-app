@@ -12,6 +12,7 @@ import { initAdminProductFilter } from './components/filters/product-filter.comp
 import { initAdminOrderFilter } from './components/filters/order-filter.component.js';
 import { initDashboardFilter } from './components/filters/dashboard-filter.component.js';
 import { initCronButton } from './utils/cron-simulator.util.js';
+import { initSidebarToggle } from './components/sidebar-toggle.component.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     initPageTransitions('.admin-main-content');
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initThemeSwitcher();
     initAjaxAdminForms();
     initAdminCardToggle();
+    initSidebarToggle();
 
     if (document.getElementById('salesChart')) {
         initDashboardCharts();

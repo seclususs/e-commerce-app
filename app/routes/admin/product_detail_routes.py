@@ -43,6 +43,7 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
             if result.get("success"):
                 result["redirect_url"] = url_for("admin.admin_products")
                 logger.info(f"Produk dengan ID {id} berhasil diperbarui.")
+                flash("Produk berhasil diperbarui!", "success")
                 return jsonify(result), 200
 
             logger.warning(
@@ -51,7 +52,7 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
             )
 
             status_code: int = 400
-
+            
             if "tidak ditemukan" in result.get("message", ""):
                 status_code = 404
             elif "sudah ada" in result.get("message", ""):
