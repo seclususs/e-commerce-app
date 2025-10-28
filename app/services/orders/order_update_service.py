@@ -4,17 +4,22 @@ import mysql.connector
 
 from app.core.db import get_db_connection
 from app.exceptions.database_exceptions import (
-    DatabaseException, RecordNotFoundError
-    )
-from app.exceptions.service_exceptions import ServiceLogicError
+    DatabaseException,
+    RecordNotFoundError,
+)
+from app.exceptions.service_exceptions import (
+    InvalidOperationError,
+    ServiceLogicError,
+)
 from app.services.orders.order_cancel_service import order_cancel_service
 from app.utils.logging_utils import get_logger
+from app.utils.template_filters import status_class_filter
 
 logger = get_logger(__name__)
 
 
 class OrderUpdateService:
-
+    
     def update_order_status_and_tracking(
         self,
         order_id: int,
@@ -27,8 +32,13 @@ class OrderUpdateService:
         )
 
         if new_status == "Dibatalkan":
-            return order_cancel_service.cancel_admin_order(order_id)
-        
+            cancel_result = order_cancel_service.cancel_admin_order(order_id)
+            if cancel_result.get("success") and "data" in cancel_result:
+                cancel_result["data"]["status_class"] = status_class_filter(
+                    cancel_result["data"]["status"]
+                )
+            return cancel_result
+
         conn = None
         cursor = None
 
@@ -38,7 +48,8 @@ class OrderUpdateService:
             conn.start_transaction()
 
             cursor.execute(
-                "SELECT status, tracking_number FROM orders WHERE id = %s FOR UPDATE",
+                "SELECT status, tracking_number FROM orders "
+                "WHERE id = %s FOR UPDATE",
                 (order_id,),
             )
 
@@ -51,7 +62,7 @@ class OrderUpdateService:
                 raise RecordNotFoundError(
                     f"Pesanan dengan ID {order_id} tidak ditemukan."
                 )
-            
+
             original_status = order["status"]
             tracking_number = (
                 tracking_number_input.strip()
@@ -71,43 +82,51 @@ class OrderUpdateService:
                     "data": {
                         "id": order_id,
                         "status": original_status,
-                        "status_class": original_status.lower().replace(" ", "-"),
+                        "status_class": status_class_filter(
+                            original_status
+                        ),
                         "tracking_number": order["tracking_number"],
                     },
                 }
-            
+
             cursor.execute(
-                "UPDATE orders SET status = %s, tracking_number = %s WHERE id = %s",
+                "UPDATE orders SET status = %s, tracking_number = %s "
+                "WHERE id = %s",
                 (new_status, tracking_number, order_id),
             )
 
-            notes = f'Status diubah dari "{original_status}" menjadi "{new_status}".'
+            notes = (
+                f'Status diubah dari "{original_status}" menjadi '
+                f'"{new_status}".'
+            )
 
             if tracking_changed:
                 notes += f" Nomor resi: {tracking_number}"
 
             cursor.execute(
-                "INSERT INTO order_status_history (order_id, status, notes) VALUES (%s, %s, %s)",
+                "INSERT INTO order_status_history (order_id, status, notes) "
+                "VALUES (%s, %s, %s)",
                 (order_id, new_status, notes),
             )
 
             conn.commit()
 
             logger.info(
-                f"Pesanan {order_id} berhasil diperbarui. Status: {new_status}, Resi: {tracking_number}"
+                f"Pesanan {order_id} berhasil diperbarui. "
+                f"Status: {new_status}, Resi: {tracking_number}"
             )
-            
+
             return {
                 "success": True,
                 "message": f"Pesanan #{order_id} berhasil diperbarui",
                 "data": {
                     "id": order_id,
                     "status": new_status,
-                    "status_class": new_status.lower().replace(" ", "-"),
+                    "status_class": status_class_filter(new_status),
                     "tracking_number": tracking_number,
                 },
             }
-        
+
         except (mysql.connector.Error, DatabaseException) as e:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -119,6 +138,14 @@ class OrderUpdateService:
                 f"Kesalahan database saat memperbarui pesanan: {e}"
             )
         
+        except (RecordNotFoundError, InvalidOperationError) as user_error:
+            if conn and conn.is_connected():
+                conn.rollback()
+            logger.warning(
+                f"Gagal memperbarui pesanan {order_id}: {user_error}"
+            )
+            raise user_error
+        
         except Exception as e:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -127,14 +154,15 @@ class OrderUpdateService:
                 exc_info=True,
             )
             raise ServiceLogicError(f"Gagal memperbarui status pesanan: {e}")
-
+        
         finally:
             if cursor:
                 cursor.close()
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(
-                f"Koneksi database ditutup untuk update_order_status_and_tracking {order_id}"
+                "Koneksi database ditutup untuk "
+                f"update_order_status_and_tracking {order_id}"
             )
 
 order_update_service = OrderUpdateService()

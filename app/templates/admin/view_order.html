@@ -13,16 +13,15 @@
     <div class="admin-card">
         <h3>Informasi Pesanan</h3>
         <p><strong>ID Pesanan:</strong> #{{ order.id }}</p>
-        <p><strong>Tanggal:</strong> {{ order.order_date }}</p>
+        <p><strong>Tanggal:</strong> {{ (order.order_date | datetime_from_string).strftime('%d %B %Y, %H:%M') }}</p> {# Format tanggal #}
         <p><strong>Pelanggan:</strong> {{ order.customer_name or 'Tamu' }} ({{ order.email or 'N/A' }})</p>
         <p><strong>Total Pembayaran:</strong> {{ order.total_amount|rupiah }}</p>
         <p><strong>Metode Pembayaran:</strong> {{ order.payment_method or 'N/A' }}</p>
-        <p><strong>Status Saat Ini:</strong> <span class="status-badge status-{{ order.status|status_class }}">{{ order.status }}</span></p>
+        <p id="order-status-display"><strong>Status Saat Ini:</strong> <span class="status-badge status-{{ order.status|status_class }}">{{ order.status|status_translate }}</span></p>
     </div>
     <div class="admin-card">
         <h3>Update Pesanan</h3>
-        <form action="{{ url_for('admin.update_order_status', id=order.id) }}" method="POST" data-ajax="true" data-update-action="update-status">
-             <!-- Update status dan nomor resi dalam satu form -->
+        <form id="update-order-form" action="{{ url_for('admin.update_order_status', id=order.id) }}" method="POST" data-ajax="true" data-update-action="update-status">
             <div class="form-group">
                 <label for="status">Ubah Status</label>
                 <select name="status" id="status" class="form-control">
@@ -61,7 +60,10 @@
             <tbody>
                 {% for item in items %}
                 <tr>
-                    <td>{{ item.name }}</td><td>{{ item.quantity }}</td><td>{{ item.price|rupiah }}</td><td>{{ (item.price * item.quantity)|rupiah }}</td>
+                    <td>{{ item.name }} {% if item.size_at_order %}({{ item.size_at_order }}){% endif %}</td> {# Tampilkan ukuran jika ada #}
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.price|rupiah }}</td>
+                    <td>{{ (item.price * item.quantity)|rupiah }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
