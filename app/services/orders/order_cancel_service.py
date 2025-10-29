@@ -1,6 +1,7 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import mysql.connector
+from mysql.connector.connection import MySQLConnection
 
 from app.core.db import get_db_connection
 from app.exceptions.database_exceptions import (
@@ -9,37 +10,48 @@ from app.exceptions.database_exceptions import (
 from app.exceptions.service_exceptions import (
     InvalidOperationError, ServiceLogicError
 )
-from app.services.orders.stock_service import stock_service
+from app.repository.order_repository import OrderRepository, order_repository
+from app.repository.order_status_history_repository import (
+    OrderStatusHistoryRepository, order_status_history_repository
+)
+from app.services.orders.stock_service import StockService, stock_service
 from app.utils.logging_utils import get_logger
 from app.utils.template_filters import status_class_filter
+
 
 logger = get_logger(__name__)
 
 
 class OrderCancelService:
+
+    def __init__(
+        self,
+        order_repo: OrderRepository = order_repository,
+        history_repo: OrderStatusHistoryRepository = (
+            order_status_history_repository
+        ),
+        stock_svc: StockService = stock_service,
+    ):
+        self.order_repository = order_repo
+        self.history_repository = history_repo
+        self.stock_service = stock_svc
+
+
     def cancel_user_order(
         self, order_id: int, user_id: int
     ) -> Dict[str, Any]:
+        
         logger.info(
             f"Pengguna {user_id} mencoba membatalkan pesanan {order_id}"
         )
-
-        conn = None
-        cursor = None
+        conn: Optional[MySQLConnection] = None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
             conn.start_transaction()
-
-            cursor.execute(
-                "SELECT * FROM orders WHERE id = %s AND user_id = %s "
-                "FOR UPDATE",
-                (order_id, user_id),
+            order = self.order_repository.find_by_id_and_user_id_for_update(
+                conn, order_id, user_id
             )
-
-            order = cursor.fetchone()
-
             if not order:
                 logger.warning(
                     f"Pembatalan gagal: Pesanan {order_id} tidak "
@@ -50,7 +62,6 @@ class OrderCancelService:
                 )
 
             current_status = order["status"]
-
             if current_status not in ["Menunggu Pembayaran", "Diproses"]:
                 logger.warning(
                     f"Pembatalan gagal untuk pesanan {order_id}: Status "
@@ -66,34 +77,31 @@ class OrderCancelService:
                     f"Restocking item untuk pesanan {order_id} yang "
                     "dibatalkan."
                 )
-                stock_service.restock_items_for_order(order_id, conn)
+                self.stock_service.restock_items_for_order(order_id, conn)
 
-            cursor.execute(
-                "UPDATE orders SET status = %s WHERE id = %s",
-                ("Dibatalkan", order_id),
+            self.order_repository.update_status(conn, order_id, "Dibatalkan")
+            self.history_repository.create(
+                conn,
+                order_id,
+                "Dibatalkan",
+                "Pesanan dibatalkan oleh pelanggan.",
             )
-            cursor.execute(
-                "INSERT INTO order_status_history (order_id, status, notes) "
-                "VALUES (%s, %s, %s)",
-                (order_id, "Dibatalkan", "Pesanan dibatalkan oleh pelanggan."),
-            )
-
             conn.commit()
+
             logger.info(
                 f"Pesanan {order_id} berhasil dibatalkan oleh pengguna "
                 f"{user_id}."
             )
-
             return {
                 "success": True,
                 "message": f"Pesanan #{order_id} dibatalkan.",
             }
-
+        
         except (RecordNotFoundError, InvalidOperationError) as user_error:
             if conn and conn.is_connected():
                 conn.rollback()
             return {"success": False, "message": str(user_error)}
-
+        
         except (mysql.connector.Error, DatabaseException) as db_err:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -117,43 +125,30 @@ class OrderCancelService:
             raise ServiceLogicError(f"Gagal membatalkan pesanan: {e}")
         
         finally:
-            if cursor:
-                cursor.close()
-
             if conn and conn.is_connected():
                 conn.close()
-
             logger.debug(
                 f"Koneksi database ditutup untuk cancel_user_order {order_id}"
             )
 
 
     def cancel_admin_order(self, order_id: int) -> Dict[str, Any]:
+
         logger.info(f"Admin mencoba membatalkan pesanan {order_id}")
-        conn = None
-        cursor = None
+        conn: Optional[MySQLConnection] = None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
             conn.start_transaction()
-
-            cursor.execute(
-                "SELECT status FROM orders WHERE id = %s FOR UPDATE",
-                (order_id,),
-            )
-
-            order = cursor.fetchone()
-
+            order = self.order_repository.find_by_id_for_update(conn, order_id)
             if not order:
                 logger.warning(
-                    "Pembatalan admin gagal: Pesanan {order_id} tidak "
+                    f"Pembatalan admin gagal: Pesanan {order_id} tidak "
                     "ditemukan."
                 )
                 raise RecordNotFoundError("Pesanan tidak ditemukan.")
 
             current_status = order["status"]
-
             if current_status == "Dibatalkan":
                 logger.info(f"Pesanan {order_id} sudah dibatalkan sebelumnya.")
                 raise InvalidOperationError("Pesanan sudah dibatalkan.")
@@ -163,22 +158,18 @@ class OrderCancelService:
                     f"Restocking item untuk pesanan {order_id} yang "
                     "dibatalkan oleh admin."
                 )
-                stock_service.restock_items_for_order(order_id, conn)
+                self.stock_service.restock_items_for_order(order_id, conn)
 
-            cursor.execute(
-                "UPDATE orders SET status = 'Dibatalkan' WHERE id = %s",
-                (order_id,),
+            self.order_repository.update_status(conn, order_id, "Dibatalkan")
+            self.history_repository.create(
+                conn,
+                order_id,
+                "Dibatalkan",
+                "Pesanan dibatalkan oleh admin.",
             )
-            cursor.execute(
-                "INSERT INTO order_status_history (order_id, status, notes) "
-                "VALUES (%s, %s, %s)",
-                (order_id, "Dibatalkan", "Pesanan dibatalkan oleh admin."),
-            )
-
             conn.commit()
-
+            
             logger.info(f"Pesanan {order_id} berhasil dibatalkan oleh admin.")
-
             return {
                 "success": True,
                 "message": f"Pesanan #{order_id} berhasil dibatalkan.",
@@ -193,7 +184,7 @@ class OrderCancelService:
             if conn and conn.is_connected():
                 conn.rollback()
             raise user_error
-
+        
         except (mysql.connector.Error, DatabaseException) as db_err:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -216,8 +207,6 @@ class OrderCancelService:
             raise ServiceLogicError(f"Gagal membatalkan pesanan: {e}")
         
         finally:
-            if cursor:
-                cursor.close()
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(
@@ -225,4 +214,6 @@ class OrderCancelService:
                 f"{order_id}"
             )
 
-order_cancel_service = OrderCancelService()
+order_cancel_service = OrderCancelService(
+    order_repository, order_status_history_repository, stock_service
+)

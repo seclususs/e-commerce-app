@@ -1,18 +1,33 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import mysql.connector
+from mysql.connector.connection import MySQLConnection
 
 from app.core.db import get_db_connection
 from app.exceptions.database_exceptions import (
     DatabaseException, RecordNotFoundError
-    )
+)
 from app.exceptions.service_exceptions import ServiceLogicError
+from app.repository.order_item_repository import (
+    OrderItemRepository, order_item_repository
+)
+from app.repository.order_repository import OrderRepository, order_repository
 from app.utils.logging_utils import get_logger
+
 
 logger = get_logger(__name__)
 
 
 class OrderQueryService:
+
+    def __init__(
+        self,
+        order_repo: OrderRepository = order_repository,
+        item_repo: OrderItemRepository = order_item_repository,
+    ):
+        self.order_repository = order_repo
+        self.order_item_repository = item_repo
+        
 
     def get_filtered_admin_orders(
         self,
@@ -21,55 +36,21 @@ class OrderQueryService:
         end_date: Optional[str] = None,
         search: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
+        
         logger.debug(
             f"Service: Mengambil pesanan admin difilter - Status: {status}, "
             f"Awal: {start_date}, Akhir: {end_date}, Pencarian: {search}"
         )
-
-        conn = None
-        cursor = None
+        conn: Optional[MySQLConnection] = None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-
-            query = (
-                "SELECT o.*, u.username AS customer_name FROM orders o "
-                "LEFT JOIN users u ON o.user_id = u.id WHERE 1=1"
+            orders = self.order_repository.find_filtered_admin(
+                conn, status, start_date, end_date, search
             )
-
-            params = []
-
-            if status:
-                query += " AND o.status = %s"
-                params.append(status)
-
-            if start_date:
-                query += " AND DATE(o.order_date) >= %s"
-                params.append(start_date)
-
-            if end_date:
-                query += " AND DATE(o.order_date) <= %s"
-                params.append(end_date)
-
-            if search:
-                query += (
-                    " AND (CAST(o.id AS CHAR) LIKE %s "
-                    "OR u.username LIKE %s "
-                    "OR o.shipping_name LIKE %s)"
-                )
-
-                search_term = f"%{search}%"
-                params.extend([search_term, search_term, search_term])
-
-            query += " ORDER BY o.order_date DESC"
-            cursor.execute(query, tuple(params))
-            orders = cursor.fetchall()
-
             logger.info(f"Service: Ditemukan {len(orders)} pesanan.")
-
             return orders
-
+        
         except mysql.connector.Error as db_err:
             logger.error(
                 f"Service: Kesalahan database saat filter pesanan: {db_err}",
@@ -89,68 +70,56 @@ class OrderQueryService:
             )
         
         finally:
-            if cursor:
-                cursor.close()
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(
-                "Service: Koneksi database ditutup untuk get_filtered_admin_orders"
+                "Service: Koneksi database ditutup untuk "
+                "get_filtered_admin_orders"
             )
 
 
     def get_order_details_for_admin(
         self, order_id: int
     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+        
         logger.debug(
             f"Service: Mengambil detail pesanan admin untuk ID: {order_id}"
         )
-
-        conn = None
-        cursor = None
+        conn: Optional[MySQLConnection] = None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-
-            cursor.execute(
-                "SELECT o.*, u.username AS customer_name, u.email "
-                "FROM orders o LEFT JOIN users u ON o.user_id = u.id "
-                "WHERE o.id = %s",
-                (order_id,),
+            order = self.order_repository.find_details_for_admin(
+                conn, order_id
             )
-            order = cursor.fetchone()
-
             if not order:
                 raise RecordNotFoundError(
                     f"Pesanan dengan ID {order_id} tidak ditemukan."
                 )
-            
-            cursor.execute(
-                "SELECT p.name, oi.quantity, oi.price, oi.size_at_order "
-                "FROM order_items oi JOIN products p ON oi.product_id = p.id "
-                "WHERE oi.order_id = %s",
-                (order_id,),
+            items = self.order_item_repository.find_for_admin_detail(
+                conn, order_id
             )
-
-            items = cursor.fetchall()
             logger.info(
-                f"Service: Mengambil detail pesanan {order_id} dengan {len(items)} item."
+                f"Service: Mengambil detail pesanan {order_id} dengan "
+                f"{len(items)} item."
             )
-
             return order, items
         
         except mysql.connector.Error as db_err:
             logger.error(
-                f"Service: Kesalahan database saat mengambil detail pesanan {order_id}: {db_err}",
+                f"Service: Kesalahan database saat mengambil detail pesanan "
+                f"{order_id}: {db_err}",
                 exc_info=True,
             )
             raise DatabaseException(
-                f"Kesalahan database saat mengambil detail pesanan {order_id}: {db_err}"
+                f"Kesalahan database saat mengambil detail pesanan "
+                f"{order_id}: {db_err}"
             )
         
         except Exception as e:
             logger.error(
-                f"Service: Kesalahan saat mengambil detail pesanan {order_id}: {e}",
+                f"Service: Kesalahan saat mengambil detail pesanan "
+                f"{order_id}: {e}",
                 exc_info=True,
             )
             raise ServiceLogicError(
@@ -158,79 +127,67 @@ class OrderQueryService:
             )
         
         finally:
-            if cursor:
-                cursor.close()
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(
-                "Service: Koneksi database ditutup untuk get_order_details_for_admin"
+                "Service: Koneksi database ditutup untuk "
+                "get_order_details_for_admin"
             )
 
 
     def get_order_details_for_invoice(
         self, order_id: int
     ) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+        
         logger.debug(f"Service: Mengambil detail invoice untuk ID: {order_id}")
-        conn = None
-        cursor = None
+        conn: Optional[MySQLConnection] = None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-
-            cursor.execute(
-                "SELECT o.*, u.email FROM orders o "
-                "LEFT JOIN users u ON o.user_id = u.id WHERE o.id = %s",
-                (order_id,),
+            order = self.order_repository.find_details_for_invoice(
+                conn, order_id
             )
-
-            order = cursor.fetchone()
-
             if not order:
                 raise RecordNotFoundError(
-                    f"Pesanan dengan ID {order_id} tidak ditemukan untuk invoice."
+                    f"Pesanan dengan ID {order_id} tidak ditemukan "
+                    "untuk invoice."
                 )
-            
-            cursor.execute(
-                "SELECT p.name, oi.quantity, oi.price "
-                "FROM order_items oi JOIN products p ON oi.product_id = p.id "
-                "WHERE oi.order_id = %s",
-                (order_id,),
-            )
-
-            items = cursor.fetchall()
-
+            items = self.order_item_repository.find_for_invoice(conn, order_id)
             logger.info(
-                f"Service: Mengambil detail invoice {order_id} dengan {len(items)} item."
+                f"Service: Mengambil detail invoice {order_id} dengan "
+                f"{len(items)} item."
             )
-            
             return order, items
         
         except mysql.connector.Error as db_err:
             logger.error(
-                f"Service: Kesalahan database saat mengambil detail invoice {order_id}: {db_err}",
+                f"Service: Kesalahan database saat mengambil detail invoice "
+                f"{order_id}: {db_err}",
                 exc_info=True,
             )
             raise DatabaseException(
-                f"Kesalahan database saat mengambil detail invoice {order_id}: {db_err}"
+                f"Service: Kesalahan database saat mengambil detail invoice "
+                f"{order_id}: {db_err}"
             )
         
         except Exception as e:
             logger.error(
-                f"Service: Kesalahan saat mengambil detail invoice {order_id}: {e}",
+                f"Service: Kesalahan saat mengambil detail invoice "
+                f"{order_id}: {e}",
                 exc_info=True,
             )
             raise ServiceLogicError(
-                f"Kesalahan saat mengambil detail invoice {order_id}: {e}"
+                f"Service: Kesalahan saat mengambil detail invoice {order_id}: {e}"
             )
         
         finally:
-            if cursor:
-                cursor.close()
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(
-                "Service: Koneksi database ditutup untuk get_order_details_for_invoice"
+                "Service: Koneksi database ditutup untuk "
+                "get_order_details_for_invoice"
             )
 
-order_query_service = OrderQueryService()
+order_query_service = OrderQueryService(
+    order_repository, order_item_repository
+)

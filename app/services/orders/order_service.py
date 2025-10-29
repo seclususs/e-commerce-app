@@ -6,6 +6,7 @@ from app.services.orders.order_creation_service import order_creation_service
 from app.services.orders.order_update_service import order_update_service
 from app.utils.logging_utils import get_logger
 
+
 logger = get_logger(__name__)
 
 
@@ -21,6 +22,7 @@ class OrderService:
         voucher_code: Optional[str] = None,
         shipping_cost: float = 0,
     ) -> Dict[str, Any]:
+        
         logger.debug("Mendelegasikan pembuatan pesanan ke OrderCreationService")
 
         try:
@@ -36,7 +38,7 @@ class OrderService:
         
         except Exception as e:
             logger.error(
-                f"Error caught in OrderService.create_order: {e}",
+                f"Kesalahan tertangkap di OrderService.create_order: {e}",
                 exc_info=True,
             )
             raise ServiceLogicError(f"Gagal memproses pembuatan pesanan: {e}")
@@ -52,7 +54,7 @@ class OrderService:
         
         except Exception as e:
             logger.error(
-                f"Error caught in OrderService.cancel_user_order: {e}",
+                f"Kesalahan tertangkap di OrderService.cancel_user_order: {e}",
                 exc_info=True,
             )
             raise ServiceLogicError(
@@ -77,7 +79,7 @@ class OrderService:
         
         except Exception as e:
             logger.error(
-                f"Error caught in OrderService.update_order_status_and_tracking: {e}",
+                f"Kesalahan tertangkap di OrderService.update_order_status_and_tracking: {e}",
                 exc_info=True,
             )
             raise ServiceLogicError(

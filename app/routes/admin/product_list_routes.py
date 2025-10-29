@@ -57,7 +57,7 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
 
                     if action_bulk == "set_category" and category_id:
                         category: Dict[str, Any] = (
-                            category_service.get_category_by_id(category_id)
+                            category_service.get_category_by_id(int(category_id))
                         )
                         result["new_category_name"] = (
                             category["name"] if category else "Tidak diketahui"
@@ -70,6 +70,7 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
                 )
                 return jsonify(result), 400
 
+
             elif form_type == "add_product":
                 logger.info("Memproses penambahan produk baru.")
                 result: Dict[str, Any] = product_service.create_product(
@@ -77,40 +78,60 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
                 )
 
                 if result.get("success"):
-                    product_id = result.get("product_id")
+                    product_data_from_service = result.get("product", {})
+                    product_id = product_data_from_service.get("id")
+
                     logger.info(
                         f"Produk baru berhasil ditambahkan dengan ID: {product_id}"
                     )
-                    new_product_data = (
-                        product_query_service.get_product_row_data(
-                            product_id
-                        )
-                    ) if product_id else None
 
-                    if new_product_data:
-                        html = render_template(
-                            "partials/admin/_product_row.html",
-                            product=new_product_data,
-                        )
+                    if product_id:
+
+                        new_product_data_for_row = product_data_from_service
+
+                        if new_product_data_for_row:
+                             if 'category_name' not in new_product_data_for_row:
+                                category = category_service.get_category_by_id(new_product_data_for_row.get('category_id'))
+                                new_product_data_for_row['category_name'] = category.get('name') if category else 'N/A'
+
+                             html = render_template(
+                                "partials/admin/_product_row.html",
+                                product=new_product_data_for_row,
+                             )
+                             return (
+                                jsonify(
+                                    {
+                                        "success": True,
+                                        "message": result.get(
+                                            "message", "Produk berhasil ditambahkan!"
+                                        ),
+                                        "html": html,
+                                    }
+                                ),
+                                200,
+                             )
+                        else:
+                            logger.error(
+                                f"Gagal mendapatkan data baris produk untuk ID baru: {product_id}"
+                                )
+                            return (
+                               jsonify(
+                                    {
+                                        "success": False,
+                                        "message": "Produk ditambahkan tapi gagal memuat ulang data baris produk.",
+                                    }
+                                ),
+                                500,
+                            )
+                    else:
+                        logger.error(
+                            f"Service create_product sukses, namun 'id' tidak ditemukan dalam 'product' di response: {result}"
+                            )
                         return (
                             jsonify(
                                 {
-                                    "success": True,
-                                    "message": result.get(
-                                        "message", "Produk berhasil ditambahkan!"
-                                    ),
-                                    "html": html,
-                                }
-                            ),
-                            200,
-                        )
-                    else:
-                        logger.error(f"Gagal mengambil data untuk produk baru ID: {product_id}")
-                        return (
-                           jsonify(
-                                {
                                     "success": False,
-                                    "message": "Produk ditambahkan tapi gagal memuat ulang data.",
+                                    "message": "Produk ditambahkan tapi gagal mendapatkan ID produk baru dari service.",
                                 }
                             ),
                             500,
@@ -119,7 +140,11 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
                     logger.warning(
                         f"Gagal menambahkan produk baru. Pesan: {result.get('message')}"
                     )
-                    return jsonify(result), 400
+                    status_code = 400
+                    message = result.get("message", "")
+                    if "sudah ada" in message:
+                         status_code = 409
+                    return jsonify(result), status_code
 
             else:
                 logger.warning(f"Form type tidak dikenal: {form_type}")
@@ -151,13 +176,17 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
                 ),
                 500,
             )
-        
+
     search_term: str = request.args.get("search", "").strip()
     category_filter: str = request.args.get("category")
     stock_status_filter: str = request.args.get("stock_status")
     page_title = "Manajemen Produk - Admin"
     header_title = "Manajemen Produk"
-    logger.debug(f"Mengambil daftar produk dengan filter - Search: '{search_term}', Cat: {category_filter}, Stock: {stock_status_filter}")
+    logger.debug(
+        f"Mengambil daftar produk dengan filter - Search: '{search_term}'"
+        f"Cat: {category_filter}"
+        f"Stock: {stock_status_filter}"
+        )
 
     try:
         logger.debug("Mencoba mengambil semua kategori...")
@@ -201,7 +230,7 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
                         "header_title": header_title,
                     }
                 )
-            
+
         logger.debug("Merender manage_products.html untuk respons GET biasa")
         return render_template(
             "admin/manage_products.html",

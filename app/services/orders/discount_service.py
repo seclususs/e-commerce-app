@@ -10,6 +10,7 @@ from app.exceptions.service_exceptions import ServiceLogicError
 from app.services.orders.voucher_service import voucher_service
 from app.utils.logging_utils import get_logger
 
+
 logger = get_logger(__name__)
 
 
@@ -18,6 +19,7 @@ class DiscountService:
     def validate_and_calculate_voucher(
         self, code: str, subtotal: float
     ) -> Dict[str, Any]:
+        
         upper_code = code.upper()
 
         try:
@@ -27,18 +29,18 @@ class DiscountService:
             raise ValidationError("Format subtotal tidak valid.")
 
         logger.debug(
-            f"Memvalidasi kode voucher: {upper_code} untuk subtotal: {subtotal_decimal}"
+            f"Memvalidasi kode voucher: {upper_code} "
+            f"untuk subtotal: {subtotal_decimal}"
         )
-
         conn = None
         cursor = None
 
         try:
             voucher = voucher_service.get_active_voucher_by_code(upper_code)
-
             if not voucher:
                 logger.info(
-                    f"Validasi voucher gagal: Kode '{upper_code}' tidak ditemukan atau tidak aktif."
+                    f"Validasi voucher gagal: Kode '{upper_code}' "
+                    f"tidak ditemukan atau tidak aktif."
                 )
                 return {
                     "success": False,
@@ -46,7 +48,6 @@ class DiscountService:
                 }
             
             logger.debug(f"Voucher '{upper_code}' ditemukan: {voucher}")
-
             now = datetime.now()
 
             if voucher["start_date"] and now < voucher["start_date"]:
@@ -82,6 +83,7 @@ class DiscountService:
             min_purchase_decimal = Decimal(
                 str(voucher.get("min_purchase_amount", 0))
             )
+
             if subtotal_decimal < min_purchase_decimal:
                 min_purchase_formatted = (
                     f"Rp {min_purchase_decimal:,.0f}".replace(",", ".")
@@ -92,7 +94,8 @@ class DiscountService:
                 )
                 return {
                     "success": False,
-                    "message": f"Minimal pembelian {min_purchase_formatted} untuk menggunakan voucher ini.",
+                    "message": f"Minimal pembelian {min_purchase_formatted} "
+                               f"untuk menggunakan voucher ini.",
                 }
             
             discount_amount = Decimal("0")
@@ -125,11 +128,11 @@ class DiscountService:
             
             discount_amount = min(discount_amount, subtotal_decimal)
             final_total = subtotal_decimal - discount_amount
+            
             logger.info(
                 f"Voucher '{upper_code}' berhasil divalidasi. "
                 f"Diskon: {discount_amount}, Total Akhir: {final_total}"
             )
-
             return {
                 "success": True,
                 "discount_amount": float(discount_amount),

@@ -2,50 +2,44 @@ from typing import Any, Optional, Tuple
 
 import mysql.connector
 from mysql.connector.connection import MySQLConnection
-from mysql.connector.cursor import MySQLCursor
 
 from app.core.db import get_db_connection
 from app.exceptions.database_exceptions import DatabaseException
 from app.exceptions.service_exceptions import ServiceLogicError
+from app.repository.user_repository import UserRepository, user_repository
 from app.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
 
 class ValidationService:
+
+    def __init__(self, user_repo: UserRepository = user_repository):
+        self.user_repository = user_repo
+
+
     def validate_username_availability(
         self, username: str, conn: Optional[MySQLConnection] = None
     ) -> Tuple[bool, str]:
+        
         logger.debug(
             f"Service: Memvalidasi ketersediaan username: {username}"
         )
-        
         close_conn: bool = False
-
         if conn is None:
             conn = get_db_connection()
             close_conn = True
 
-        cursor: Optional[MySQLCursor] = None
-
         try:
-            cursor = conn.cursor()
-
-            cursor.execute(
-                "SELECT id FROM users WHERE username = %s", (username,)
-            )
-
-            user: Optional[Tuple[Any, ...]] = cursor.fetchone()
-
+            user = self.user_repository.find_by_username(conn, username)
             is_available: bool = user is None
             message: str = (
                 "Username tersedia."
                 if is_available
                 else "Username sudah digunakan."
             )
-
             return is_available, message
-        
+
         except mysql.connector.Error as db_err:
             logger.error(
                 "Service: Kesalahan DB saat validasi username "
@@ -69,38 +63,28 @@ class ValidationService:
             )
         
         finally:
-            if cursor:
-                cursor.close()
             if close_conn and conn and conn.is_connected():
                 conn.close()
+
 
     def validate_email_availability(
         self, email: str, conn: Optional[MySQLConnection] = None
     ) -> Tuple[bool, str]:
+        
         logger.debug(f"Service: Memvalidasi ketersediaan email: {email}")
-
         close_conn: bool = False
-
         if conn is None:
             conn = get_db_connection()
             close_conn = True
 
-        cursor: Optional[MySQLCursor] = None
-
         try:
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
-
-            user: Optional[Tuple[Any, ...]] = cursor.fetchone()
-
+            user = self.user_repository.find_by_email(conn, email)
             is_available: bool = user is None
             message: str = (
                 "Email tersedia."
                 if is_available
                 else "Email sudah terdaftar."
             )
-
             return is_available, message
         
         except mysql.connector.Error as db_err:
@@ -124,10 +108,7 @@ class ValidationService:
             )
         
         finally:
-            if cursor:
-                cursor.close()
             if close_conn and conn and conn.is_connected():
                 conn.close()
 
-
-validation_service = ValidationService()
+validation_service = ValidationService(user_repository)

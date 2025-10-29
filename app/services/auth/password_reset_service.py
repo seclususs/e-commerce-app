@@ -2,10 +2,12 @@ import uuid
 from typing import Any, Optional
 
 import mysql.connector
+from mysql.connector.connection import MySQLConnection
 
 from app.core.db import get_db_connection
 from app.exceptions.database_exceptions import DatabaseException
 from app.exceptions.service_exceptions import ServiceLogicError
+from app.repository.user_repository import UserRepository, user_repository
 from app.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -13,24 +15,20 @@ logger = get_logger(__name__)
 
 class PasswordResetService:
 
+    def __init__(self, user_repo: UserRepository = user_repository):
+        self.user_repository = user_repo
+
+
     def handle_password_reset_request(self, email: str) -> None:
         logger.debug(
             f"Menangani permintaan reset kata sandi untuk email: {email}"
         )
         
-        conn: Optional[Any] = None
-        cursor: Optional[Any] = None
+        conn: Optional[MySQLConnection] = None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-
-            cursor.execute(
-                "SELECT id, username FROM users WHERE email = %s", (email,)
-            )
-
-            user = cursor.fetchone()
-
+            user = self.user_repository.find_by_email(conn, email)
             if user:
                 reset_token = str(uuid.uuid4())
                 logger.info(
@@ -41,7 +39,6 @@ class PasswordResetService:
                     f"EMAIL SIMULASI: Mengirim email reset ke {email} "
                     f"dengan token: {reset_token}"
                 )
-
             else:
                 logger.info(
                     f"Permintaan reset kata sandi untuk email yang tidak ada: {email}"
@@ -66,10 +63,8 @@ class PasswordResetService:
             raise ServiceLogicError(
                 f"Kesalahan layanan saat menangani reset kata sandi: {e}"
             )
-
+        
         finally:
-            if cursor:
-                cursor.close()
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(
@@ -77,4 +72,4 @@ class PasswordResetService:
                 f"(email: {email})."
             )
 
-password_reset_service = PasswordResetService()
+password_reset_service = PasswordResetService(user_repository)

@@ -47,10 +47,12 @@ def admin_categories() -> Union[str, Response, Tuple[Response, int]]:
                 result = category_service.create_category(name)
 
                 if result.get("success"):
-                    logger.info(f"Kategori '{name}' berhasil ditambahkan. ID: {result.get('data', {}).get('id')}")
+                    category_data = result.get("data")
+                    new_id = category_data.get("id") if category_data else None
+                    logger.info(f"Kategori '{name}' berhasil ditambahkan. ID: {new_id}")
                     html: str = render_template(
                         "partials/admin/_category_row.html",
-                        category=result["data"],
+                        category=category_data,
                     )
                     result["html"] = html
                     status_code = 200
@@ -63,7 +65,7 @@ def admin_categories() -> Union[str, Response, Tuple[Response, int]]:
 
             elif action_type == "edit" and name and category_id:
                 logger.info(f"Mencoba mengedit kategori ID: {category_id} menjadi '{name}'")
-                result = category_service.update_category(category_id, name)
+                result = category_service.update_category(int(category_id), name)
 
                 if result.get("success"):
                     logger.info(f"Kategori ID: {category_id} berhasil diupdate menjadi '{name}'")
@@ -78,8 +80,9 @@ def admin_categories() -> Union[str, Response, Tuple[Response, int]]:
                     else:
                         status_code = 400
             else:
-                 logger.warning(f"Aksi POST tidak valid atau data kurang: Action: {action_type}, Name: {name}, ID: {category_id}")
-
+                 logger.warning(
+                     f"Aksi POST tidak valid atau data kurang: Action: {action_type}, Name: {name}, ID: {category_id}"
+                     )
 
             return jsonify(result), status_code
 
@@ -160,24 +163,26 @@ def admin_categories() -> Union[str, Response, Tuple[Response, int]]:
         message = "Gagal memuat daftar kategori."
         if is_ajax:
             return jsonify({"success": False, "message": message}), 500
-        flash(message, "danger")
-        return render_template(
-            "admin/manage_categories.html",
-            categories=[],
-            content=get_content(),
-        )
+        else:
+            flash(message, "danger")
+            return render_template(
+                "admin/manage_categories.html",
+                categories=[],
+                content=get_content(),
+            )
 
     except Exception as e:
         logger.exception(f"Error tidak terduga saat GET /admin/categories: {e}")
         message = "Terjadi kesalahan tidak terduga saat memuat halaman kategori."
         if is_ajax:
             return jsonify({"success": False, "message": "Gagal memuat daftar kategori."}), 500
-        flash(message, "danger")
-        return render_template(
-            "admin/manage_categories.html",
-            categories=[],
-            content=get_content(),
-        )
+        else:
+            flash(message, "danger")
+            return render_template(
+                "admin/manage_categories.html",
+                categories=[],
+                content=get_content(),
+            )
 
 
 @admin_bp.route("/delete_category/<int:id>", methods=["POST"])

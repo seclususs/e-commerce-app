@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict, Optional
 
 import mysql.connector
@@ -11,6 +10,7 @@ from app.exceptions.database_exceptions import (
     DatabaseException, RecordNotFoundError
 )
 from app.exceptions.service_exceptions import ServiceLogicError
+from app.repository.user_repository import UserRepository, user_repository
 from app.utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
@@ -18,31 +18,27 @@ logger = get_logger(__name__)
 
 class UserService:
 
-    def get_user_by_id(self, user_id: int) -> Dict[str, Any]:
-        logger.debug(f"Mengambil pengguna berdasarkan ID: {user_id}")
+    def __init__(self, user_repo: UserRepository = user_repository):
+        self.user_repository = user_repo
 
+
+    def get_user_by_id(self, user_id: int) -> Dict[str, Any]:
+        
+        logger.debug(f"Mengambil pengguna berdasarkan ID: {user_id}")
         conn: Optional[MySQLConnection] = None
-        cursor: Optional[Any] = None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-
-            cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
-
-            user: Optional[Dict[str, Any]] = cursor.fetchone()
-
+            user = self.user_repository.find_by_id(conn, user_id)
             if user:
                 logger.info(f"Pengguna ditemukan untuk ID: {user_id}")
-
             else:
                 logger.warning(f"Pengguna tidak ditemukan untuk ID: {user_id}")
                 raise RecordNotFoundError(
                     f"Pengguna dengan ID {user_id} tidak ditemukan."
                 )
-
             return user
-
+        
         except mysql.connector.Error as db_err:
             logger.error(
                 f"Kesalahan database saat mengambil pengguna ID {user_id}: {db_err}",
@@ -58,42 +54,34 @@ class UserService:
         except Exception as e:
             logger.error(
                 f"Kesalahan saat mengambil pengguna ID {user_id}: {e}",
-                exc_info=True
+                exc_info=True,
             )
             raise ServiceLogicError(f"Gagal mengambil data pengguna: {e}")
-
+        
         finally:
-            if cursor:
-                cursor.close()
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(
                 f"Koneksi database ditutup untuk get_user_by_id (ID: {user_id})."
             )
 
+
     def update_user_info(
         self, user_id: int, username: str, email: str
     ) -> Dict[str, Any]:
+        
         logger.debug(
             f"Mencoba memperbarui info pengguna untuk ID: {user_id}. "
             f"Nama pengguna baru: {username}, Email baru: {email}"
         )
-
         conn: Optional[MySQLConnection] = None
-        cursor: Optional[Any] = None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor()
-
-            cursor.execute(
-                "SELECT id FROM users WHERE (username = %s OR email = %s) "
-                "AND id != %s",
-                (username, email, user_id),
+            conn.start_transaction()
+            existing = self.user_repository.check_existing(
+                conn, username, email, user_id
             )
-
-            existing: Optional[Any] = cursor.fetchone()
-
             if existing:
                 logger.warning(
                     f"Pembaruan gagal untuk pengguna {user_id}: Nama pengguna "
@@ -102,20 +90,16 @@ class UserService:
                 raise ValidationError(
                     "Username atau email sudah digunakan oleh akun lain."
                 )
-
-            cursor.execute(
-                "UPDATE users SET username = %s, email = %s WHERE id = %s",
-                (username, email, user_id),
+            self.user_repository.update_profile(
+                conn, user_id, username, email
             )
-
             conn.commit()
             logger.info(f"Info pengguna berhasil diperbarui untuk ID: {user_id}")
-
             return {
                 "success": True,
                 "message": "Informasi akun berhasil diperbarui.",
             }
-        
+
         except mysql.connector.Error as db_err:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -142,10 +126,8 @@ class UserService:
                 exc_info=True,
             )
             raise ServiceLogicError(f"Gagal memperbarui informasi akun: {e}")
-
+        
         finally:
-            if cursor:
-                cursor.close()
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(
@@ -153,22 +135,18 @@ class UserService:
                 f"(ID: {user_id})."
             )
 
+
     def change_user_password(
         self, user_id: int, current_password: str, new_password: str
     ) -> Dict[str, Any]:
+        
         logger.debug(f"Mencoba mengubah kata sandi untuk pengguna ID: {user_id}")
-
         conn: Optional[MySQLConnection] = None
-        cursor: Optional[Any] = None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-
-            cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
-
-            user: Optional[Dict[str, Any]] = cursor.fetchone()
-
+            conn.start_transaction()
+            user = self.user_repository.find_by_id(conn, user_id)
             if not user or not check_password_hash(
                 user["password"], current_password
             ):
@@ -177,19 +155,14 @@ class UserService:
                     "Kata sandi saat ini salah."
                 )
                 raise AuthError("Password saat ini salah.")
-
             hashed_password: str = generate_password_hash(new_password)
-
-            cursor.execute(
-                "UPDATE users SET password = %s WHERE id = %s",
-                (hashed_password, user_id),
+            self.user_repository.update_password(
+                conn, user_id, hashed_password
             )
-
             conn.commit()
             logger.info(f"Kata sandi berhasil diubah untuk pengguna ID: {user_id}")
-
             return {"success": True, "message": "Password berhasil diubah."}
-        
+
         except mysql.connector.Error as db_err:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -216,10 +189,8 @@ class UserService:
                 exc_info=True,
             )
             raise ServiceLogicError(f"Gagal mengubah password: {e}")
-
+        
         finally:
-            if cursor:
-                cursor.close()
             if conn and conn.is_connected():
                 conn.close()
             logger.debug(
@@ -227,53 +198,30 @@ class UserService:
                 f"(ID: {user_id})."
             )
 
+
     def update_user_address(
         self,
         user_id: int,
         address_data: Dict[str, Any],
         conn: Optional[MySQLConnection] = None,
     ) -> Dict[str, Any]:
+        
         logger.debug(
             f"Mencoba memperbarui alamat untuk pengguna ID: {user_id}. "
             f"Data: {address_data}"
         )
-
         is_external_conn: bool = conn is not None
-        cursor: Optional[Any] = None
-
         if not is_external_conn:
             logger.debug("Membuat koneksi DB baru untuk update_user_address.")
             conn = get_db_connection()
 
         try:
-            cursor = conn.cursor()
-
-            cursor.execute(
-                """
-                UPDATE users
-                SET phone = %s, address_line_1 = %s, address_line_2 = %s,
-                    city = %s, province = %s, postal_code = %s
-                WHERE id = %s
-                """,
-                (
-                    address_data.get("phone"),
-                    address_data.get("address1"),
-                    address_data.get("address2", ""),
-                    address_data.get("city"),
-                    address_data.get("province"),
-                    address_data.get("postal_code"),
-                    user_id,
-                ),
-            )
-
+            self.user_repository.update_address(conn, user_id, address_data)
             if not is_external_conn:
                 conn.commit()
-
             logger.info(
-                f"Alamat berhasil diperbarui untuk pengguna ID: {user_id}. "
-                f"Baris terpengaruh: {cursor.rowcount}"
+                f"Alamat berhasil diperbarui untuk pengguna ID: {user_id}."
             )
-
             return {"success": True, "message": "Alamat berhasil diperbarui."}
         
         except mysql.connector.Error as db_err:
@@ -297,22 +245,18 @@ class UserService:
                 exc_info=True,
             )
             raise ServiceLogicError(f"Gagal memperbarui alamat: {e}")
-
+        
         finally:
-            if cursor:
-                cursor.close()
-
             if not is_external_conn and conn and conn.is_connected():
                 conn.close()
                 logger.debug(
                     f"Koneksi DB ditutup untuk update_user_address "
                     f"(ID: {user_id})."
                 )
-
             elif is_external_conn:
                 logger.debug(
                     f"Kursor ditutup untuk update_user_address "
                     f"(ID: {user_id}, koneksi eksternal)."
                 )
 
-user_service = UserService()
+user_service = UserService(user_repository)

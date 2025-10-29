@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 import mysql.connector
 from flask import session, url_for
@@ -9,10 +9,13 @@ from app.exceptions.database_exceptions import DatabaseException
 from app.services.orders.checkout_validation_service import (
     checkout_validation_service
 )
-from app.services.orders.order_creation_service import order_creation_service
+from app.services.orders.order_creation_service import (
+    order_creation_service
+)
 from app.services.orders.stock_service import stock_service
 from app.services.users.user_service import user_service
 from app.utils.logging_utils import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -37,6 +40,7 @@ class CheckoutService:
 
         try:
             if user_id:
+
                 if not user:
                     logger.error(
                         f"ID Pengguna {user_id} tidak ditemukan "
@@ -49,7 +53,7 @@ class CheckoutService:
                         "message": "Terjadi kesalahan, pengguna tidak ditemukan.",
                         "flash_category": "danger",
                     }
-
+                
                 pending_order: Optional[Dict[str, Any]] = (
                     checkout_validation_service.check_pending_order(user_id)
                 )
@@ -70,9 +74,9 @@ class CheckoutService:
                         return {
                             "success": False,
                             "redirect": url_for("purchase.cart_page"),
-                            "message": "Sesi checkout Anda berakhir karena "
-                                       "stok tidak lagi ditahan. Silakan "
-                                       "ulangi dari keranjang.",
+                            "message": ("Sesi checkout Anda berakhir karena "
+                                        "stok tidak lagi ditahan. Silakan "
+                                        "ulangi dari keranjang."),
                             "flash_category": "warning",
                         }
 
@@ -80,15 +84,14 @@ class CheckoutService:
                         f"Pengguna {user_id} memiliki pesanan tertunda "
                         f"{pending_order['id']}. Mengarahkan ke pembayaran."
                     )
-
                     return {
                         "success": False,
                         "redirect": url_for(
                             "purchase.payment_page",
                             order_id=pending_order["id"]
                         ),
-                        "message": "Anda memiliki pesanan yang belum dibayar. "
-                                   "Silakan selesaikan pembayaran.",
+                        "message": ("Anda memiliki pesanan yang belum dibayar. "
+                                    "Silakan selesaikan pembayaran."),
                         "flash_category": "info",
                     }
 
@@ -100,8 +103,8 @@ class CheckoutService:
                     return {
                         "success": False,
                         "redirect": url_for("purchase.edit_address"),
-                        "message": "Alamat pengiriman belum lengkap. Mohon "
-                                   "perbarui di profil Anda.",
+                        "message": ("Alamat pengiriman belum lengkap. Mohon "
+                                    "perbarui di profil Anda."),
                         "flash_category": "danger",
                     }
 
@@ -175,8 +178,8 @@ class CheckoutService:
                         "redirect": url_for(
                             "auth.login", next=url_for("purchase.checkout")
                         ),
-                        "message": "Email sudah terdaftar. Silakan login "
-                                   "untuk melanjutkan.",
+                        "message": ("Email sudah terdaftar. Silakan login "
+                                    "untuk melanjutkan."),
                         "flash_category": "danger",
                     }
 
@@ -217,7 +220,6 @@ class CheckoutService:
                 f"Metode: {payment_method}, Voucher: {voucher_code}, "
                 f"Pengiriman: {shipping_cost}"
             )
-
             result: Dict[str, Any] = order_creation_service.create_order(
                 user_id=user_id,
                 session_id=session_id if not user_id else None,
@@ -243,7 +245,6 @@ class CheckoutService:
                         "message": f"Pesanan #{order_id} (COD) berhasil dibuat!",
                         "flash_category": "success",
                     }
-
                 else:
                     logger.info(
                         f"Mengarahkan {user_log_id} ke pembayaran untuk "

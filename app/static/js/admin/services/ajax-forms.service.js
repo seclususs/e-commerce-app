@@ -2,12 +2,23 @@ import { showNotification } from '../../components/notification.js';
 import { confirmModal } from '../../components/confirm-modal.js';
 import { handleUIUpdate } from './ajax-update-handlers.service.js';
 
+const formatPrice = (value) => {
+    const numStr = String(value).replace(/[^0-9]/g, '');
+    if (!numStr) return '';
+    return parseInt(numStr, 10).toLocaleString('id-ID');
+};
+
 
 export async function handleAjaxSubmit(form, button) {
-    const originalButtonHTML = button.innerHTML;
-    const isUpdate = button.textContent.toLowerCase().includes('update');
+    if (button.disabled) {
+        console.warn('Submit attempt ignored, button already disabled.');
+        return;
+    }
     button.disabled = true;
-    button.innerHTML = `<span class="spinner" style="display: inline-block; animation: spin 0.8s ease-in-out infinite; width: 1em; height: 1em; border-width: 2px;"></span> ${isUpdate ? 'Updating...' : 'Menyimpan...'}`;
+
+    const originalButtonHTML = button.innerHTML;
+    const isUpdate = button.textContent.toLowerCase().includes('update') || button.textContent.toLowerCase().includes('simpan');
+    button.innerHTML = `<span class="spinner" style="display: inline-block; animation: spin 0.8s ease-in-out infinite; width: 1em; height: 1em; border-width: 2px;"></span> ${isUpdate ? 'Menyimpan...' : 'Memproses...'}`;
 
     const priceInputs = form.querySelectorAll('input[inputmode="numeric"]');
     const originalPrices = new Map();
@@ -31,31 +42,58 @@ export async function handleAjaxSubmit(form, button) {
         if (response.ok && result.success) {
             showNotification(result.message || 'Berhasil!', false);
             handleUIUpdate(form, result);
-            if (form.hasAttribute('data-reset-on-success')) {
+             if (form.hasAttribute('data-reset-on-success') && form.getAttribute('data-reset-on-success') === 'true') {
                 form.reset();
-                priceInputs.forEach(input => input.value = '');
+                 if (form.id === 'add-product-form') {
+                    const previewContainer = document.getElementById('image-previews');
+                    const fileNameDisplay = document.getElementById('file-name');
+                    if (previewContainer) previewContainer.innerHTML = '';
+                    if (fileNameDisplay) fileNameDisplay.textContent = 'Belum ada file dipilih';
+                    const hasVariantsCheckbox = document.getElementById('has-variants-checkbox');
+                    if (hasVariantsCheckbox) {
+                        hasVariantsCheckbox.checked = false;
+                        hasVariantsCheckbox.dispatchEvent(new Event('change'));
+                    }
+                    priceInputs.forEach(input => input.value = '');
+                 } else {
+                     priceInputs.forEach(input => input.value = '');
+                 }
+            } else {
+                 priceInputs.forEach(input => {
+                     const inputName = input.name;
+                     if (result.data && typeof result.data[inputName] !== 'undefined') {
+                         input.value = formatPrice(result.data[inputName]);
+                     } else {
+                         input.value = originalPrices.get(input);
+                     }
+                 });
             }
+
         } else {
             showNotification(result.message || 'Terjadi kesalahan.', true);
+             priceInputs.forEach(input => input.value = originalPrices.get(input));
         }
+
     } catch (error) {
         console.error('Fetch error:', error);
         showNotification('Tidak dapat terhubung ke server.', true);
+         priceInputs.forEach(input => input.value = originalPrices.get(input));
     } finally {
-        button.disabled = false;
-        button.innerHTML = originalButtonHTML;
-
-        if (!form.hasAttribute('data-reset-on-success')) {
-
-            priceInputs.forEach(input => {
-                const originalValue = originalPrices.get(input);
-                if (input.value) {
-                     const numStr = String(input.value).replace(/[^0-9]/g, '');
-                     input.value = numStr ? parseInt(numStr, 10).toLocaleString('id-ID') : '';
-                } else {
-                     input.value = '';
+        const action = form.dataset.updateAction || 'none';
+        if (action !== 'redirect' && !(form.hasAttribute('data-reset-on-success') && form.getAttribute('data-reset-on-success') === 'true')) {
+             setTimeout(() => {
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = originalButtonHTML;
                 }
-            });
+             }, 100);
+        } else if (action !== 'redirect') {
+             setTimeout(() => {
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = originalButtonHTML;
+                }
+             }, 100);
         }
     }
 }
@@ -69,6 +107,10 @@ function handleAjaxDelete(link) {
         'Konfirmasi Hapus',
         'Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat diurungkan.',
         async () => {
+            const originalLinkHTML = link.innerHTML;
+            link.innerHTML = `<span class="spinner" style="display: inline-block; width: 0.8em; height: 0.8em; border-width: 2px;"></span>`;
+            link.style.pointerEvents = 'none';
+
             try {
                 const response = await fetch(url, {
                     method: 'POST',
@@ -79,21 +121,28 @@ function handleAjaxDelete(link) {
                     showNotification(result.message || 'Berhasil dihapus.');
                     const targetElement = document.querySelector(targetSelector);
                     if (targetElement) {
-                        targetElement.remove();
-
-                        const tbody = targetElement.closest('tbody');
-                        if (tbody && tbody.children.length === 0) {
-                             const colspan = tbody.previousElementSibling?.querySelector('tr')?.children.length || 1;
-                             tbody.innerHTML = `<tr class="no-items-row"><td colspan="${colspan}">Tidak ada data lagi.</td></tr>`;
-                        }
+                         targetElement.style.transition = 'opacity 0.3s ease-out';
+                         targetElement.style.opacity = '0';
+                         setTimeout(() => {
+                            targetElement.remove();
+                            const tbody = targetElement.closest('tbody');
+                            if (tbody && tbody.children.length === 0) {
+                                 const colspan = tbody.previousElementSibling?.querySelector('tr')?.children.length || 1;
+                                 tbody.innerHTML = `<tr class="no-items-row"><td colspan="${colspan}">Tidak ada data lagi.</td></tr>`;
+                            }
+                         }, 300);
                     } else {
                         window.location.reload();
                     }
                 } else {
                     showNotification(result.message || 'Gagal menghapus.', true);
+                    link.innerHTML = originalLinkHTML;
+                    link.style.pointerEvents = 'auto';
                 }
             } catch (error) {
                 showNotification('Error koneksi.', true);
+                link.innerHTML = originalLinkHTML;
+                link.style.pointerEvents = 'auto';
             }
         }
     );
@@ -103,6 +152,9 @@ function handleAjaxDelete(link) {
 async function handleAjaxToggle(link) {
     const url = link.href;
     const row = link.closest('tr');
+    const originalLinkText = link.textContent;
+    link.innerHTML = `<span class="spinner" style="display: inline-block; width: 0.8em; height: 0.8em; border-width: 2px;"></span>`;
+    link.style.pointerEvents = 'none';
 
     try {
         const response = await fetch(url, {
@@ -110,10 +162,10 @@ async function handleAjaxToggle(link) {
              headers: {'X-Requested-With': 'XMLHttpRequest'}
         });
         const result = await response.json();
-        if (response.ok && result.success) {
+        if (response.ok && result.success && result.data) {
             showNotification(result.message);
 
-            if (row && result.data) {
+            if (row) {
                 const statusCell = row.querySelector('.status-cell');
                 const newStatus = result.data.is_active;
                 if (statusCell) {
@@ -123,26 +175,50 @@ async function handleAjaxToggle(link) {
             }
         } else {
             showNotification(result.message || 'Gagal mengubah status.', true);
+            link.textContent = originalLinkText;
         }
     } catch (error) {
         showNotification('Error koneksi.', true);
+        link.textContent = originalLinkText;
+    } finally {
+        link.style.pointerEvents = 'auto';
+        if (link.innerHTML.includes('spinner')) {
+             link.textContent = originalLinkText;
+        }
     }
 }
 
 
 export function initAjaxAdminForms() {
-    const adminContent = document.querySelector('.admin-content-area');
-    if (!adminContent) return;
+    const adminContent = document.getElementById('adminContentArea');
+    if (!adminContent) {
+        console.warn("Admin content area not found for AJAX form initialization.");
+        return;
+    }
+
+    let isSubmitting = false;
 
     adminContent.addEventListener('submit', e => {
-
         if (e.target.matches('form[data-ajax="true"]') && e.target.id !== 'bulk-action-form') {
             e.preventDefault();
+            e.stopPropagation();
+
+             if (isSubmitting) {
+                console.warn('Submit ignored, another submission is in progress.');
+                return;
+             }
+             isSubmitting = true;
+
             const submitter = e.submitter || e.target.querySelector('button[type="submit"]');
             if (submitter) {
-                handleAjaxSubmit(e.target, submitter);
+                handleAjaxSubmit(e.target, submitter)
+                    .finally(() => {
+                         isSubmitting = false;
+                    });
             } else {
-                 console.warn("Submitter tidak ditemukan untuk form AJAX:", e.target);
+                 console.warn("Submitter button not found for AJAX form:", e.target);
+                 showNotification("Tidak dapat menemukan tombol submit.", true);
+                 isSubmitting = false;
             }
         }
     });
@@ -152,6 +228,7 @@ export function initAjaxAdminForms() {
         if (!link) return;
 
         e.preventDefault();
+        e.stopPropagation();
 
         if (link.dataset.removeTarget || link.classList.contains('action-link-delete')) {
             handleAjaxDelete(link);
