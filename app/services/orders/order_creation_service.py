@@ -426,7 +426,10 @@ class OrderCreationService:
                         str(voucher_result["discount_amount"])
                     )
                 else:
-                    raise ValidationError(voucher_result["message"])
+                    logger.warning(
+                        f"Validasi voucher gagal untuk {log_id}: {voucher_result['message']}"
+                    )
+                    return {"success": False, "message": voucher_result["message"]}
 
             shipping_cost_decimal = Decimal(str(shipping_cost))
             final_total = (

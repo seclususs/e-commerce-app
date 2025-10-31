@@ -11,13 +11,13 @@ class ReportRepository:
         end_date: Optional[str], 
         table_alias: str = "o",
     ) -> Tuple[str, List[str]]:
-        date_filter = f" WHERE {table_alias}.status != 'Dibatalkan' "
+        date_filter = f" WHERE {table_alias}.status != 'Dibatalkan'"
         params: List[str] = []
         if start_date:
-            date_filter += f" AND {table_alias}.order_date >= %s "
+            date_filter += f" AND {table_alias}.order_date >= %s"
             params.append(start_date)
         if end_date:
-            date_filter += f" AND {table_alias}.order_date <= %s "
+            date_filter += f" AND {table_alias}.order_date <= %s"
             params.append(end_date)
         return date_filter, params
 

@@ -90,6 +90,11 @@ class ProductBulkService:
                 f"Kesalahan database saat memproses aksi massal: {e}"
             )
         
+        except ValidationError as e:
+            if conn:
+                conn.rollback()
+            raise e
+        
         except Exception as e:
             if conn:
                 conn.rollback()

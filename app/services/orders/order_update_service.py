@@ -123,6 +123,14 @@ class OrderUpdateService:
                 },
             }
         
+        except (RecordNotFoundError, InvalidOperationError) as user_error:
+            if conn and conn.is_connected():
+                conn.rollback()
+            logger.warning(
+                f"Gagal memperbarui pesanan {order_id}: {user_error}"
+            )
+            raise user_error
+        
         except (mysql.connector.Error, DatabaseException) as e:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -133,14 +141,6 @@ class OrderUpdateService:
             raise DatabaseException(
                 f"Kesalahan database saat memperbarui pesanan: {e}"
             )
-        
-        except (RecordNotFoundError, InvalidOperationError) as user_error:
-            if conn and conn.is_connected():
-                conn.rollback()
-            logger.warning(
-                f"Gagal memperbarui pesanan {order_id}: {user_error}"
-            )
-            raise user_error
         
         except Exception as e:
             if conn and conn.is_connected():

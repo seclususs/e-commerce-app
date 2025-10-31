@@ -17,7 +17,9 @@ logger = get_logger(__name__)
 def apply_voucher() -> Tuple[Response, int]:
     data: Dict[str, Any] | None = request.get_json()
     if not data:
-        raise ValidationError("Data JSON tidak valid.")
+        return jsonify(
+            {"success": False, "message": "Data JSON tidak valid."}
+            ), 400
 
     code: str | None = data.get("voucher_code")
     subtotal: Any = data.get("subtotal")
@@ -30,7 +32,9 @@ def apply_voucher() -> Tuple[Response, int]:
             f"Permintaan penerapan voucher tidak valid. "
             f"Kode: {code}, Subtotal: {subtotal}"
         )
-        raise ValidationError("Kode voucher dan subtotal diperlukan.")
+        return jsonify(
+            {"success": False, "message": "Kode voucher dan subtotal diperlukan."}
+            ), 400
 
     try:
         subtotal_float: float = float(subtotal)
@@ -52,21 +56,30 @@ def apply_voucher() -> Tuple[Response, int]:
                 f"Penerapan voucher '{code}' gagal. "
                 f"Alasan: {result['message']}"
             )
-            raise ValidationError(result["message"])
+            return jsonify(
+                {"success": False, "message": result["message"]}
+                ), 400
 
     except ValueError:
         logger.error(f"Format subtotal tidak valid: {subtotal}", exc_info=True)
-        raise ValidationError("Format subtotal tidak valid.")
+        return jsonify(
+            {"success": False, "message": "Format subtotal tidak valid."}
+            ), 400
     
     except (ValidationError, DatabaseException, ServiceLogicError) as e:
         logger.error(
             f"Error caught applying voucher '{code}': {e}", exc_info=True
         )
-        raise e
+        status_code = 500
+        if isinstance(e, ValidationError):
+            status_code = 400
+        return jsonify({"success": False, "message": str(e)}), status_code
     
     except Exception as e:
         logger.error(
             f"Kesalahan tak terduga saat menerapkan voucher '{code}': {e}",
             exc_info=True,
         )
-        raise ServiceLogicError("Gagal memvalidasi voucher.")
+        return jsonify(
+            {"success": False, "message": "Gagal memvalidasi voucher."}
+            ), 500

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple, Optional
 
 from flask import Response, jsonify, request, session
 
-from app.exceptions.api_exceptions import PermissionDeniedError, ValidationError
+from app.exceptions.api_exceptions import ValidationError
 from app.exceptions.database_exceptions import DatabaseException, RecordNotFoundError
 from app.exceptions.service_exceptions import OutOfStockError, ServiceLogicError
 from app.services.orders.cart_service import cart_service
@@ -45,7 +45,9 @@ def get_guest_cart_items() -> Response:
             f"keranjang tamu: {e}",
             exc_info=True,
         )
-        raise e
+        return jsonify(
+            {"success": False, "message": "Gagal mengambil detail keranjang."}
+            ), 500
 
     except Exception as e:
         logger.error(
@@ -53,13 +55,19 @@ def get_guest_cart_items() -> Response:
             f"keranjang tamu: {e}",
             exc_info=True,
         )
-        raise ServiceLogicError("Gagal mengambil detail keranjang.")
+        return jsonify(
+            {"success": False, "message": "Gagal mengambil detail keranjang."}
+            ), 500
 
 
 @api_bp.route("/user-cart", methods=["GET"])
 @login_required
 def get_user_cart() -> Response:
-    user_id: int = session["user_id"]
+    user_id: Optional[int] = session.get("user_id")
+    if not user_id:
+        logger.warning("API: /user-cart GET ditolak. Pengguna tidak login.")
+        return jsonify({"success": False, "message": "Otentikasi diperlukan."}), 401
+    
     logger.debug(f"Mengambil detail keranjang untuk user_id: {user_id}")
 
     try:
@@ -76,7 +84,9 @@ def get_user_cart() -> Response:
             f"{user_id}: {e}",
             exc_info=True,
         )
-        raise e
+        return jsonify(
+            {"success": False, "message": "Gagal mengambil detail keranjang."}
+            ), 500
 
     except Exception as e:
         logger.error(
@@ -84,15 +94,26 @@ def get_user_cart() -> Response:
             f"{user_id}: {e}",
             exc_info=True,
         )
-        raise ServiceLogicError("Gagal mengambil detail keranjang.")
+        return jsonify(
+            {"success": False, "message": "Gagal mengambil detail keranjang."}
+            ), 500
 
 
 @api_bp.route("/user-cart", methods=["POST"])
 @login_required
 def add_to_user_cart() -> Tuple[Response, int]:
+    user_id: Optional[int] = session.get("user_id")
+    if not user_id:
+        logger.warning("API: /user-cart POST ditolak. Pengguna tidak login.")
+        return jsonify(
+            {"success": False, "message": "Otentikasi diperlukan."}
+            ), 401
+
     data: Dict[str, Any] | None = request.get_json()
     if not data:
-        raise ValidationError("Data JSON tidak valid.")
+        return jsonify(
+            {"success": False, "message": "Data JSON tidak valid."}
+            ), 400
 
     product_id: int | None = data.get("product_id")
     variant_id_input: Any = data.get("variant_id")
@@ -110,7 +131,7 @@ def add_to_user_cart() -> Tuple[Response, int]:
             variant_id = None
 
     quantity: int = data.get("quantity", 1)
-    user_id: int = session["user_id"]
+    
     logger.debug(
         f"Menambahkan item ke keranjang untuk user_id: {user_id}. "
         f"Produk: {product_id}, Varian: {variant_id}, Jumlah: {quantity}"
@@ -121,7 +142,7 @@ def add_to_user_cart() -> Tuple[Response, int]:
             f"Permintaan penambahan item tidak valid untuk user_id: {user_id}. "
             f"Data: {data}"
         )
-        raise ValidationError("Data tidak valid.")
+        return jsonify({"success": False, "message": "Data tidak valid."}), 400
 
     try:
         result: Dict[str, Any] = cart_service.add_to_cart(
@@ -142,32 +163,43 @@ def add_to_user_cart() -> Tuple[Response, int]:
             )
             message: str = result.get("message", "")
             if "Stok" in message:
-                raise OutOfStockError(message)
+                return jsonify({"success": False, "message": message}), 400
             elif "Produk tidak ditemukan" in message:
-                raise RecordNotFoundError(message)
+                return jsonify({"success": False, "message": message}), 404
             elif "pilih ukuran" in message:
-                raise ValidationError(message)
+                return jsonify({"success": False, "message": message}), 400
             else:
-                raise ServiceLogicError(
-                    result.get("message", "Gagal menambahkan item.")
-                )
+                return jsonify({"success": False, "message": message}), 500
 
     except (
-        ValidationError, RecordNotFoundError, OutOfStockError,
-        DatabaseException, ServiceLogicError
+        ValidationError, RecordNotFoundError, OutOfStockError
     ) as e:
         logger.error(
             f"Error caught in add_to_user_cart for user {user_id}: {e}",
             exc_info=True
         )
-        raise e
+        status_code = 400
+        if isinstance(e, RecordNotFoundError):
+            status_code = 404
+        return jsonify({"success": False, "message": str(e)}), status_code
+    
+    except (DatabaseException, ServiceLogicError) as e:
+        logger.error(
+            f"Error caught in add_to_user_cart for user {user_id}: {e}",
+            exc_info=True
+        )
+        return jsonify(
+            {"success": False, "message": "Gagal menambahkan item ke keranjang."}
+            ), 500
     
     except Exception as e:
         logger.error(
             "Terjadi kesalahan tak terduga saat menambahkan item ke keranjang "
             f"user {user_id}: {e}", exc_info=True
         )
-        raise ServiceLogicError("Gagal menambahkan item ke keranjang.")
+        return jsonify(
+            {"success": False, "message": "Gagal menambahkan item ke keranjang."}
+            ), 500
 
 
 @api_bp.route("/user-cart/<int:product_id>/<variant_id_str>", methods=["PUT"])
@@ -175,6 +207,13 @@ def add_to_user_cart() -> Tuple[Response, int]:
 def update_user_cart_item(
     product_id: int, variant_id_str: str
 ) -> Tuple[Response, int]:
+    user_id: Optional[int] = session.get("user_id")
+    if not user_id:
+        logger.warning("API: /user-cart PUT ditolak. Pengguna tidak login.")
+        return jsonify(
+            {"success": False, "message": "Otentikasi diperlukan."}
+            ), 401
+
     variant_id: Optional[int] = None
     if variant_id_str.lower() != 'null':
 
@@ -190,10 +229,10 @@ def update_user_cart_item(
     data: Dict[str, Any] | None = request.get_json()
 
     if not data:
-        raise ValidationError("Data JSON tidak valid.")
+        return jsonify({"success": False, "message": "Data JSON tidak valid."}), 400
 
     quantity: int | None = data.get("quantity")
-    user_id: int = session["user_id"]
+    
     logger.debug(
         f"Memperbarui item keranjang untuk user_id: {user_id}. "
         f"Produk: {product_id}, Varian: {variant_id}, "
@@ -204,7 +243,7 @@ def update_user_cart_item(
             f"Permintaan pembaruan keranjang tidak valid untuk "
             f"user_id: {user_id}. Data: {data}"
         )
-        raise ValidationError("Kuantitas tidak valid.")
+        return jsonify({"success": False, "message": "Kuantitas tidak valid."}), 400
 
     try:
         result: Dict[str, Any] = cart_service.update_cart_item(
@@ -223,35 +262,47 @@ def update_user_cart_item(
                 f"Alasan: {result.get('message', 'Tidak diketahui')}"
             )
             if "Stok" in result.get("message", ""):
-                raise OutOfStockError(result["message"])
+                return jsonify({"success": False, "message": result["message"]}), 400
             else:
-                raise ServiceLogicError(
-                    result.get("message", "Gagal memperbarui item.")
-                )
+                return jsonify({"success": False, "message": result.get("message", "Gagal memperbarui item.")}), 500
 
-    except (OutOfStockError, DatabaseException, ServiceLogicError) as e:
+    except OutOfStockError as e:
         logger.error(
             f"Error caught in update_user_cart_item for user {user_id}: {e}",
             exc_info=True
         )
-        raise e
+        return jsonify({"success": False, "message": str(e)}), 400
+    
+    except (DatabaseException, ServiceLogicError) as e:
+        logger.error(
+            f"Error caught in update_user_cart_item for user {user_id}: {e}",
+            exc_info=True
+        )
+        return jsonify({"success": False, "message": "Gagal memperbarui item keranjang."}), 500
     
     except Exception as e:
         logger.error(
             "Terjadi kesalahan tak terduga saat memperbarui item keranjang "
             f"user {user_id}: {e}", exc_info=True
         )
-        raise ServiceLogicError("Gagal memperbarui item keranjang.")
+        return jsonify({"success": False, "message": "Gagal memperbarui item keranjang."}), 500
 
 
 @api_bp.route("/user-cart/merge", methods=["POST"])
 @login_required
 def merge_cart() -> Tuple[Response, int] | Response:
+    user_id: Optional[int] = session.get("user_id")
+    if not user_id:
+        logger.warning("API: /user-cart/merge ditolak. Pengguna tidak login.")
+        return jsonify(
+            {"success": False, "message": "Otentikasi diperlukan."}
+            ), 401
+
     local_cart_data: Dict[str, Any] | None = request.get_json()
     local_cart: Dict[str, Any] | None = (
         local_cart_data.get("local_cart") if local_cart_data else None
     )
-    user_id: int = session["user_id"]
+    
     logger.debug(
         f"Mencoba menggabungkan keranjang lokal untuk user_id: {user_id}. "
         "Kunci keranjang lokal: "
@@ -282,21 +333,26 @@ def merge_cart() -> Tuple[Response, int] | Response:
                 f"Gagal menggabungkan keranjang lokal untuk user_id: {user_id}. "
                 f"Alasan: {result['message']}"
             )
-            raise ServiceLogicError(result["message"])
+            return jsonify({"success": False, "message": result["message"]}), 500
 
     except (ValidationError, DatabaseException, ServiceLogicError) as e:
         logger.error(
             f"Error caught in merge_cart for user {user_id}: {e}",
             exc_info=True
         )
-        raise e
+        status_code = 500
+        if isinstance(e, ValidationError):
+            status_code = 400
+        return jsonify({"success": False, "message": str(e)}), status_code
     
     except Exception as e:
         logger.error(
             "Terjadi kesalahan tak terduga saat menggabungkan keranjang "
             f"user {user_id}: {e}", exc_info=True
         )
-        raise ServiceLogicError("Gagal menyinkronkan keranjang.")
+        return jsonify(
+            {"success": False, "message": "Gagal menyinkronkan keranjang."}
+            ), 500
 
 
 @api_bp.route("/checkout/prepare", methods=["POST"])
@@ -305,7 +361,9 @@ def prepare_guest_checkout() -> Tuple[Response, int]:
         logger.warning(
             "Pengguna yang login mencoba mengakses endpoint checkout tamu."
         )
-        raise PermissionDeniedError("Endpoint ini hanya untuk tamu.")
+        return jsonify(
+            {"success": False, "message": "Endpoint ini hanya untuk tamu."}
+            ), 403
 
     if "session_id" not in session:
         session["session_id"] = str(uuid.uuid4())
@@ -329,7 +387,9 @@ def prepare_guest_checkout() -> Tuple[Response, int]:
             f"Data keranjang tidak valid untuk persiapan checkout tamu. "
             f"Session ID: {session_id}"
         )
-        raise ValidationError("Data keranjang tidak valid.")
+        return jsonify(
+            {"success": False, "message": "Data keranjang tidak valid."}
+            ), 400
 
     formatted_items: List[Dict[str, Any]] = []
 
@@ -342,6 +402,7 @@ def prepare_guest_checkout() -> Tuple[Response, int]:
                 "size": item.get("size"),
                 "variant_id": variant_id,
                 "quantity": item["quantity"],
+                "product_id": item["id"]
             })
 
     except KeyError as e:
@@ -349,7 +410,9 @@ def prepare_guest_checkout() -> Tuple[Response, int]:
             f"Kunci data item keranjang tamu hilang: {e}. "
             f"Session ID: {session_id}", exc_info=True
         )
-        raise ValidationError("Data item keranjang tidak lengkap.")
+        return jsonify(
+            {"success": False, "message": "Data item keranjang tidak lengkap."}
+            ), 400
 
     try:
         hold_result: Dict[str, Any] = stock_service.hold_stock_for_checkout(
@@ -370,22 +433,37 @@ def prepare_guest_checkout() -> Tuple[Response, int]:
                 f"Session ID: {session_id}. Alasan: {hold_result['message']}"
             )
             if "Stok" in hold_result.get("message", ""):
-                raise OutOfStockError(hold_result["message"])
+                return jsonify(
+                    {"success": False, "message": hold_result["message"]}
+                    ), 400
             else:
-                raise ServiceLogicError(hold_result["message"])
+                return jsonify(
+                    {"success": False, "message": hold_result["message"]}
+                    ), 500
 
     except (
-        OutOfStockError, DatabaseException, ServiceLogicError, ValidationError
+        OutOfStockError, ValidationError
     ) as e:
         logger.error(
             f"Error caught in prepare_guest_checkout for session "
             f"{session_id}: {e}", exc_info=True
         )
-        raise e
+        return jsonify({"success": False, "message": str(e)}), 400
+
+    except (DatabaseException, ServiceLogicError) as e:
+        logger.error(
+            f"Error caught in prepare_guest_checkout for session "
+            f"{session_id}: {e}", exc_info=True
+        )
+        return jsonify(
+            {"success": False, "message": "Gagal memvalidasi stok."}
+            ), 500
     
     except Exception as e:
         logger.error(
             "Terjadi kesalahan tak terduga saat menahan stok untuk checkout "
             f"tamu. Session ID: {session_id}: {e}", exc_info=True
         )
-        raise ServiceLogicError("Gagal memvalidasi stok.")
+        return jsonify(
+            {"success": False, "message": "Gagal memvalidasi stok."}
+            ), 500

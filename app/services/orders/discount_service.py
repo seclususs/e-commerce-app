@@ -1,5 +1,5 @@
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any, Dict
 
 import mysql.connector
@@ -25,7 +25,8 @@ class DiscountService:
         try:
             subtotal_decimal = Decimal(str(subtotal))
 
-        except ValueError:
+        except (ValueError, InvalidOperation) as e:
+            logger.warning(f"Format subtotal tidak valid: {subtotal}. Error: {e}")
             raise ValidationError("Format subtotal tidak valid.")
 
         logger.debug(
@@ -154,6 +155,8 @@ class DiscountService:
                 f"Kesalahan saat memvalidasi voucher '{upper_code}': {e}",
                 exc_info=True,
             )
+            if isinstance(e, ValidationError):
+                raise e
             raise ServiceLogicError(
                 f"Gagal memvalidasi voucher karena kesalahan server: {e}"
             )

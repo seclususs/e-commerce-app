@@ -203,6 +203,11 @@ class VariantService:
                 f"Kesalahan database saat memperbarui varian: {e}"
             )
         
+        except RecordNotFoundError as e:
+            if conn and conn.is_connected():
+                conn.rollback()
+            raise e
+
         except Exception as e:
             if conn and conn.is_connected():
                 conn.rollback()

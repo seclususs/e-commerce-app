@@ -116,6 +116,9 @@ class OrderQueryService:
                 f"{order_id}: {db_err}"
             )
         
+        except RecordNotFoundError as e:
+            raise e
+        
         except Exception as e:
             logger.error(
                 f"Service: Kesalahan saat mengambil detail pesanan "

@@ -36,11 +36,15 @@ def filter_products() -> Response:
             f"Terjadi kesalahan service/DB saat memfilter produk: {e}",
             exc_info=True,
         )
-        raise e
+        return jsonify(
+            {"success": False, "message": "Gagal memfilter produk"}
+            ), 500
     
     except Exception as e:
         logger.error(
             f"Terjadi kesalahan tak terduga saat memfilter produk: {e}",
             exc_info=True,
         )
-        raise ServiceLogicError("Gagal memfilter produk")
+        return jsonify(
+            {"success": False, "message": "Gagal memfilter produk"}
+            ), 500

@@ -145,6 +145,11 @@ class CategoryService:
                 f"Kesalahan database saat memperbarui kategori: {e}"
             )
         
+        except RecordNotFoundError as e:
+            if conn:
+                conn.rollback()
+            raise e
+        
         except Exception as e:
             if conn:
                 conn.rollback()
@@ -181,6 +186,11 @@ class CategoryService:
             raise DatabaseException(
                 f"Kesalahan database saat menghapus kategori: {e}"
             )
+        
+        except RecordNotFoundError as e:
+            if conn:
+                conn.rollback()
+            raise e
         
         except Exception as e:
             if conn:

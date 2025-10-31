@@ -8,12 +8,12 @@ from app.exceptions.service_exceptions import ServiceLogicError
 from app.services.utils.scheduler_service import scheduler_service
 from app.utils.logging_utils import get_logger
 
+from . import api_bp
+
 logger = get_logger(__name__)
 
-scheduler_api_bp: Blueprint = Blueprint("scheduler_api", __name__)
 
-
-@scheduler_api_bp.route("/admin/run-scheduler-jobs", methods=["POST"])
+@api_bp.route("/admin/run-scheduler-jobs", methods=["POST"])
 def run_scheduler_jobs() -> Tuple[Response, int]:
     secret_key: str = current_app.config["SECRET_KEY"]
     auth_header: str | None = request.headers.get("X-API-Key")
@@ -24,7 +24,7 @@ def run_scheduler_jobs() -> Tuple[Response, int]:
 
     if auth_header != secret_key:
         logger.warning("Percobaan tidak sah untuk menjalankan tugas scheduler.")
-        raise AuthError("Tidak diizinkan")
+        return jsonify({"success": False, "message": "Tidak diizinkan"}), 401
 
     try:
         logger.info("Menjalankan layanan scheduler: cancel_expired_pending_orders")
@@ -38,7 +38,7 @@ def run_scheduler_jobs() -> Tuple[Response, int]:
         logger.error(
             f"Error caught running scheduler manually: {e}", exc_info=True
         )
-        raise e
+        return jsonify({"success": False, "message": "Terjadi kesalahan server."}), 500
     
     except Exception as e:
         logger.error(
@@ -46,6 +46,9 @@ def run_scheduler_jobs() -> Tuple[Response, int]:
             f"melalui API: {e}",
             exc_info=True,
         )
-        raise ServiceLogicError(
-            "Terjadi kesalahan internal saat menjalankan tugas scheduler."
-        )
+        return jsonify(
+            {
+                "success": False,
+                "message": "Terjadi kesalahan internal saat menjalankan tugas scheduler.",
+            }
+        ), 500

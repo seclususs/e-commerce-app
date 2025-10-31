@@ -132,7 +132,15 @@ def product_detail(id: int) -> str | Response:
 def add_review(id: int) -> Response | Tuple[Response, int]:
     rating: Optional[str] = request.form.get("rating")
     comment: Optional[str] = request.form.get("comment")
-    user_id: Any = session["user_id"]
+    user_id: Optional[int] = session.get("user_id")
+
+    if not user_id:
+        logger.warning(
+            f"Akses add_review ditolak untuk pengguna anonim ke produk {id}."
+            )
+        return jsonify(
+            {"success": False, "message": "Otentikasi diperlukan."}
+            ), 401
 
     logger.debug(
         f"Pengguna {user_id} mencoba menambahkan ulasan untuk produk {id}. "

@@ -21,10 +21,10 @@
   <td data-label="Kategori:" class="collapsible-detail category-name-cell">{{ product.category_name or 'N/A' }}</td>
   <td data-label="Harga:" class="collapsible-detail price-cell">
     {% if product.discount_price and product.discount_price > 0 %}
-      <span class="discount-price">{{ product.discount_price|rupiah }}</span>
-      <del>{{ product.price|rupiah }}</del>
+      <span class="discount-price">{{ (product.discount_price or 0)|rupiah }}</span>
+      <del>{{ (product.price or 0)|rupiah }}</del>
     {% else %}
-      <span>{{ product.price|rupiah }}</span>
+      <span>{{ (product.price or 0)|rupiah }}</span>
     {% endif %}
   </td>
   <td data-label="Stok:" class="collapsible-detail">

@@ -1,12 +1,9 @@
 from typing import Optional, Union
 
 from flask import (
-    flash,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    url_for,
+    flash, jsonify, redirect,
+    render_template, request,
+    url_for
 )
 from werkzeug.wrappers import Response
 
@@ -26,18 +23,19 @@ def forgot_password() -> Union[Response, str]:
     if request.method == "POST":
         email: Optional[str] = request.form.get("email")
         logger.info(f"Permintaan reset password untuk email: {email}")
-
-        if not email:
-            raise ValidationError("Email harus diisi.")
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
         try:
+            if not email:
+                raise ValidationError("Email harus diisi.")
+
             password_reset_service.handle_password_reset_request(email)
             message: str = (
                 "Jika email terdaftar, link reset password telah dikirim."
             )
             logger.info(f"Simulasi reset password dimulai untuk email: {email}")
             
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            if is_ajax:
                 logger.debug(
                     "Merespons dengan JSON untuk permintaan reset "
                     "password melalui AJAX."
@@ -46,13 +44,20 @@ def forgot_password() -> Union[Response, str]:
 
             flash(f"SIMULASI: {message}", "success")
             return redirect(url_for("auth.login"))
+        
+        except ValidationError as ve:
+            logger.warning(f"Validasi gagal untuk reset password: {ve}")
+            if is_ajax:
+                return jsonify({"success": False, "message": str(ve)}), 400
+            flash(str(ve), "danger")
+            return redirect(url_for("auth.forgot_password"))
 
         except ServiceLogicError as sle:
             logger.error(
                 f"Kesalahan service saat reset password untuk {email}: {sle}",
                 exc_info=True,
             )
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            if is_ajax:
                 raise sle
             flash("Terjadi kesalahan saat memproses permintaan.", "danger")
             return redirect(url_for("auth.forgot_password"))
@@ -63,7 +68,7 @@ def forgot_password() -> Union[Response, str]:
                 f"reset password untuk email {email}: {e}",
                 exc_info=True,
             )
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            if is_ajax:
                 raise ServiceLogicError(
                     "Terjadi kesalahan server saat memproses permintaan."
                 )

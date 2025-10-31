@@ -28,6 +28,18 @@ def convert_decimals(obj: Any) -> Any:
     return obj
 
 
+def get_default_stats() -> Dict[str, Any]:
+    return {
+        "total_sales": 0,
+        "order_count": 0,
+        "new_user_count": 0,
+        "product_count": 0,
+        "sales_chart_data": {"labels": [], "data": []},
+        "top_products_chart": {"labels": [], "data": []},
+        "low_stock_chart": {"labels": [], "data": []},
+    }
+
+
 @admin_bp.route("/dashboard")
 @admin_required
 def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
@@ -130,7 +142,9 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
             custom_end=custom_end,
         )
 
-    except (DatabaseException, ServiceLogicError):
+    except (DatabaseException, ServiceLogicError) as e:
+        logger.error(f"Error memuat dashboard: {e}", exc_info=True)
+        stats_converted = get_default_stats()
         flash("Gagal memuat data dashboard.", "danger")
         if is_ajax:
             return (
@@ -141,7 +155,7 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
             )
         return render_template(
             "admin/dashboard.html",
-            stats={},
+            stats=stats_converted,
             content=get_content(),
             chart_labels="[]",
             chart_data="[]",
@@ -151,7 +165,9 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
             low_stock_chart_data="[]",
         )
 
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error tidak terduga memuat dashboard: {e}", exc_info=True)
+        stats_converted = get_default_stats()
         flash("Gagal memuat data dashboard.", "danger")
         if is_ajax:
             return (
@@ -162,7 +178,7 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
             )
         return render_template(
             "admin/dashboard.html",
-            stats={},
+            stats=stats_converted,
             content=get_content(),
             chart_labels="[]",
             chart_data="[]",

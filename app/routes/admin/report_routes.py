@@ -15,6 +15,33 @@ from . import admin_bp
 logger = get_logger(__name__)
 
 
+def get_default_reports_data() -> Dict[str, Any]:
+    return {
+        "sales": {
+            "total_revenue": 0,
+            "total_orders": 0,
+            "total_items_sold": 0
+        },
+        "products": {
+            "top_selling": [],
+            "most_viewed": []
+        },
+        "customers": {
+            "top_spenders": []
+        },
+        "voucher_effectiveness": [],
+        "cart_analytics": {
+            "abandonment_rate": 0,
+            "carts_created": 0,
+            "orders_completed": 0
+        },
+        "inventory": {
+            "total_value": 0,
+            "low_stock": [],
+            "slow_moving": []
+        },
+    }
+
 @admin_bp.route("/reports")
 @admin_required
 def admin_reports() -> Union[str, Response, Tuple[Response, int]]:
@@ -28,10 +55,10 @@ def admin_reports() -> Union[str, Response, Tuple[Response, int]]:
         sales_summary: Dict[str, Any] = report_service.get_sales_summary(
             start_date, end_date
         )
-        product_reports: List[Dict[str, Any]] = (
+        product_reports: Dict[str, Any] = (
             report_service.get_product_reports(start_date, end_date)
         )
-        customer_reports: List[Dict[str, Any]] = (
+        customer_reports: Dict[str, Any] = (
             report_service.get_customer_reports(start_date, end_date)
         )
         voucher_effectiveness: List[Dict[str, Any]] = (
@@ -74,22 +101,26 @@ def admin_reports() -> Union[str, Response, Tuple[Response, int]]:
                 content=get_content(),
             )
 
-    except (DatabaseException, ServiceLogicError):
+    except (DatabaseException, ServiceLogicError) as e:
+        logger.error(f"Gagal memuat laporan: {e}", exc_info=True)
         message = "Gagal memuat data laporan."
+        reports_data = get_default_reports_data() # PERBAIKAN
         if is_ajax:
             return jsonify({"success": False, "message": message}), 500
         flash(message, "danger")
         return render_template(
-            "admin/reports.html", reports={}, content=get_content()
+            "admin/reports.html", reports=reports_data, content=get_content()
         )
     
-    except Exception:
+    except Exception as e:
+        logger.error(f"Error tidak terduga saat memuat laporan: {e}", exc_info=True)
         message = "Gagal memuat data laporan."
+        reports_data = get_default_reports_data()
         if is_ajax:
             return jsonify({"success": False, "message": message}), 500
         flash(message, "danger")
         return render_template(
-            "admin/reports.html", reports={}, content=get_content()
+            "admin/reports.html", reports=reports_data, content=get_content()
         )
 
 

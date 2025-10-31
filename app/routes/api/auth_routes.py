@@ -20,7 +20,9 @@ def validate_username() -> Response:
 
     if not username:
         logger.warning("API: Validasi gagal: kolom username kosong.")
-        raise ValidationError("Username tidak boleh kosong.")
+        return jsonify(
+            {"success": False, "message": "Username tidak boleh kosong."}
+            ), 400
 
     try:
         is_available: bool
@@ -29,21 +31,27 @@ def validate_username() -> Response:
             validation_service.validate_username_availability(username)
         )
         logger.info(f"API: Hasil validasi username '{username}': {message}")
-        return jsonify({"available": is_available, "message": message})
+        return jsonify(
+            {"available": is_available, "message": message, "success": True}
+            )
     
     except (DatabaseException, ServiceLogicError) as e:
         logger.error(
             f"API: Terjadi kesalahan saat memvalidasi username '{username}': {e}",
             exc_info=True,
         )
-        raise e
+        return jsonify(
+            {"success": False, "message": "Gagal memeriksa ketersediaan username."}
+            ), 500
     
     except Exception as e:
         logger.error(
             f"API: Kesalahan tak terduga saat memvalidasi username '{username}': {e}",
             exc_info=True,
         )
-        raise ServiceLogicError("Gagal memeriksa ketersediaan username.")
+        return jsonify(
+            {"success": False, "message": "Gagal memeriksa ketersediaan username."}
+            ), 500
 
 
 @api_bp.route("/validate/email", methods=["POST"])
@@ -53,7 +61,9 @@ def validate_email() -> Response:
 
     if not email:
         logger.warning("API: Validasi gagal: kolom email kosong.")
-        raise ValidationError("Email tidak boleh kosong.")
+        return jsonify(
+            {"success": False, "message": "Email tidak boleh kosong."}
+            ), 400
 
     try:
         is_available: bool
@@ -62,18 +72,22 @@ def validate_email() -> Response:
             email
         )
         logger.info(f"API: Hasil validasi email '{email}': {message}")
-        return jsonify({"available": is_available, "message": message})
+        return jsonify({"available": is_available, "message": message, "success": True})
     
     except (DatabaseException, ServiceLogicError) as e:
         logger.error(
             f"API: Terjadi kesalahan saat memvalidasi email '{email}': {e}",
             exc_info=True,
         )
-        raise e
+        return jsonify(
+            {"success": False, "message": "Gagal memeriksa ketersediaan email."}
+            ), 500
     
     except Exception as e:
         logger.error(
             f"API: Kesalahan tak terduga saat memvalidasi email '{email}': {e}",
             exc_info=True,
         )
-        raise ServiceLogicError("Gagal memeriksa ketersediaan email.")
+        return jsonify(
+            {"success": False, "message": "Gagal memeriksa ketersediaan email."}
+            ), 500

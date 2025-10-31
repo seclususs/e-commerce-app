@@ -36,11 +36,11 @@
             <p class="product-category-detail">{{ product.category_name or 'N/A' }}</p>
             <div class="product-price-detail-container">
                  {% if product.discount_price and product.discount_price > 0 %}
-                    <span class="product-price-detail discount-price">{{ product.discount_price|rupiah }}</span>
-                    <del class="original-price-detail">{{ product.price|rupiah }}</del>
-                    <span class="discount-badge">Hemat {{ product.discount_price|percentage(product.price) }}%</span>
+                    <span class="product-price-detail discount-price">{{ (product.discount_price or 0)|rupiah }}</span>
+                    <del class="original-price-detail">{{ (product.price or 0)|rupiah }}</del>
+                    <span class="discount-badge">Hemat {{ (product.discount_price or 0)|percentage(product.price or 0) }}%</span>
                 {% else %}
-                    <span class="product-price-detail">{{ product.price|rupiah }}</span>
+                    <span class="product-price-detail">{{ (product.price or 0)|rupiah }}</span>
                 {% endif %}
             </div>
 
@@ -121,7 +121,7 @@
                 <a href="{{ url_for('product.product_detail', id=p.id) }}" class="product-card-link"></a>
                 <div class="product-image">
                     {% if p.discount_price and p.discount_price > 0 %}
-                        <span class="discount-badge">Hemat {{ p.discount_price|percentage(p.price) }}%</span>
+                        <span class="discount-badge">Hemat {{ (p.discount_price or 0)|percentage(p.price or 0) }}%</span>
                     {% endif %}
                     <img loading="lazy" src="{{ url_for('images.serve_image', filename=p.image_url) if p.image_url and p.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + p.name }}" alt="{{ p.name }}">
                     {% if p.stock == 0 %}<div class="stock-overlay">Stok Habis</div>{% endif %}
@@ -131,10 +131,10 @@
                     <p class="product-category">{{ p.category_name or 'N/A' }}</p>
                     <div class="product-price-container">
                         {% if p.discount_price and p.discount_price > 0 %}
-                            <span class="product-price discount-price">{{ p.discount_price|rupiah }}</span>
-                            <del class="original-price">{{ p.price|rupiah }}</del>
+                            <span class="product-price discount-price">{{ (p.discount_price or 0)|rupiah }}</span>
+                            <del class="original-price">{{ (p.price or 0)|rupiah }}</del>
                         {% else %}
-                            <span class="product-price">{{ p.price|rupiah }}</span>
+                            <span class="product-price">{{ (p.price or 0)|rupiah }}</span>
                         {% endif %}
                     </div>
                 </div>

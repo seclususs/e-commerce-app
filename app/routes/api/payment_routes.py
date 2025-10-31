@@ -2,16 +2,12 @@ from typing import Any, Dict, Tuple
 
 from flask import Response, current_app, jsonify, request
 
-from app.exceptions.api_exceptions import AuthError, ValidationError
 from app.exceptions.database_exceptions import (
-    DatabaseException,
-    RecordNotFoundError,
+    DatabaseException, RecordNotFoundError
 )
 from app.exceptions.service_exceptions import (
-    InvalidOperationError,
-    OutOfStockError,
-    PaymentFailedError,
-    ServiceLogicError,
+    InvalidOperationError, OutOfStockError,
+    PaymentFailedError, ServiceLogicError
 )
 from app.services.orders.payment_service import payment_service
 from app.utils.logging_utils import get_logger
@@ -32,13 +28,21 @@ def payment_webhook() -> Tuple[Response, int]:
 
     if auth_header != secret_key:
         logger.warning("Percobaan webhook pembayaran tidak sah.")
-        raise AuthError("Tidak diizinkan")
-
-    data: Dict[str, Any] | None = request.get_json()
+        return jsonify({"success": False, "message": "Tidak diizinkan"}), 401
+    
+    data: Dict[str, Any] | None = request.get_json(silent=True)
 
     if data is None:
         logger.error("Payload JSON tidak valid diterima pada webhook pembayaran.")
-        raise ValidationError("Payload JSON tidak valid.")
+        return jsonify(
+            {"success": False, "message": "Payload JSON tidak valid."}
+            ), 400
+
+    if not request.is_json:
+        logger.error("Payload non-JSON diterima pada webhook pembayaran.")
+        return jsonify(
+            {"success": False, "message": "Payload harus format JSON."}
+        ), 415
 
     event_type: str | None = data.get("event")
     transaction_id: str | None = data.get("transaction_id")
@@ -72,24 +76,37 @@ def payment_webhook() -> Tuple[Response, int]:
                     f"{transaction_id}. Alasan: {result['message']}"
                 )
                 if "stok habis" in result.get("message", "").lower():
-                    raise OutOfStockError(result["message"])
+                    return jsonify(
+                        {"success": False, "message": result["message"]}
+                        ), 400
                 else:
-                    raise PaymentFailedError(result["message"])
+                    return jsonify(
+                        {"success": False, "message": result["message"]}
+                        ), 400
 
         except (
             RecordNotFoundError,
             InvalidOperationError,
             OutOfStockError,
             PaymentFailedError,
-            DatabaseException,
-            ServiceLogicError,
         ) as e:
             logger.error(
                 "Error caught processing webhook for transaction "
                 f"{transaction_id}: {e}",
                 exc_info=True,
             )
-            raise e
+            status_code = 404 if isinstance(e, RecordNotFoundError) else 400
+            return jsonify({"success": False, "message": str(e)}), status_code
+        
+        except (DatabaseException, ServiceLogicError) as e:
+            logger.error(
+                "Error caught processing webhook for transaction "
+                f"{transaction_id}: {e}",
+                exc_info=True,
+            )
+            return jsonify(
+                {"success": False, "message": "Terjadi kesalahan server."}
+                ), 500
         
         except Exception as e:
             logger.error(
@@ -97,8 +114,14 @@ def payment_webhook() -> Tuple[Response, int]:
                 f"ID Transaksi {transaction_id}: {e}",
                 exc_info=True,
             )
-            raise ServiceLogicError(
-                "Terjadi kesalahan internal saat memproses pembayaran."
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Terjadi kesalahan internal saat memproses pembayaran.",
+                    }
+                ),
+                500,
             )
 
     logger.info(

@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional
 
 import mysql.connector
@@ -135,7 +135,7 @@ class VoucherService:
                 "data": new_voucher,
             }
         
-        except ValueError:
+        except (ValueError, InvalidOperation):
             raise ValidationError(
                 "Nilai, Minimal Belanja, atau Maks Penggunaan "
                 "harus berupa angka yang valid."

@@ -36,6 +36,9 @@ class UserProfileService:
                 f"Kesalahan database saat mengambil pengguna: {db_err}"
             )
         
+        except RecordNotFoundError as e:
+            raise e
+        
         except Exception as e:
             raise ServiceLogicError(f"Gagal mengambil data pengguna: {e}")
         
