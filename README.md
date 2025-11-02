@@ -40,6 +40,7 @@ e-commerce-app/
 │   │   ├── review_repository.py
 │   │   ├── stock_repository.py
 │   │   ├── user_repository.py
+│   │   ├── user_voucher_repository.py
 │   │   ├── variant_repository.py
 │   │   ├── voucher_repository.py
 │   │   └── __init__.py
@@ -341,6 +342,7 @@ e-commerce-app/
 │   │   │   │   └── _success_page.html
 │   │   │   │
 │   │   │   └── user/        # Komponen profil pengguna
+│   │   │       ├── _my_vouchers.html
 │   │   │       ├── _order_tracking.html
 │   │   │       ├── _profile_editor.html
 │   │   │       └── _user_profile.html
@@ -402,6 +404,7 @@ e-commerce-app/
     │   ├── test_review_repository.py
     │   ├── test_stock_repository.py
     │   ├── test_user_repository.py
+    │   ├── test_user_voucher_repository.py
     │   ├── test_variant_repository.py
     │   ├── test_voucher_repository.py
     │   └── __init__.py
