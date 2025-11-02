@@ -59,6 +59,25 @@ class TestReportRepository(BaseTestCase):
         self.assertEqual(params, ("2025-01-01", "2025-01-31"))
         self.mock_cursor.close.assert_called_once()
 
+    def test_get_top_spenders_user_ids_by_percentile(self):
+        mock_result = [{"user_id": 1}, {"user_id": 2}]
+        self.mock_cursor.fetchall.return_value = mock_result
+        start_date = "2025-01-01 00:00:00"
+        end_date = "2025-01-31 00:00:00"
+        
+        result = self.repository.get_top_spenders_user_ids_by_percentile(
+            self.db_conn, 0.05, start_date, end_date
+        )
+        
+        self.mock_cursor.execute.assert_called_once()
+        query, params = self.mock_cursor.execute.call_args[0]
+        self.assertIn("RANK() OVER", query)
+        self.assertIn("status = 'Selesai'", query)
+        self.assertIn("COUNT(DISTINCT user_id) * %s", query)
+        self.assertEqual(params, (start_date, end_date, 0.05, start_date, end_date))
+        self.assertEqual(result, [1, 2])
+        self.mock_cursor.close.assert_called_once()
+
     def test_get_dashboard_sales(self):
         mock_result = {"total": Decimal("1000.50")}
         self.mock_cursor.fetchone.return_value = mock_result

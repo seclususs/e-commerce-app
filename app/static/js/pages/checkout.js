@@ -67,6 +67,8 @@ function initCheckoutForm() {
 
         const applyBtn = document.getElementById('applyVoucherBtn');
         if (applyBtn) applyBtn.disabled = true;
+        const voucherSelect = document.getElementById('user_voucher_id_select');
+        if (voucherSelect) voucherSelect.disabled = true;
 
         buttons.forEach(btn => {
             btn.disabled = true;
@@ -102,37 +104,77 @@ function initMobileCtaHandlers() {
 
 function initVoucherHandler() {
     const applyBtn = document.getElementById('applyVoucherBtn');
-    const voucherInput = document.getElementById('voucher_code');
+    const voucherCodeInput = document.getElementById('voucher_code');
     const messageEl = document.getElementById('voucher-message');
-    if (!applyBtn || !voucherInput || !messageEl) return;
+    const voucherSelect = document.getElementById('user_voucher_id_select');
+    const userVoucherIdInput = document.getElementById('user_voucher_id_input');
 
-    const applyVoucher = async () => {
-        const code = voucherInput.value.trim();
-        if (!code) return;
+    if (!applyBtn || !voucherCodeInput || !messageEl || !userVoucherIdInput) return;
 
-        applyBtn.disabled = true;
-        messageEl.textContent = 'Memvalidasi...';
+    const setVoucherLoading = (isLoading) => {
+        if (applyBtn) applyBtn.disabled = isLoading;
+        if (voucherCodeInput) voucherCodeInput.disabled = isLoading;
+        if (voucherSelect) voucherSelect.disabled = isLoading;
+        messageEl.textContent = isLoading ? 'Memvalidasi...' : '';
         messageEl.className = 'voucher-feedback';
+    };
 
+    const resetDiscount = () => {
+        messageEl.textContent = '';
+        messageEl.className = 'voucher-feedback';
+        const discountEl = document.getElementById('checkoutDiscount');
+        discountEl.textContent = '- Rp 0';
+        discountEl.dataset.rawAmount = '0';
+        document.querySelector('.discount-row').style.display = 'none';
+
+        if (voucherSelect) voucherSelect.value = '';
+        if (voucherCodeInput) voucherCodeInput.value = '';
+        if (userVoucherIdInput) userVoucherIdInput.value = '';
+
+        if (voucherCodeInput) voucherCodeInput.disabled = false;
+        if (voucherSelect) voucherSelect.disabled = false;
+        if (applyBtn) applyBtn.disabled = false;
+
+        const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
+        cityElement?.dispatchEvent(new Event('recalc'));
+    };
+
+    const applyVoucherRequest = async (payload) => {
+        setVoucherLoading(true);
         const subtotal = Number(cartStore.getState().subtotal) || 0;
         if (isNaN(subtotal)) {
-            applyBtn.disabled = false;
+            setVoucherLoading(false);
             return;
-        };
+        }
 
         try {
             const response = await fetch('/api/apply-voucher', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ voucher_code: code, subtotal: subtotal })
+                body: JSON.stringify({ ...payload, subtotal: subtotal })
             });
             const result = await response.json();
 
             if (result.success) {
                 messageEl.textContent = result.message;
                 messageEl.classList.add('success');
-                document.getElementById('checkoutDiscount').textContent = `- ${formatRupiah(result.discount_amount)}`;
+                
+                const discountAmount = result.discount_amount;
+                const discountEl = document.getElementById('checkoutDiscount');
+                discountEl.textContent = `- ${formatRupiah(discountAmount)}`;
+                discountEl.dataset.rawAmount = discountAmount;
                 document.querySelector('.discount-row').style.display = 'flex';
+                
+                if (result.user_voucher_id) {
+                    userVoucherIdInput.value = result.user_voucher_id;
+                    voucherCodeInput.value = '';
+                    voucherCodeInput.disabled = true;
+                } else if (result.code) {
+                    userVoucherIdInput.value = '';
+                    if (voucherSelect) voucherSelect.value = '';
+                    if (voucherSelect) voucherSelect.disabled = true;
+                }
+                
                 const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
                 cityElement?.dispatchEvent(new Event('recalc'));
             } else {
@@ -144,37 +186,52 @@ function initVoucherHandler() {
             console.error('Voucher apply error:', error);
             messageEl.textContent = 'Gagal terhubung ke server.';
             messageEl.classList.add('error');
+            resetDiscount();
         } finally {
-            applyBtn.disabled = false;
+            setVoucherLoading(false);
+            if (payload.voucher_code) {
+                if (voucherSelect) voucherSelect.disabled = !messageEl.classList.contains('error');
+            } else if (payload.user_voucher_id) {
+                voucherCodeInput.disabled = !messageEl.classList.contains('error');
+            }
         }
     };
-
-    const resetDiscount = () => {
-        messageEl.textContent = '';
-        messageEl.className = 'voucher-feedback';
-        document.querySelector('.discount-row').style.display = 'none';
-        document.getElementById('checkoutDiscount').textContent = '- Rp 0';
-        voucherInput.value = '';
-        document.getElementById('voucher_code').name = 'voucher_code';
-        const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
-        cityElement?.dispatchEvent(new Event('recalc'));
-    };
-
-    applyBtn.addEventListener('click', applyVoucher);
-
-    voucherInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            applyVoucher();
+    
+    applyBtn.addEventListener('click', () => {
+        const code = voucherCodeInput.value.trim();
+        if (code) {
+            applyVoucherRequest({ voucher_code: code });
         }
     });
 
-    voucherInput.addEventListener('input', () => {
-        if (messageEl.textContent !== '') {
+    voucherCodeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const code = voucherCodeInput.value.trim();
+            if (code) {
+                applyVoucherRequest({ voucher_code: code });
+            }
+        }
+    });
+
+    voucherCodeInput.addEventListener('input', () => {
+        if (messageEl.textContent !== '' || (voucherSelect && voucherSelect.value !== '')) {
             resetDiscount();
         }
     });
+
+    if (voucherSelect) {
+        voucherSelect.addEventListener('change', (e) => {
+            const userVoucherId = e.target.value;
+            if (userVoucherId) {
+                applyVoucherRequest({ user_voucher_id: userVoucherId });
+            } else {
+                resetDiscount();
+            }
+        });
+    }
 }
+
 
 function initStockHoldTimer(expiresAtIsoString) {
     const expiresAtInput = document.getElementById('stock_hold_expires_at');
@@ -278,10 +335,8 @@ function initShippingCalculation() {
         }
 
         const subtotal = Number(cartStore.getState().subtotal) || 0;
-        const discountText = discountEl.textContent || '0';
-        const discount = parseFloat(discountText.replace(/[^\d.-]/g, '')) || 0;
-
-        const finalTotal = subtotal + shippingCost + discount;
+        const discount = parseFloat(discountEl.dataset.rawAmount || '0') || 0;
+        const finalTotal = subtotal + shippingCost - discount; 
         totalEl.textContent = formatRupiah(finalTotal);
         shippingCostInput.value = shippingCost;
     };

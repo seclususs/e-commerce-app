@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import mysql.connector
 from flask import (
-    Response, flash, jsonify, redirect, 
+    Response, flash, jsonify, redirect,
     render_template, request, session, url_for
 )
 from mysql.connector.connection import MySQLConnection
@@ -14,6 +14,7 @@ from app.exceptions.database_exceptions import (
     DatabaseException, RecordNotFoundError
 )
 from app.exceptions.service_exceptions import ServiceLogicError
+from app.services.orders.voucher_service import voucher_service
 from app.services.users.user_service import user_service
 from app.utils.logging_utils import get_logger
 from app.utils.route_decorators import login_required
@@ -68,14 +69,20 @@ def user_profile() -> Union[str, Response, Tuple[Response, int]]:
             (user_id,),
         )
         orders: List[Dict[str, Any]] = cursor.fetchall()
+
+        my_vouchers: List[Dict[str, Any]] = (
+            voucher_service.get_available_vouchers_for_user(user_id)
+        )
+
         logger.info(
-            f"Berhasil mengambil profil dan {len(orders)} pesanan "
-            f"untuk ID pengguna: {user_id}"
+            f"Berhasil mengambil profil, {len(orders)} pesanan, "
+            f"dan {len(my_vouchers)} voucher untuk ID pengguna: {user_id}"
         )
 
         render_args = {
             "user": user,
             "orders": orders,
+            "my_vouchers": my_vouchers,
             "content": get_content(),
         }
 
@@ -191,7 +198,7 @@ def edit_profile() -> Union[str, Response, Tuple[Response, int]]:
                     f"untuk pengguna {user_id}."
                 )
                 raise ValidationError("Aksi tidak dikenal.")
-            
+
         except (ValidationError, AuthError) as user_error:
             logger.warning(
                 f"Kesalahan memproses edit profil '{action}' "
@@ -268,7 +275,7 @@ def edit_profile() -> Union[str, Response, Tuple[Response, int]]:
             )
         flash(message, "danger")
         return redirect(url_for("auth.login"))
-    
+
     except (DatabaseException, ServiceLogicError) as e:
         logger.error(
             f"Kesalahan saat memuat edit profil pengguna {user_id}: {e}",
@@ -279,7 +286,7 @@ def edit_profile() -> Union[str, Response, Tuple[Response, int]]:
             return jsonify({"success": False, "message": message}), 500
         flash(message, "danger")
         return redirect(url_for("user.user_profile"))
-    
+
     except Exception as e:
         logger.error(
             f"Kesalahan tak terduga saat memuat edit profil pengguna {user_id}: {e}",

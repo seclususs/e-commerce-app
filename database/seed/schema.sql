@@ -149,3 +149,18 @@ CREATE TABLE stock_holds (
     INDEX idx_session_id (session_id),
     INDEX idx_expires_at (expires_at)
 );
+
+CREATE TABLE user_vouchers (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    voucher_id INT NOT NULL,
+    status ENUM('available', 'used') NOT NULL DEFAULT 'available',
+    claimed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    used_at DATETIME,
+    order_id INT,
+    UNIQUE KEY uk_user_voucher (user_id, voucher_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
+    INDEX idx_user_status (user_id, status)
+);

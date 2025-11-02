@@ -103,7 +103,7 @@ class TestAdminVoucherRoutes(BaseTestCase):
     def test_toggle_voucher_post_success(self):
         self.mock_voucher_service.toggle_voucher_status.return_value = {
             "success": True,
-            "is_active": False,
+            "data": {"id": 1, "is_active": False}
         }
         
         with self.client.session_transaction() as sess:

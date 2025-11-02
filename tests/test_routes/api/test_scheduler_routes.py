@@ -26,6 +26,10 @@ class TestApiSchedulerRoutes(BaseTestCase):
             "success": True,
             "cancelled_count": 2,
         }
+        self.mock_scheduler_service.grant_segmented_vouchers.return_value = {
+            "success": True,
+            "granted_count": 1,
+        }
         response = self.client.post(
             url_for("api.run_scheduler_jobs"),
             headers={"X-API-Key": "test_secret"},
@@ -33,7 +37,25 @@ class TestApiSchedulerRoutes(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertTrue(data["success"])
-        self.assertEqual(data["cancelled_count"], 2)
+        self.assertIn("2 pesanan dibatalkan", data["message"])
+        self.assertIn("1 voucher top spender diberikan", data["message"])
+
+    def test_run_scheduler_jobs_partial_fail(self):
+        self.mock_scheduler_service.cancel_expired_pending_orders.return_value = {
+            "success": True,
+            "cancelled_count": 2,
+        }
+        self.mock_scheduler_service.grant_segmented_vouchers.return_value = {
+            "success": False,
+            "granted_count": 0,
+        }
+        response = self.client.post(
+            url_for("api.run_scheduler_jobs"),
+            headers={"X-API-Key": "test_secret"},
+        )
+        self.assertEqual(response.status_code, 500)
+        data = json.loads(response.data)
+        self.assertFalse(data["success"])
 
     def test_run_scheduler_jobs_unauthorized(self):
         response = self.client.post(

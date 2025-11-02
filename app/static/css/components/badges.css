@@ -1,45 +1,46 @@
 .product-image .discount-badge {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 2;
+position: absolute;
+top: 10px;
+left: 10px;
+z-index: 2;
 }
 
 .discount-badge {
-    background-color: var(--color-danger);
-    color: var(--color-white);
-    padding: 0.3rem 0.6rem;
-    border-radius: var(--border-radius-sm);
-    font-size: 0.8rem;
-    font-weight: 600;
+background-color: var(--color-danger);
+color: var(--color-white);
+padding: 0.3rem 0.6rem;
+border-radius: var(--border-radius-sm);
+font-size: 0.8rem;
+font-weight: 600;
 }
 
-/* Status Badge */
 .status-badge {
-    padding: 0.3rem 0.8rem;
-    border-radius: var(--border-radius-full);
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: capitalize;
-    color: var(--color-white);
+padding: 0.3rem 0.8rem;
+border-radius: var(--border-radius-full);
+font-size: 0.8rem;
+font-weight: 600;
+text-transform: capitalize;
+color: var(--color-white);
+display: inline-block;
+white-space: nowrap;
 }
 
 .status-pending {
-    background-color: var(--color-warning);
+background-color: var(--color-warning);
 }
 
 .status-processing {
-    background-color: var(--color-primary);
+background-color: var(--color-primary);
 }
 
 .status-shipped {
-    background-color: var(--color-info);
+background-color: var(--color-info);
 }
 
 .status-completed {
-    background-color: var(--color-success);
+background-color: var(--color-success);
 }
 
 .status-cancelled {
-    background-color: var(--color-danger);
+background-color: var(--color-danger);
 }

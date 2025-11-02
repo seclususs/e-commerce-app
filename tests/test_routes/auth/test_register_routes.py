@@ -44,9 +44,11 @@ class TestAuthRegisterRoutes(BaseTestCase):
         response = self.client.post(
             url_for("auth.register"),
             data={"username": "newuser", "email": "a@b.c", "password": "pw"},
+            follow_redirects=True
         )
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.location.startswith(url_for("product.products_page", _external=False)))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Voucher selamat datang", response.data)
 
         with self.client.session_transaction() as sess:
             self.assertEqual(sess["user_id"], 1)
@@ -81,14 +83,15 @@ class TestAuthRegisterRoutes(BaseTestCase):
                 "password": "pw",
                 "order_id": "100",
             },
+            follow_redirects=True
         )
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.location.startswith(url_for("user.user_profile", _external=False)))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Akun berhasil dibuat! Voucher selamat datang", response.data)
 
         with self.client.session_transaction() as sess:
             self.assertEqual(sess["user_id"], 2)
             
-        self.mock_cursor.execute.assert_called_with(
+        self.mock_cursor.execute.assert_any_call(
             "UPDATE orders SET user_id = %s "
             "WHERE id = %s AND user_id IS NULL",
             (2, "100"),

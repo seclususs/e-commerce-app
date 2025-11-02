@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, patch
 import mysql.connector
 
 from app.services.products.product_service import ProductService
-from app.exceptions.api_exceptions import ValidationError
 
 
 class TestProductService(BaseTestCase):
@@ -16,6 +15,7 @@ class TestProductService(BaseTestCase):
         self.mock_image_svc = MagicMock()
         self.mock_variant_conv_svc = MagicMock()
         self.mock_variant_svc = MagicMock()
+        self.mock_stock_svc = MagicMock()
         
         self.patch_get_db_extra = patch(
             'app.services.products.product_service.get_db_connection',
@@ -28,7 +28,8 @@ class TestProductService(BaseTestCase):
             variant_repo=self.mock_variant_repo,
             image_svc=self.mock_image_svc,
             variant_conversion_svc=self.mock_variant_conv_svc,
-            variant_svc=self.mock_variant_svc
+            variant_svc=self.mock_variant_svc,
+            stock_svc=self.mock_stock_svc
         )
         
         self.mock_form = {
@@ -46,8 +47,15 @@ class TestProductService(BaseTestCase):
             "main.jpg", ["add.jpg"], [], [], None
         )
         self.mock_product_repo.create.return_value = 1
-        new_product = {"id": 1, "name": "Test Product"}
+        
+        new_product = {
+            "id": 1, 
+            "name": "Test Product",
+            "additional_image_urls": '["add.jpg"]',
+            "image_url": "main.jpg"
+        }
         self.mock_product_repo.find_with_category.return_value = new_product
+        self.mock_stock_svc.get_available_stock.return_value = 10
         
         result = self.product_service.create_product(
             self.mock_form, self.mock_files
@@ -55,8 +63,11 @@ class TestProductService(BaseTestCase):
         
         self.mock_image_svc.handle_image_upload.assert_called_once()
         self.mock_product_repo.create.assert_called_once()
+        self.mock_stock_svc.get_available_stock.assert_called_once_with(1, None, self.db_conn)
         self.assertEqual(result["success"], True)
-        self.assertEqual(result["product"], new_product)
+        self.assertIn("all_images", result["product"])
+        self.assertEqual(result["product"]["all_images"], ["main.jpg", "add.jpg"])
+        self.assertEqual(result["product"]["stock"], 10)
 
     def test_create_product_image_error(self):
         self.mock_image_svc.handle_image_upload.return_value = (

@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional
+import json
+from typing import Any, Dict, Optional
 
 import mysql.connector
 from mysql.connector.connection import MySQLConnection
@@ -20,6 +21,7 @@ from app.services.products.variant_conversion_service import (
     VariantConversionService, variant_conversion_service
 )
 from app.services.products.variant_service import VariantService, variant_service
+from app.services.orders.stock_service import StockService, stock_service
 from app.utils.logging_utils import get_logger
 
 
@@ -37,12 +39,14 @@ class ProductService:
             variant_conversion_service
         ),
         variant_svc: VariantService = variant_service,
+        stock_svc: StockService = stock_service
     ):
         self.product_repository = product_repo
         self.variant_repository = variant_repo
         self.image_service = image_svc
         self.variant_conversion_service = variant_conversion_svc
         self.variant_service = variant_svc
+        self.stock_service = stock_svc
 
 
     def create_product(
@@ -103,14 +107,35 @@ class ProductService:
             product_id: int = self.product_repository.create(
                 conn, product_data
             )
+            conn.commit()
             new_product_details = (
                 self.product_repository.find_with_category(conn, product_id)
             )
             if not new_product_details:
+                logger.error(
+                    f"Gagal membaca kembali produk {product_id} setelah commit."
+                    )
                 raise RecordNotFoundError(
                     "Gagal mengambil detail produk setelah dibuat."
                 )
-            conn.commit()
+            
+            new_product_details["stock"] = self.stock_service.get_available_stock(
+                product_id, None, conn
+            )
+            new_product_details["variants"] = []
+            try:
+                new_product_details["additional_image_urls"] = (
+                    json.loads(new_product_details["additional_image_urls"])
+                    if new_product_details["additional_image_urls"]
+                    else []
+                )
+            except (json.JSONDecodeError, TypeError):
+                new_product_details["additional_image_urls"] = []
+            
+            new_product_details["all_images"] = [new_product_details["image_url"]] + new_product_details[
+                "additional_image_urls"
+            ]
+
             logger.info(
                 f"Service: Produk '{product_data['name']}' berhasil dibuat dengan ID: {product_id}"
             )
@@ -148,7 +173,7 @@ class ProductService:
                 f"Terjadi kesalahan database integritas: {e}"
             )
         
-        except ValidationError as ve:
+        except (ValidationError, RecordNotFoundError) as ve:
             if conn and conn.is_connected():
                 conn.rollback()
             logger.warning(
@@ -472,5 +497,5 @@ class ProductService:
 
 product_service = ProductService(
     product_repository, variant_repository, image_service,
-    variant_conversion_service, variant_service
+    variant_conversion_service, variant_service, stock_service
 )

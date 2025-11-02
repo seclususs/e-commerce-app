@@ -17,14 +17,7 @@ export function initAdminProductFilter() {
 
     const handleFilterRequest = async (isReset = false) => {
         const params = isReset ? new URLSearchParams() : new URLSearchParams(new FormData(filterForm));
-
-        if (!isReset) {
-            for (let [key, value] of new FormData(filterForm).entries()) {
-                if (!value) {
-                    params.delete(key);
-                }
-            }
-        }
+        params.set('is_filter_request', 'true');
 
         const url = `${filterForm.action}?${params.toString()}`;
         tableBody.style.opacity = '0.5';

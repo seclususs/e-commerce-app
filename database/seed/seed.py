@@ -101,26 +101,6 @@ def seed_database():
                 for user in data["users"]
             ]
 
-            reg_count = data.get("regular_users_count", 0)
-            reg_pass = data.get("regular_user_password", "password123")
-            hashed_reg_pass = generate_password_hash(reg_pass)
-
-            for i in range(1, reg_count + 1):
-                users_to_add.append(
-                    (
-                        f"user{i}",
-                        f"user{i}@example.com",
-                        hashed_reg_pass,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        0,
-                    )
-                )
-
             cursor.executemany(
                 """
                 INSERT INTO users (
@@ -132,6 +112,32 @@ def seed_database():
             )
             connection.commit()
             print(f"- Data 'users' ({len(users_to_add)} baris) berhasil dimasukkan.")
+
+        if "vouchers" in data:
+            vouchers_data = [
+                (
+                    item["code"],
+                    item["type"],
+                    item["value"],
+                    item.get("max_uses"),
+                    item.get("min_purchase_amount", 0),
+                    item.get("is_active", 1)
+                )
+                for item in data["vouchers"]
+            ]
+            if vouchers_data:
+                cursor.executemany(
+                    """
+                    INSERT INTO vouchers
+                    (code, type, value, max_uses, min_purchase_amount, is_active)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """,
+                    vouchers_data,
+                )
+                connection.commit()
+                print(f"- Data 'vouchers' ({len(vouchers_data)} baris) berhasil dimasukkan.")
+            else:
+                print("- Tidak ada data 'vouchers' untuk dimasukkan.")
 
         print("\nSetup database dan seeding selesai.")
 

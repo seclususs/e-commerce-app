@@ -42,27 +42,15 @@ export async function handleAjaxSubmit(form, button) {
         if (response.ok && result.success) {
             showNotification(result.message || 'Berhasil!', false);
             handleUIUpdate(form, result);
-             if (form.hasAttribute('data-reset-on-success') && form.getAttribute('data-reset-on-success') === 'true') {
-                form.reset();
-                 if (form.id === 'add-product-form') {
-                    const previewContainer = document.getElementById('image-previews');
-                    const fileNameDisplay = document.getElementById('file-name');
-                    if (previewContainer) previewContainer.innerHTML = '';
-                    if (fileNameDisplay) fileNameDisplay.textContent = 'Belum ada file dipilih';
-                    const hasVariantsCheckbox = document.getElementById('has-variants-checkbox');
-                    if (hasVariantsCheckbox) {
-                        hasVariantsCheckbox.checked = false;
-                        hasVariantsCheckbox.dispatchEvent(new Event('change'));
-                    }
-                    priceInputs.forEach(input => input.value = '');
-                 } else {
-                     priceInputs.forEach(input => input.value = '');
-                 }
-            } else {
+            if (!(form.hasAttribute('data-reset-on-success') && form.getAttribute('data-reset-on-success') === 'true')) {
                  priceInputs.forEach(input => {
                      const inputName = input.name;
                      if (result.data && typeof result.data[inputName] !== 'undefined') {
-                         input.value = formatPrice(result.data[inputName]);
+                         if (input.name === 'price' || input.name === 'discount_price') {
+                            input.value = formatPrice(result.data[inputName]);
+                         } else {
+                            input.value = result.data[inputName];
+                         }
                      } else {
                          input.value = originalPrices.get(input);
                      }
@@ -80,14 +68,7 @@ export async function handleAjaxSubmit(form, button) {
          priceInputs.forEach(input => input.value = originalPrices.get(input));
     } finally {
         const action = form.dataset.updateAction || 'none';
-        if (action !== 'redirect' && !(form.hasAttribute('data-reset-on-success') && form.getAttribute('data-reset-on-success') === 'true')) {
-             setTimeout(() => {
-                if (button) {
-                    button.disabled = false;
-                    button.innerHTML = originalButtonHTML;
-                }
-             }, 100);
-        } else if (action !== 'redirect') {
+        if (action !== 'redirect') {
              setTimeout(() => {
                 if (button) {
                     button.disabled = false;
@@ -152,7 +133,14 @@ function handleAjaxDelete(link) {
 async function handleAjaxToggle(link) {
     const url = link.href;
     const row = link.closest('tr');
-    const originalLinkText = link.textContent;
+    if (!row) {
+        console.error('Toggle link clicked, but parent <tr> not found.', link);
+        return;
+    }
+    
+    const originalLinkText = link.textContent.trim();
+    const isCurrentlyActive = (originalLinkText.toLowerCase() === 'nonaktifkan');
+
     link.innerHTML = `<span class="spinner" style="display: inline-block; width: 0.8em; height: 0.8em; border-width: 2px;"></span>`;
     link.style.pointerEvents = 'none';
 
@@ -161,23 +149,31 @@ async function handleAjaxToggle(link) {
              method: 'POST',
              headers: {'X-Requested-With': 'XMLHttpRequest'}
         });
+        
         const result = await response.json();
-        if (response.ok && result.success && result.data) {
-            showNotification(result.message);
+        
+        if (response.ok && result.success) {
+            showNotification(result.message || "Status diperbarui!");
 
-            if (row) {
-                const statusCell = row.querySelector('.status-cell');
-                const newStatus = result.data.is_active;
-                if (statusCell) {
-                    statusCell.innerHTML = `<span class="status-badge status-${newStatus ? 'completed' : 'cancelled'}">${newStatus ? 'Aktif' : 'Nonaktif'}</span>`;
-                }
-                link.textContent = newStatus ? 'Nonaktifkan' : 'Aktifkan';
+            const statusCell = row.querySelector('.status-cell');
+            const newStatus = !isCurrentlyActive;
+
+            if (statusCell) {
+                const statusClass = newStatus ? 'completed' : 'cancelled';
+                const statusText = newStatus ? 'Aktif' : 'Nonaktif';
+                statusCell.innerHTML = `<span class="status-badge status-${statusClass}">${statusText}</span>`;
+            } else {
+                console.warn('Could not find .status-cell in row:', row);
             }
+            
+            link.textContent = newStatus ? 'Nonaktifkan' : 'Aktifkan';
+            
         } else {
             showNotification(result.message || 'Gagal mengubah status.', true);
             link.textContent = originalLinkText;
         }
     } catch (error) {
+        console.error('AJAX Toggle Error:', error);
         showNotification('Error koneksi.', true);
         link.textContent = originalLinkText;
     } finally {

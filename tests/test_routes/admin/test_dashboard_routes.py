@@ -91,6 +91,10 @@ class TestAdminDashboardRoutes(BaseTestCase):
             "success": True,
             "cancelled_count": 2,
         }
+        self.mock_scheduler_service.grant_segmented_vouchers.return_value = {
+            "success": True,
+            "granted_count": 1,
+        }
 
         with self.client.session_transaction() as sess:
             sess["user_id"] = 1
@@ -101,4 +105,5 @@ class TestAdminDashboardRoutes(BaseTestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
         self.assertTrue(data["success"])
-        self.assertIn("2 pesanan", data["message"])
+        self.assertIn("2 pesanan kedaluwarsa", data["message"])
+        self.assertIn("1 voucher top spender", data["message"])

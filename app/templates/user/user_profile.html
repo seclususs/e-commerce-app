@@ -3,69 +3,90 @@
 {% block title %}Profil Saya - {{ content.app_name }}{% endblock %}
 
 {% block content %}
-<section class="user-profile-section">
-    <div class="profile-container animated-element">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-            <h2 class="section-title" style="margin: 0;">Profil Saya</h2>
-            <a href="{{ url_for('user.edit_profile') }}" class="cta-button-secondary">Edit Profil</a>
+<section class="user-profile-section animated-element">
+    <div class="profile-container">
+        <div class="profile-header">
+            <h2 class="section-title">Profil Saya</h2>
+            <a href="{{ url_for('user.edit_profile') }}" class="cta-button-secondary" data-ajax-nav="true">
+                <i class="fas fa-pen"></i> <span>Edit Profil</span>
+            </a>
         </div>
 
-        <div class="admin-card animated-element" data-animation-delay="200">
-            <div class="order-detail-grid">
-                <div>
+        <div class="profile-info-card animated-element" data-animation-delay="200">
+            <div class="profile-info-grid">
+                <div class="info-item">
                     <h3>Informasi Akun</h3>
                     <p><strong>Username:</strong> {{ user.username }}</p>
                     <p><strong>Email:</strong> {{ user.email }}</p>
                 </div>
-                <div>
+                <div class="info-item">
                     <h3>Alamat Utama</h3>
                     {% if user.address_line_1 %}
                         <p><strong>Telepon:</strong> {{ user.phone }}</p>
-                        <p>{{ user.address_line_1 }}<br>
+                        <p class="address-text">
+                           {{ user.address_line_1 }}<br>
                            {% if user.address_line_2 %}{{ user.address_line_2 }}<br>{% endif %}
                            {{ user.city }}, {{ user.province }} {{ user.postal_code }}
                         </p>
                     {% else %}
-                        <p style="color: #94a3b8;">Anda belum mengatur alamat utama.</p>
+                        <p class="address-placeholder">Anda belum mengatur alamat utama.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
 
-        <div class="admin-card animated-element" data-animation-delay="400">
-            <h3>Riwayat Pesanan</h3>
-            <div class="table-wrapper">
-                <table class="admin-table user-profile-orders">
-                    <thead><tr><th>ID Pesanan</th><th>Tanggal</th><th>Total</th><th>Status</th><th>No. Resi</th><th>Aksi</th></tr></thead>
-                    <tbody id="orders-list">
-                        {% for order in orders %}
-                        <tr id="order-row-{{ order.id }}">
-                            <td data-label="ID Pesanan:">#{{ order.id }}</td>
-                            <td data-label="Tanggal:">{{ order.order_date.strftime('%Y-%m-%d') }}</td>
-                            <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
-                            <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status|status_translate }}</span></td>
-                            <td data-label="No. Resi:">{{ order.tracking_number or '-' }}</td>
-                            <td data-label="Aksi:" class="profile-order-actions">
-                                <div class="action-buttons-container">
-                                    <a href="{{ url_for('user.track_order', order_id=order.id) }}" class="cta-button-secondary action-btn">Lacak</a>
-                                    {% if order.status in ['Menunggu Pembayaran', 'Diproses'] %}
-                                        <button class="btn-cancel ajax-cancel-order action-btn"
-                                                data-order-id="{{ order.id }}"
-                                                data-url="{{ url_for('purchase.cancel_order', order_id=order.id) }}">
-                                            Batalkan
-                                        </button>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="6" style="text-align: center;">Anda belum memiliki riwayat pesanan.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <div class="profile-tabs-container animated-element" data-animation-delay="400">
+            <div class="profile-tabs">
+                <button class="profile-tab-btn active" data-tab="tab-orders">
+                    <i class="fas fa-receipt"></i> <span>Riwayat Pesanan</span>
+                </button>
+                <button class="profile-tab-btn" data-tab="tab-vouchers">
+                    <i class="fas fa-ticket-alt"></i> <span>Voucher Saya</span>
+                </button>
+            </div>
+
+            <div id="tab-orders" class="profile-tab-content active">
+                <div class="profile-tab-card">
+                    <h3>Riwayat Pesanan</h3>
+                    <div class="table-wrapper">
+                        <table class="admin-table user-profile-orders">
+                            <thead><tr><th>ID Pesanan</th><th>Tanggal</th><th>Total</th><th>Status</th><th>No. Resi</th><th>Aksi</th></tr></thead>
+                            <tbody id="orders-list">
+                                {% for order in orders %}
+                                <tr id="order-row-{{ order.id }}">
+                                    <td data-label="ID Pesanan:">#{{ order.id }}</td>
+                                    <td data-label="Tanggal:">{{ order.order_date.strftime('%Y-%m-%d') }}</td>
+                                    <td data-label="Total:">{{ order.total_amount|rupiah }}</td>
+                                    <td data-label="Status:"><span class="status-badge status-{{ order.status|status_class }}">{{ order.status|status_translate }}</span></td>
+                                    <td data-label="No. Resi:">{{ order.tracking_number or '-' }}</td>
+                                    <td data-label="Aksi:" class="profile-order-actions">
+                                        <div class="action-buttons-container">
+                                            <a href="{{ url_for('user.track_order', order_id=order.id) }}" class="cta-button-secondary action-btn" data-ajax-nav="true">Lacak</a>
+                                            {% if order.status in ['Menunggu Pembayaran', 'Diproses'] %}
+                                                <button class="btn-cancel ajax-cancel-order action-btn"
+                                                        data-order-id="{{ order.id }}"
+                                                        data-url="{{ url_for('purchase.cancel_order', order_id=order.id) }}">
+                                                    Batalkan
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="6" style="text-align: center;">Anda belum memiliki riwayat pesanan.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-vouchers" class="profile-tab-content">
+                {% include 'partials/user/_my_vouchers.html' %}
             </div>
         </div>
-        <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary" style="display:inline-block; margin-top: 2rem;">Lanjutkan Belanja</a>
+
+        <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary" style="display:inline-block; margin-top: 2rem;" data-ajax-nav="true">Lanjutkan Belanja</a>
     </div>
 </section>
 {% endblock %}

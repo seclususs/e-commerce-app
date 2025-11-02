@@ -1,0 +1,34 @@
+<div class="profile-tab-card animated-element" data-animation-delay="100">
+    <h3>Klaim Voucher Baru</h3>
+    <form id="claim-voucher-form" class="form-actions" data-ajax="true" data-url="{{ url_for('api.claim_voucher') }}">
+        <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+            <label for="claim_voucher_code" class="sr-only">Kode Voucher</label>
+            <input type="text" id="claim_voucher_code" name="voucher_code" placeholder="Masukkan kode voucher..." required class="form-control">
+        </div>
+        <button type="submit" class="cta-button">Klaim</button>
+    </form>
+</div>
+
+<div class="profile-tab-card animated-element" data-animation-delay="300">
+    <h3>Voucher Tersedia</h3>
+    <div class="voucher-list-container">
+        {% for v in my_vouchers %}
+        <div class="voucher-card">
+            <div class="voucher-code">
+                <strong>{{ v.code }}</strong>
+            </div>
+            <div class="voucher-details">
+                {% if v.type == 'PERCENTAGE' %}
+                    <p>Diskon {{ v.value|int }}%</p>
+                {% else %}
+                    <p>Diskon {{ v.value|rupiah }}</p>
+                {% endif %}
+                <small>Min. Belanja: {{ v.min_purchase_amount|rupiah }}</small>
+            </div>
+            <button class="cta-button-secondary copy-voucher-btn" data-code="{{ v.code }}">Salin Kode</button>
+        </div>
+        {% else %}
+        <p style="color: var(--color-text-med); text-align: center;">Anda belum memiliki voucher.</p>
+        {% endfor %}
+    </div>
+</div>

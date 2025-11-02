@@ -1,6 +1,7 @@
 import json
 from unittest.mock import patch, MagicMock
 from datetime import datetime
+from decimal import Decimal
 
 from flask import url_for
 
@@ -26,6 +27,13 @@ class TestUserProfileRoutes(BaseTestCase):
         
         self.mock_cursor = MagicMock()
         patch.object(self.db_conn, 'cursor', return_value=self.mock_cursor).start()
+        
+        self.voucher_service_patch = patch(
+            "app.routes.user.profile_routes.voucher_service"
+        )
+        self.mock_voucher_service = self.voucher_service_patch.start()
+        self.mock_voucher_service.get_available_vouchers_for_user.return_value = []
+
 
     def tearDown(self):
         self.mock_cursor.reset_mock()
@@ -49,12 +57,26 @@ class TestUserProfileRoutes(BaseTestCase):
         ]
         self.mock_cursor.fetchall.return_value = mock_orders
         
+        mock_vouchers = [
+            {
+                "code": "TESTV", 
+                "value": 10000, 
+                "type": "FIXED_AMOUNT",
+                "min_purchase_amount": Decimal('0.00') 
+            }
+        ]
+        self.mock_voucher_service.get_available_vouchers_for_user.return_value = mock_vouchers
+        
         response = self.client.get(url_for("user.user_profile"))
         
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Profil Saya", response.data)
         self.assertIn(b"Selesai", response.data)
         self.assertIn(b"RESI123", response.data)
+        self.assertIn(b"TESTV", response.data)
+        self.assertIn(b"Min. Belanja: Rp 0", response.data)
+        self.mock_voucher_service.get_available_vouchers_for_user.assert_called_with(1)
+
 
     def test_user_profile_get_user_not_found(self):
 
@@ -67,6 +89,9 @@ class TestUserProfileRoutes(BaseTestCase):
         self.assertEqual(response.status_code, 302)
         with self.client.session_transaction() as sess:
             self.assertIsNone(sess.get("user_id"))
+        
+        self.mock_voucher_service.get_available_vouchers_for_user.assert_not_called()
+
 
     def test_edit_profile_get_success(self):
 

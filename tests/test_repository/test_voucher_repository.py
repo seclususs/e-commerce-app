@@ -1,5 +1,5 @@
 from decimal import Decimal
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from tests.base_test_case import BaseTestCase
 from app.repository.voucher_repository import (

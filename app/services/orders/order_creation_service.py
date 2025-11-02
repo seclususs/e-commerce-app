@@ -23,6 +23,9 @@ from app.repository.product_repository import (
     ProductRepository, product_repository
 )
 from app.repository.stock_repository import StockRepository, stock_repository
+from app.repository.user_voucher_repository import (
+    UserVoucherRepository, user_voucher_repository
+)
 from app.repository.voucher_repository import (
     VoucherRepository, voucher_repository
 )
@@ -30,6 +33,9 @@ from app.services.orders.discount_service import (
     DiscountService, discount_service
 )
 from app.services.orders.stock_service import StockService, stock_service
+from app.services.orders.voucher_service import (
+    VoucherService, voucher_service
+)
 from app.services.products.variant_service import (
     VariantService, variant_service
 )
@@ -55,6 +61,8 @@ class OrderCreationService:
         discount_svc: DiscountService = discount_service,
         stock_svc: StockService = stock_service,
         variant_svc: VariantService = variant_service,
+        voucher_svc: VoucherService = voucher_service,
+        user_voucher_repo: UserVoucherRepository = user_voucher_repository
     ):
         self.stock_repository = stock_repo
         self.product_repository = product_repo
@@ -66,6 +74,8 @@ class OrderCreationService:
         self.discount_service = discount_svc
         self.stock_service = stock_svc
         self.variant_service = variant_svc
+        self.voucher_service = voucher_svc
+        self.user_voucher_repository = user_voucher_repo
 
 
     def _get_held_items(
@@ -111,7 +121,7 @@ class OrderCreationService:
                 "Kesalahan database saat mengambil item yang "
                 f"ditahan: {db_err}"
             )
-        
+
 
     def _prepare_items_for_order(
         self, conn: MySQLConnection, held_items: List[Dict[str, Any]]
@@ -126,7 +136,7 @@ class OrderCreationService:
                 "Sesi checkout Anda telah berakhir atau keranjang kosong. "
                 "Silakan kembali ke keranjang."
             )
-        
+
         product_ids = [item["product_id"] for item in held_items]
         logger.debug(
             f"Mempersiapkan item untuk pesanan. ID Produk: {product_ids}"
@@ -156,7 +166,7 @@ class OrderCreationService:
                         f"Produk '{item.get('name', 'N/A')}' "
                         f"tidak lagi tersedia."
                     )
-                
+
                 effective_price = (
                     product["discount_price"]
                     if product["discount_price"]
@@ -175,7 +185,7 @@ class OrderCreationService:
                         "size": item["size"],
                     }
                 )
-            
+
             logger.info(
                 f"Mempersiapkan {len(items_for_order)} item untuk pesanan. "
                 f"Subtotal: {subtotal}"
@@ -191,7 +201,7 @@ class OrderCreationService:
                 "Kesalahan database saat mempersiapkan item "
                 f"pesanan: {db_err}"
             )
-        
+
 
     def _insert_order_and_items(
         self,
@@ -265,12 +275,12 @@ class OrderCreationService:
                 self.history_repository.create(
                     conn, order_id, initial_status, notes
                 )
-            
+
             if payment_method == "COD":
                 self._deduct_stock_for_cod_order(
                     conn, order_id, items_for_order
                 )
-            
+
             return order_id
         
         except mysql.connector.Error as db_err:
@@ -282,7 +292,7 @@ class OrderCreationService:
             raise DatabaseException(
                 f"Kesalahan database saat menyimpan pesanan: {db_err}"
             )
-        
+
 
     def _deduct_stock_for_cod_order(
         self,
@@ -307,7 +317,7 @@ class OrderCreationService:
                     current_stock_row = self.product_repository.lock_stock(
                         conn, lock_id
                     )
-                
+
                 if (
                     not current_stock_row
                     or current_stock_row["stock"] < item["quantity"]
@@ -317,7 +327,7 @@ class OrderCreationService:
                         f"{'varian' if item['variant_id'] else 'produk'} "
                         f"ID {lock_id}"
                     )
-                
+
                 if item["variant_id"]:
                     rowcount = (
                         self.variant_service.variant_repository.decrease_stock(
@@ -329,7 +339,7 @@ class OrderCreationService:
                     rowcount = self.product_repository.decrease_stock(
                         conn, lock_id, item["quantity"]
                     )
-                
+
                 if rowcount == 0:
                     raise ServiceLogicError(
                         f"Gagal mengurangi stok COD (rowcount 0) "
@@ -354,26 +364,39 @@ class OrderCreationService:
             raise DatabaseException(
                 f"Kesalahan database saat mengurangi stok COD: {db_err}"
             )
-        
 
-    def _post_order_cart_cleanup(
+
+    def _post_order_cleanup(
         self,
         conn: MySQLConnection,
         user_id: Optional[int],
         voucher_code: Optional[str],
+        user_voucher_id: Optional[int],
+        order_id: int,
     ) -> None:
         
         try:
             if voucher_code:
-                self.voucher_repository.increment_use_count(conn, voucher_code)
+                self.voucher_repository.increment_use_count(
+                    conn, voucher_code
+                )
                 logger.debug(
                     f"Jumlah penggunaan voucher '{voucher_code}' ditingkatkan."
                 )
-            
+
+            if user_id and user_voucher_id:
+                self.voucher_service.mark_user_voucher_as_used(
+                    conn, user_voucher_id, order_id
+                )
+                logger.debug(
+                    f"UserVoucherID {user_voucher_id} ditandai "
+                    f"sebagai terpakai."
+                )
+
             if user_id:
                 self.cart_repository.clear_user_cart(conn, user_id)
                 logger.debug(f"Keranjang pengguna ID {user_id} dikosongkan.")
-        
+
         except mysql.connector.Error as db_err:
             logger.error(
                 f"Kesalahan database saat pembersihan pasca-pesanan "
@@ -389,6 +412,7 @@ class OrderCreationService:
         shipping_details: Dict[str, Any],
         payment_method: str,
         voucher_code: Optional[str] = None,
+        user_voucher_id_str: Optional[str] = None,
         shipping_cost: float = 0.0,
     ) -> Dict[str, Any]:
         
@@ -396,10 +420,12 @@ class OrderCreationService:
         logger.info(
             f"Pembuatan pesanan dimulai untuk {log_id}. "
             f"Metode: {payment_method}, Voucher: {voucher_code}, "
+            f"UserVoucherID: {user_voucher_id_str}, "
             f"Pengiriman: {shipping_cost}"
         )
         conn: Optional[MySQLConnection] = None
         order_id: Optional[int] = None
+        user_voucher_id: Optional[int] = None
 
         try:
             conn = get_db_connection()
@@ -410,26 +436,59 @@ class OrderCreationService:
                     "Sesi checkout Anda telah berakhir atau keranjang "
                     "kosong. Silakan kembali ke keranjang."
                 )
-            
+
             items_for_order, subtotal = self._prepare_items_for_order(
                 conn, held_items
             )
             discount_amount = Decimal("0")
-            if voucher_code:
+            final_voucher_code = voucher_code
+            
+            if user_id and user_voucher_id_str:
+                try:
+                    user_voucher_id = int(user_voucher_id_str)
+
+                except (ValueError, TypeError):
+                    logger.warning(
+                        f"user_voucher_id tidak valid: {user_voucher_id_str}"
+                    )
+                    return {
+                        "success": False,
+                        "message": "ID Voucher yang dipilih tidak valid.",
+                    }
+                
                 voucher_result = (
-                    self.discount_service.validate_and_calculate_voucher(
+                    self.discount_service.validate_and_calculate_by_id(
+                        user_id, user_voucher_id, float(subtotal)
+                    )
+                )
+
+            elif voucher_code:
+                voucher_result = (
+                    self.discount_service.validate_and_calculate_by_code(
                         voucher_code, float(subtotal)
                     )
                 )
-                if voucher_result["success"]:
-                    discount_amount = Decimal(
-                        str(voucher_result["discount_amount"])
-                    )
-                else:
-                    logger.warning(
-                        f"Validasi voucher gagal untuk {log_id}: {voucher_result['message']}"
-                    )
-                    return {"success": False, "message": voucher_result["message"]}
+            else:
+                voucher_result = {"success": False}
+
+            if voucher_result.get("success"):
+                discount_amount = Decimal(
+                    str(voucher_result["discount_amount"])
+                )
+                final_voucher_code = voucher_result.get("code")
+                user_voucher_id = voucher_result.get("user_voucher_id")
+
+            elif voucher_code or user_voucher_id:
+                logger.warning(
+                    f"Validasi voucher gagal untuk {log_id}: "
+                    f"{voucher_result.get('message')}"
+                )
+                return {
+                    "success": False,
+                    "message": voucher_result.get(
+                        "message", "Voucher tidak valid."
+                    ),
+                }
 
             shipping_cost_decimal = Decimal(str(shipping_cost))
             final_total = (
@@ -452,14 +511,16 @@ class OrderCreationService:
                 discount_amount,
                 shipping_cost_decimal,
                 final_total,
-                voucher_code,
+                final_voucher_code,
                 initial_status,
                 payment_method,
                 transaction_id,
                 shipping_details,
                 items_for_order
             )
-            self._post_order_cart_cleanup(conn, user_id, voucher_code)
+            self._post_order_cleanup(
+                conn, user_id, final_voucher_code, user_voucher_id, order_id
+            )
             self.stock_service.release_stock_holds(user_id, session_id, conn)
             conn.commit()
 
@@ -467,7 +528,7 @@ class OrderCreationService:
                 f"Pesanan #{order_id} berhasil dibuat untuk {log_id}."
             )
             return {"success": True, "order_id": order_id}
-        
+
         except (ValidationError, RecordNotFoundError, OutOfStockError) as ve:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -510,7 +571,8 @@ class OrderCreationService:
                 )
 
 order_creation_service = OrderCreationService(
-    stock_repository, product_repository, order_repository, order_item_repository,
-    order_status_history_repository, voucher_repository, cart_repository,
-    discount_service, stock_service, variant_service
+    stock_repository, product_repository, order_repository,
+    order_item_repository, order_status_history_repository, voucher_repository,
+    cart_repository, discount_service, stock_service, variant_service,
+    voucher_service, user_voucher_repository
 )

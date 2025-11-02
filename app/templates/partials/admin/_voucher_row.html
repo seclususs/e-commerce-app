@@ -25,15 +25,15 @@
   </td>
   <td data-label="Aksi:" class="action-buttons">
     <div class="desktop-actions">
-      <a href="{{ url_for('admin.toggle_voucher', id=voucher.id) }}" 
-         class="action-link action-link-edit toggle-voucher-btn" 
-         data-ajax="true" 
+      <a href="{{ url_for('admin.toggle_voucher', id=voucher.id) }}"
+         class="action-link action-link-edit toggle-voucher-btn"
+         data-ajax="true"
          data-update-target="#voucher-row-{{ voucher.id }}">
         {{ 'Nonaktifkan' if voucher.is_active else 'Aktifkan' }}
       </a>
-      <a href="{{ url_for('admin.delete_voucher', id=voucher.id) }}" 
-         class="action-link action-link-delete" 
-         data-ajax="true" 
+      <a href="{{ url_for('admin.delete_voucher', id=voucher.id) }}"
+         class="action-link action-link-delete"
+         data-ajax="true"
          data-remove-target="#voucher-row-{{ voucher.id }}">
         Hapus
       </a>

@@ -1,4 +1,5 @@
 import { showNotification } from '../../components/notification.js';
+import { initAnimations } from '../../utils/animations.js';
 
 function handlePrependAction(form, result) {
     const targetSelector = form.dataset.updateTarget;
@@ -15,13 +16,19 @@ function handlePrependAction(form, result) {
             if (form.id === 'add-product-form') {
                 const previewContainer = document.getElementById('image-previews');
                 const fileNameDisplay = document.getElementById('file-name');
+                const fileInput = document.getElementById('images');
+
                 if (previewContainer) previewContainer.innerHTML = '';
                 if (fileNameDisplay) fileNameDisplay.textContent = 'Belum ada file dipilih';
+                if (fileInput) fileInput.value = null;
+
                 const hasVariantsCheckbox = document.getElementById('has-variants-checkbox');
                 if (hasVariantsCheckbox) {
                     hasVariantsCheckbox.checked = false;
                     hasVariantsCheckbox.dispatchEvent(new Event('change'));
                 }
+                const priceInputs = form.querySelectorAll('input[inputmode="numeric"]');
+                priceInputs.forEach(input => input.value = '');
             }
         }
 
@@ -34,6 +41,9 @@ function handlePrependAction(form, result) {
                 setTimeout(() => newRow.style.transition = '', 500);
             }, 100);
         }
+
+        initAnimations();
+        
     } else {
         console.warn('Target prepend tidak ditemukan atau tidak ada HTML dalam response:', targetSelector);
     }

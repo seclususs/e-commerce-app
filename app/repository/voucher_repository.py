@@ -8,6 +8,7 @@ class VoucherRepository:
     def find_active_by_code(
         self, conn: MySQLConnection, code: str
     ) -> Optional[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute(
@@ -23,6 +24,7 @@ class VoucherRepository:
     def find_by_code(
         self, conn: MySQLConnection, code: str
     ) -> Optional[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute(
@@ -46,6 +48,7 @@ class VoucherRepository:
     def find_by_id(
         self, conn: MySQLConnection, voucher_id: int
     ) -> Optional[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             cursor.execute(
@@ -62,6 +65,7 @@ class VoucherRepository:
         value: Decimal, min_purchase: Decimal,
         max_uses: Optional[int],
     ) -> int:
+        
         cursor = conn.cursor()
         try:
             cursor.execute(
@@ -91,6 +95,7 @@ class VoucherRepository:
     def toggle_status(
         self, conn: MySQLConnection, voucher_id: int, new_status: bool
     ) -> int:
+        
         cursor = conn.cursor()
         try:
             cursor.execute(

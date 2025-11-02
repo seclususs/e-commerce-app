@@ -53,7 +53,7 @@ class CheckoutService:
                         "message": "Terjadi kesalahan, pengguna tidak ditemukan.",
                         "flash_category": "danger",
                     }
-                
+
                 pending_order: Optional[Dict[str, Any]] = (
                     checkout_validation_service.check_pending_order(user_id)
                 )
@@ -204,6 +204,9 @@ class CheckoutService:
             voucher_code: Optional[str] = (
                 form_data.get("voucher_code") or None
             )
+            user_voucher_id_str: Optional[str] = (
+                form_data.get("user_voucher_id") or None
+            )
 
             try:
                 shipping_cost: float = float(form_data.get("shipping_cost", 0))
@@ -218,6 +221,7 @@ class CheckoutService:
             logger.info(
                 f"Membuat pesanan untuk {user_log_id}. "
                 f"Metode: {payment_method}, Voucher: {voucher_code}, "
+                f"UserVoucherID: {user_voucher_id_str}, "
                 f"Pengiriman: {shipping_cost}"
             )
             result: Dict[str, Any] = order_creation_service.create_order(
@@ -226,6 +230,7 @@ class CheckoutService:
                 shipping_details=shipping_details,
                 payment_method=payment_method,
                 voucher_code=voucher_code,
+                user_voucher_id_str=user_voucher_id_str,
                 shipping_cost=shipping_cost,
             )
 

@@ -78,60 +78,37 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
                 )
 
                 if result.get("success"):
-                    product_data_from_service = result.get("product", {})
-                    product_id = product_data_from_service.get("id")
-
-                    logger.info(
-                        f"Produk baru berhasil ditambahkan dengan ID: {product_id}"
-                    )
-
-                    if product_id:
-
-                        new_product_data_for_row = product_data_from_service
-
-                        if new_product_data_for_row:
-                             if 'category_name' not in new_product_data_for_row:
-                                category = category_service.get_category_by_id(new_product_data_for_row.get('category_id'))
-                                new_product_data_for_row['category_name'] = category.get('name') if category else 'N/A'
-
-                             html = render_template(
-                                "partials/admin/_product_row.html",
-                                product=new_product_data_for_row,
-                             )
-                             return (
-                                jsonify(
-                                    {
-                                        "success": True,
-                                        "message": result.get(
-                                            "message", "Produk berhasil ditambahkan!"
-                                        ),
-                                        "html": html,
-                                    }
-                                ),
-                                200,
-                             )
-                        else:
-                            logger.error(
-                                f"Gagal mendapatkan data baris produk untuk ID baru: {product_id}"
-                                )
-                            return (
-                               jsonify(
-                                    {
-                                        "success": False,
-                                        "message": "Produk ditambahkan tapi gagal memuat ulang data baris produk.",
-                                    }
-                                ),
-                                500,
-                            )
-                    else:
-                        logger.error(
-                            f"Service create_product sukses, namun 'id' tidak ditemukan dalam 'product' di response: {result}"
-                            )
+                    product_data_from_service = result.get("product")
+                    if product_data_from_service:
+                        logger.info(
+                            f"Produk baru {product_data_from_service.get('id')} "
+                            f"ditemukan di respons service, merender HTML."
+                        )
+                        html = render_template(
+                            "partials/admin/_product_row.html",
+                            product=product_data_from_service, 
+                        )
                         return (
                             jsonify(
                                 {
+                                    "success": True,
+                                    "message": result.get(
+                                        "message", "Produk berhasil ditambahkan!"
+                                    ),
+                                    "html": html,
+                                }
+                            ),
+                            200,
+                        )
+                    else:
+                        logger.error(
+                            f"Service create_product sukses, namun 'product' adalah None di response: {result}"
+                            )
+                        return (
+                           jsonify(
+                                {
                                     "success": False,
-                                    "message": "Produk ditambahkan tapi gagal mendapatkan ID produk baru dari service.",
+                                    "message": "Produk ditambahkan tapi gagal mengambil data untuk ditampilkan.",
                                 }
                             ),
                             500,
@@ -180,6 +157,8 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
     search_term: str = request.args.get("search", "").strip()
     category_filter: str = request.args.get("category")
     stock_status_filter: str = request.args.get("stock_status")
+    is_filter_request: str = request.args.get("is_filter_request") == "true"
+    
     page_title = "Manajemen Produk - Admin"
     header_title = "Manajemen Produk"
     logger.debug(
@@ -206,7 +185,7 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
         logger.debug(f"Berhasil mengambil {len(products)} produk.")
 
         if is_ajax:
-            if request.args:
+            if is_filter_request:
                 logger.debug("Merender _product_table_body.html untuk respons AJAX filter")
                 html: str = render_template(
                     "partials/admin/_product_table_body.html",

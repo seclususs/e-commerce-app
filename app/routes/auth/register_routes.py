@@ -2,12 +2,7 @@ import json
 from typing import Any, Dict, Optional, Union
 
 from flask import (
-    flash,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
+    flash, redirect, render_template, request, session, url_for
 )
 import mysql.connector
 from werkzeug.wrappers import Response
@@ -60,7 +55,7 @@ def register() -> Union[Response, str]:
                 f"Registrasi berhasil untuk pengguna: {username} "
                 f"(ID: {new_user['id']}). Melakukan login otomatis."
             )
-            flash("Registrasi berhasil! Selamat datang.", "success")
+            flash("Registrasi berhasil! Voucher selamat datang telah ditambahkan ke akun Anda.", "success")
             return redirect(url_for("product.products_page"))
 
         except ValidationError as ve:
@@ -176,7 +171,7 @@ def register_from_order() -> Response:
             if conn and conn.is_connected():
                 conn.close()
 
-        flash("Akun berhasil dibuat dan Anda telah login!", "success")
+        flash("Akun berhasil dibuat! Voucher selamat datang telah ditambahkan.", "success")
         return redirect(url_for("user.user_profile"))
 
     except ValidationError as ve:

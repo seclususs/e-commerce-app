@@ -76,8 +76,28 @@
 
                     <!-- Form untuk Voucher -->
                     <div class="voucher-form-container">
+                        {% if session.user_id and my_vouchers %}
                         <div class="form-group">
-                            <label for="voucher_code" style="font-size: 0.9em;">Punya Kode Voucher?</label>
+                            <label for="user_voucher_id_select" style="font-size: 0.9em;">Voucher Saya (Pilih 1)</label>
+                            <select id="user_voucher_id_select" class="form-control">
+                                <option value="">Pilih dari voucher Anda...</option>
+                                {% for v in my_vouchers %}
+                                <option value="{{ v.user_voucher_id }}" data-code="{{ v.code }}">
+                                    {{ v.code }} - 
+                                    {% if v.type == 'PERCENTAGE' %}
+                                        Diskon {{ v.value|int }}%
+                                    {% else %}
+                                        Diskon {{ v.value|rupiah }}
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <p style="text-align: center; font-size: 0.9em; color: var(--color-text-med); margin: 0.5rem 0;">atau</p>
+                        {% endif %}
+
+                        <div class="form-group">
+                            <label for="voucher_code" style="font-size: 0.9em;">Masukkan Kode Voucher</label>
                             <div class="voucher-input-group">
                                 <input type="text" id="voucher_code" name="voucher_code" placeholder="Masukkan kode di sini" class="form-control">
                                 <button type="button" id="applyVoucherBtn" class="cta-button-secondary">Terapkan</button>
@@ -100,6 +120,7 @@
                     <!-- Input tersembunyi untuk data keranjang tamu -->
                     <input type="hidden" name="cart_data" id="cart_data_input">
                     <input type="hidden" name="shipping_cost" id="shipping_cost_input" value="0">
+                    <input type="hidden" name="user_voucher_id" id="user_voucher_id_input">
                     <input type="hidden" id="stock_hold_expires_at" value="{{ stock_hold_expires }}">
                     
                     <div class="hide-on-mobile-cta">

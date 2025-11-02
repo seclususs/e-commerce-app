@@ -10,6 +10,9 @@ from app.exceptions.api_exceptions import ValidationError
 from app.exceptions.database_exceptions import DatabaseException
 from app.exceptions.service_exceptions import ServiceLogicError
 from app.repository.user_repository import UserRepository, user_repository
+from app.services.orders.voucher_service import (
+    VoucherService, voucher_service
+)
 from app.services.utils.validation_service import (
     ValidationService, validation_service
 )
@@ -24,19 +27,21 @@ class RegistrationService:
         self,
         validation_svc: ValidationService = validation_service,
         user_repo: UserRepository = user_repository,
+        voucher_svc: VoucherService = voucher_service,
     ):
         self.validation_service = validation_svc
         self.user_repository = user_repo
+        self.voucher_service = voucher_svc
 
 
     def register_new_user(
         self, username: str, email: str, password: str
     ) -> Optional[Dict[str, Any]]:
+        
         logger.debug(
             f"Mencoba mendaftarkan pengguna baru. "
             f"Nama pengguna: {username}, Email: {email}"
         )
-
         conn: Optional[MySQLConnection] = None
 
         try:
@@ -65,6 +70,8 @@ class RegistrationService:
             new_user_id = self.user_repository.create(
                 conn, username, email, hashed_password
             )
+
+            self.voucher_service.grant_welcome_voucher(conn, new_user_id)
 
             conn.commit()
 
@@ -114,6 +121,7 @@ class RegistrationService:
     def register_guest_user(
         self, order_details: Dict[str, Any], password: str
     ) -> Optional[Dict[str, Any]]:
+        
         email = order_details.get("email")
         name = order_details.get("name")
         logger.debug(
@@ -159,6 +167,7 @@ class RegistrationService:
                     break
                 username = f"{base_username}{random.randint(10, 999)}"
                 attempts += 1
+            
             if not is_username_available:
                 logger.error(
                     f"Tidak dapat membuat nama pengguna unik untuk tamu "
@@ -174,6 +183,9 @@ class RegistrationService:
             new_user_id = self.user_repository.create_guest(
                 conn, guest_details, hashed_password
             )
+
+            self.voucher_service.grant_welcome_voucher(conn, new_user_id)
+
             conn.commit()
 
             logger.info(
@@ -221,4 +233,6 @@ class RegistrationService:
                 f"(email: {email})."
             )
 
-registration_service = RegistrationService(validation_service, user_repository)
+registration_service = RegistrationService(
+    validation_service, user_repository, voucher_service
+)

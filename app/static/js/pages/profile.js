@@ -94,6 +94,99 @@ async function handleCancelOrder(button) {
     );
 }
 
+function initProfileTabs() {
+    const tabContainer = document.querySelector('.profile-tabs');
+    if (!tabContainer) return;
+
+    tabContainer.addEventListener('click', (e) => {
+        const tabButton = e.target.closest('.profile-tab-btn');
+        if (!tabButton || tabButton.classList.contains('active')) return;
+
+        const targetTabId = tabButton.dataset.tab;
+        if (!targetTabId) return;
+
+        document.querySelectorAll('.profile-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelectorAll('.profile-tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+
+        tabButton.classList.add('active');
+        const targetContent = document.getElementById(targetTabId);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+    });
+}
+
+function initMyVouchers() {
+    const claimForm = document.getElementById('claim-voucher-form');
+    if (claimForm) {
+        claimForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = claimForm.querySelector('input[name="voucher_code"]');
+            const button = claimForm.querySelector('button[type="submit"]');
+            const code = input.value.trim();
+
+            if (!code) {
+                showNotification('Silakan masukkan kode voucher.', true);
+                return;
+            }
+
+            const originalButtonHTML = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = `<span class="spinner"></span>`;
+
+            try {
+                const response = await fetch(claimForm.dataset.url, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ voucher_code: code })
+                });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showNotification(result.message);
+                    location.reload();
+                } else {
+                    showNotification(result.message || 'Gagal mengklaim voucher.', true);
+                    button.disabled = false;
+                    button.innerHTML = originalButtonHTML;
+                }
+            } catch (error) {
+                showNotification('Error koneksi.', true);
+                button.disabled = false;
+                button.innerHTML = originalButtonHTML;
+            }
+        });
+    }
+
+    const voucherList = document.querySelector('.voucher-list-container');
+    if (voucherList) {
+        voucherList.addEventListener('click', (e) => {
+            const copyBtn = e.target.closest('.copy-voucher-btn');
+            if (copyBtn) {
+                const code = copyBtn.dataset.code;
+                const tempInput = document.createElement('textarea');
+                tempInput.value = code;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                try {
+                    document.execCommand('copy');
+                    showNotification(`Kode "${code}" disalin!`);
+                } catch (err) {
+                    showNotification('Gagal menyalin kode.', true);
+                }
+                document.body.removeChild(tempInput);
+            }
+        });
+    }
+}
+
 export function initProfileEditor() {
     const profileContainer = document.querySelector('.profile-container');
     if (!profileContainer) return;
@@ -111,6 +204,9 @@ export function initProfileEditor() {
 }
 
 export function initUserProfile() {
+    initProfileTabs();
+    initMyVouchers();
+
     const ordersList = document.getElementById('orders-list');
     if (!ordersList) return;
 

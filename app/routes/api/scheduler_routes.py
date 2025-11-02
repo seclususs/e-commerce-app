@@ -1,8 +1,7 @@
 from typing import Any, Dict, Tuple
 
-from flask import Blueprint, Response, current_app, jsonify, request
+from flask import Response, current_app, jsonify, request
 
-from app.exceptions.api_exceptions import AuthError
 from app.exceptions.database_exceptions import DatabaseException
 from app.exceptions.service_exceptions import ServiceLogicError
 from app.services.utils.scheduler_service import scheduler_service
@@ -28,17 +27,41 @@ def run_scheduler_jobs() -> Tuple[Response, int]:
 
     try:
         logger.info("Menjalankan layanan scheduler: cancel_expired_pending_orders")
-        result: Dict[str, Any] = (
+        cancel_result: Dict[str, Any] = (
             scheduler_service.cancel_expired_pending_orders()
         )
-        logger.info(f"Tugas scheduler selesai dijalankan. Hasil: {result}")
-        return jsonify(result), 200 if result["success"] else 500
+        logger.info(f"Tugas pembatalan selesai. Hasil: {cancel_result}")
+        
+        logger.info("Menjalankan layanan scheduler: grant_segmented_vouchers")
+        segment_result: Dict[str, Any] = (
+            scheduler_service.grant_segmented_vouchers()
+        )
+        logger.info(f"Tugas voucher segmen selesai. Hasil: {segment_result}")
+
+        cancel_count = cancel_result.get("cancelled_count", 0)
+        grant_count = segment_result.get("granted_count", 0)
+        
+        final_success = cancel_result["success"] and segment_result["success"]
+        
+        message = (
+            f"Tugas selesai. {cancel_count} pesanan dibatalkan. "
+            f"{grant_count} voucher top spender diberikan."
+        )
+
+        return (
+            jsonify({"success": final_success, "message": message}),
+            200 if final_success else 500
+        )
     
     except (DatabaseException, ServiceLogicError) as e:
         logger.error(
             f"Error caught running scheduler manually: {e}", exc_info=True
         )
-        return jsonify({"success": False, "message": "Terjadi kesalahan server."}), 500
+        return (
+            jsonify(
+                {"success": False, "message": "Terjadi kesalahan server."}
+            ), 500
+        )
     
     except Exception as e:
         logger.error(
@@ -46,9 +69,12 @@ def run_scheduler_jobs() -> Tuple[Response, int]:
             f"melalui API: {e}",
             exc_info=True,
         )
-        return jsonify(
-            {
-                "success": False,
-                "message": "Terjadi kesalahan internal saat menjalankan tugas scheduler.",
-            }
-        ), 500
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Terjadi kesalahan internal saat menjalankan tugas scheduler.",
+                }
+            ),
+            500,
+        )

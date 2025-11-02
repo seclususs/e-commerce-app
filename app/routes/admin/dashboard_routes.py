@@ -194,22 +194,27 @@ def admin_dashboard() -> Union[str, Response, Tuple[Response, int]]:
 def run_scheduler() -> Tuple[Response, int]:
     
     try:
-        result: Dict[str, Any] = (
+        cancel_result: Dict[str, Any] = (
             scheduler_service.cancel_expired_pending_orders()
         )
-        count: int = result.get("cancelled_count", 0)
+        segment_result: Dict[str, Any] = (
+            scheduler_service.grant_segmented_vouchers()
+        )
+        
+        cancel_count: int = cancel_result.get("cancelled_count", 0)
+        grant_count: int = segment_result.get("granted_count", 0)
+        
+        final_success = cancel_result["success"] and segment_result["success"]
+        
+        message = (
+            f"Tugas harian selesai. {cancel_count} pesanan kedaluwarsa "
+            f"dibatalkan. {grant_count} voucher top spender diberikan."
+        )
 
-        if result.get("success"):
-            result["message"] = (
-                f"Tugas harian selesai. {count} pesanan "
-                f"kedaluwarsa berhasil dibatalkan."
-            )
-        else:
-            result["message"] = result.get(
-                "message", "Gagal menjalankan tugas harian."
-            )
-
-        return jsonify(result), 200
+        return (
+            jsonify({"success": final_success, "message": message}),
+            200 if final_success else 500
+        )
 
     except (DatabaseException, ServiceLogicError):
         return (

@@ -8,9 +8,10 @@ class ReportRepository:
 
     def _get_date_filter_clause(
         self, start_date: Optional[str],
-        end_date: Optional[str], 
+        end_date: Optional[str],
         table_alias: str = "o",
     ) -> Tuple[str, List[str]]:
+        
         date_filter = f" WHERE {table_alias}.status != 'Dibatalkan'"
         params: List[str] = []
         if start_date:
@@ -26,6 +27,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -48,6 +50,41 @@ class ReportRepository:
         finally:
             cursor.close()
 
+    def get_top_spenders_user_ids_by_percentile(
+        self, conn: MySQLConnection,
+        percentile: float,
+        start_date: str,
+        end_date: str,
+    ) -> List[int]:
+        
+        cursor = conn.cursor(dictionary=True)
+        try:
+            query = """
+                SELECT user_id
+                FROM (
+                    SELECT
+                        user_id,
+                        SUM(total_amount) AS total_spent,
+                        RANK() OVER (ORDER BY SUM(total_amount) DESC) as spend_rank
+                    FROM orders
+                    WHERE status = 'Selesai'
+                      AND order_date BETWEEN %s AND %s
+                      AND user_id IS NOT NULL
+                    GROUP BY user_id
+                ) AS ranked_spenders
+                WHERE spend_rank <= (
+                    SELECT CEIL(COUNT(DISTINCT user_id) * %s)
+                    FROM orders
+                    WHERE status = 'Selesai'
+                      AND order_date BETWEEN %s AND %s
+                      AND user_id IS NOT NULL
+                )
+            """
+            params = (start_date, end_date, percentile, start_date, end_date)
+            cursor.execute(query, params)
+            return [row['user_id'] for row in cursor.fetchall()]
+        finally:
+            cursor.close()
 
     def get_cart_analytics_created(self, conn: MySQLConnection) -> int:
         cursor = conn.cursor(dictionary=True)
@@ -66,6 +103,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> int:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -87,6 +125,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -114,6 +153,7 @@ class ReportRepository:
     def get_dashboard_sales(
         self, conn: MySQLConnection, start_date_str: str, end_date_str: str
     ) -> Decimal:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -132,6 +172,7 @@ class ReportRepository:
     def get_dashboard_order_count(
         self, conn: MySQLConnection, start_date_str: str, end_date_str: str
     ) -> int:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -149,6 +190,7 @@ class ReportRepository:
     def get_dashboard_new_user_count(
         self, conn: MySQLConnection, start_date_str: str, end_date_str: str
     ) -> int:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -177,6 +219,7 @@ class ReportRepository:
     def get_inventory_total_value(
         self, conn: MySQLConnection
     ) -> Decimal:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -213,6 +256,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -247,6 +291,7 @@ class ReportRepository:
     def get_inventory_low_stock(
         self, conn: MySQLConnection
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -282,6 +327,7 @@ class ReportRepository:
     def get_low_stock_chart_data(
         self, conn: MySQLConnection
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -314,6 +360,7 @@ class ReportRepository:
     def get_inventory_low_stock_for_export(
         self, conn: MySQLConnection
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -353,6 +400,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -389,6 +437,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -413,6 +462,7 @@ class ReportRepository:
     def get_most_viewed_products(
         self, conn: MySQLConnection
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -430,6 +480,7 @@ class ReportRepository:
     def get_top_products_chart_data(
         self, conn: MySQLConnection, start_date_str: str, end_date_str: str
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -454,6 +505,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -496,6 +548,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> Optional[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -521,6 +574,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -546,6 +600,7 @@ class ReportRepository:
     def get_sales_chart_data(
         self, conn: MySQLConnection, start_date_str: str, end_date_str: str
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             query = """
@@ -568,6 +623,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(
@@ -602,6 +658,7 @@ class ReportRepository:
         start_date: Optional[str],
         end_date: Optional[str],
     ) -> List[Dict[str, Any]]:
+        
         cursor = conn.cursor(dictionary=True)
         try:
             date_filter, params = self._get_date_filter_clause(

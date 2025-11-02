@@ -16,13 +16,28 @@
   "users": [
     {"username": "admin", "email": "admin@hackthread.dev", "password": "admin123", "is_admin": 1}
   ],
-  "regular_users_count": 0,
-  "regular_user_password": "password123",
   "categories": [],
   "products": [],
   "variants": [],
   "orders": [],
   "order_items": [],
   "reviews": [],
-  "vouchers": []
+  "vouchers": [
+    {
+      "code": "WELCOME",
+      "type": "FIXED_AMOUNT",
+      "value": 15000,
+      "min_purchase_amount": 50000,
+      "is_active": 1,
+      "max_uses": null
+    },
+    {
+      "code": "TOP_SPENDER",
+      "type": "PERCENTAGE",
+      "value": 10,
+      "min_purchase_amount": 200000,
+      "is_active": 1,
+      "max_uses": null
+    }
+  ]
 }

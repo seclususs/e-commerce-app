@@ -12,6 +12,7 @@ class TestRegistrationService(BaseTestCase):
         super().setUp()
         self.mock_validation_svc = MagicMock()
         self.mock_user_repo = MagicMock()
+        self.mock_voucher_svc = MagicMock()
         
         self.patch_gen_hash = patch(
             'app.services.auth.registration_service.generate_password_hash',
@@ -27,13 +28,14 @@ class TestRegistrationService(BaseTestCase):
         
         self.registration_service = RegistrationService(
             validation_svc=self.mock_validation_svc,
-            user_repo=self.mock_user_repo
+            user_repo=self.mock_user_repo,
+            voucher_svc=self.mock_voucher_svc
         )
         
         self.username = "newuser"
         self.email = "new@example.com"
         self.password = "password123"
-        self.mock_new_user = {"id": 1, "username": self.username}
+        self.mock_new_user = {"id": 1, "username": self.username, "is_admin": False}
         self.guest_details = {
             "name": "Guest User", "email": "guest@mail.com", "phone": "123"
         }
@@ -61,6 +63,10 @@ class TestRegistrationService(BaseTestCase):
         self.mock_user_repo.create.assert_called_once_with(
             self.db_conn, self.username, self.email, "hashed_password"
         )
+        self.mock_voucher_svc.grant_welcome_voucher.assert_called_once_with(
+            self.db_conn, 1
+        )
+        self.db_conn.commit.assert_called_once()
         self.assertEqual(result, self.mock_new_user)
 
     def test_register_new_user_username_taken(self):
@@ -75,6 +81,7 @@ class TestRegistrationService(BaseTestCase):
             
         self.mock_validation_svc.validate_email_availability.assert_not_called()
         self.mock_user_repo.create.assert_not_called()
+        self.mock_voucher_svc.grant_welcome_voucher.assert_not_called()
         self.assertIn("Username", str(cm.exception))
 
     def test_register_new_user_email_taken(self):
@@ -91,6 +98,7 @@ class TestRegistrationService(BaseTestCase):
             )
             
         self.mock_user_repo.create.assert_not_called()
+        self.mock_voucher_svc.grant_welcome_voucher.assert_not_called()
         self.assertIn("Email", str(cm.exception))
 
     def test_register_guest_user_success(self):
@@ -101,7 +109,7 @@ class TestRegistrationService(BaseTestCase):
             True, ""
         )
         self.mock_user_repo.create_guest.return_value = 2
-        mock_guest_user = {"id": 2, "username": "guestuser"}
+        mock_guest_user = {"id": 2, "username": "guestuser", "is_admin": False}
         self.mock_user_repo.find_by_id.return_value = mock_guest_user
         
         result = self.registration_service.register_guest_user(
@@ -113,6 +121,10 @@ class TestRegistrationService(BaseTestCase):
         self.mock_user_repo.create_guest.assert_called_once_with(
             self.db_conn, expected_details, "hashed_password"
         )
+        self.mock_voucher_svc.grant_welcome_voucher.assert_called_once_with(
+            self.db_conn, 2
+        )
+        self.db_conn.commit.assert_called_once()
         self.assertEqual(result, mock_guest_user)
 
     def test_register_guest_user_email_taken(self):
@@ -126,6 +138,7 @@ class TestRegistrationService(BaseTestCase):
             )
             
         self.mock_validation_svc.validate_username_availability.assert_not_called()
+        self.mock_voucher_svc.grant_welcome_voucher.assert_not_called()
         self.assertIn("Email sudah terdaftar", str(cm.exception))
 
     def test_register_guest_user_cannot_generate_username(self):
@@ -145,4 +158,5 @@ class TestRegistrationService(BaseTestCase):
             self.mock_validation_svc.validate_username_availability.call_count,
             10
         )
+        self.mock_voucher_svc.grant_welcome_voucher.assert_not_called()
         self.assertIn("Gagal membuat username unik", str(cm.exception))

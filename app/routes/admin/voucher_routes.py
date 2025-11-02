@@ -181,7 +181,6 @@ def toggle_voucher(id: int) -> Tuple[Response, int]:
         result: Dict[str, Any] = voucher_service.toggle_voucher_status(id)
 
         if result.get("success"):
-            result["data"] = {"is_active": result.get("is_active")}
             return jsonify(result), 200
         else:
             status_code: int = (
