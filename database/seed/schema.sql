@@ -39,11 +39,13 @@ CREATE TABLE products (
 CREATE TABLE product_variants (
     id INT PRIMARY KEY AUTO_INCREMENT,
     product_id INT NOT NULL,
+    color VARCHAR(50) NOT NULL,
     size VARCHAR(50) NOT NULL,
     stock INT NOT NULL,
     weight_grams INT DEFAULT 0,
     sku VARCHAR(100) UNIQUE,
-    FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
+    FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_product_color_size (product_id, color, size)
 );
 
 CREATE TABLE content (
@@ -82,6 +84,7 @@ CREATE TABLE order_items (
     variant_id INT,
     quantity INT NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
+    color_at_order VARCHAR(50),
     size_at_order VARCHAR(50),
     FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE,

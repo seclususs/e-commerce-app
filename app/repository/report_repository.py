@@ -22,6 +22,7 @@ class ReportRepository:
             params.append(end_date)
         return date_filter, params
 
+
     def get_top_spenders(
         self, conn: MySQLConnection,
         start_date: Optional[str],
@@ -49,6 +50,7 @@ class ReportRepository:
             return cursor.fetchall()
         finally:
             cursor.close()
+
 
     def get_top_spenders_user_ids_by_percentile(
         self, conn: MySQLConnection,
@@ -85,6 +87,7 @@ class ReportRepository:
             return [row['user_id'] for row in cursor.fetchall()]
         finally:
             cursor.close()
+
 
     def get_cart_analytics_created(self, conn: MySQLConnection) -> int:
         cursor = conn.cursor(dictionary=True)
@@ -307,7 +310,7 @@ class ReportRepository:
                 AND stock > 0
                 UNION ALL
                 SELECT
-                    CONCAT(p.name, ' (', pv.size, ')') AS name,
+                    CONCAT(p.name, ' (', pv.color, ' / ', pv.size, ')') AS name,
                     pv.stock,
                     'Varian' AS type,
                     p.id AS product_id,
@@ -341,7 +344,7 @@ class ReportRepository:
                 AND stock > 0
                 UNION ALL
                 SELECT
-                    CONCAT(p.name, ' (', pv.size, ')') AS name,
+                    CONCAT(p.name, ' (', pv.color, ' / ', pv.size, ')') AS name,
                     pv.stock,
                     p.id AS product_id
                 FROM product_variants pv
@@ -377,7 +380,7 @@ class ReportRepository:
                 AND stock > 0
                 UNION ALL
                 SELECT
-                    CONCAT(p.name, ' (', pv.size, ')') AS name,
+                    CONCAT(p.name, ' (', pv.color, ' / ', pv.size, ')') AS name,
                     pv.stock,
                     'Varian' AS type,
                     p.id AS product_id,

@@ -1,5 +1,12 @@
 <tr class="admin-card-row" id="variant-row-{{ variant.id }}">
   <td data-label="ID:">{{ variant.id }}</td>
+  <td data-label="Warna:">
+    <input type="text" 
+           name="color" 
+           value="{{ variant.color }}" 
+           class="form-control" 
+           required 
+           form="form-variant-{{ variant.id }}"> </td>
   <td data-label="Ukuran:">
     <input type="text" 
            name="size" 

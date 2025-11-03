@@ -7,6 +7,10 @@
     <form id="add-variant-form" method="POST" action="{{ url_for('admin.manage_variants', product_id=product.id) }}" class="form-actions" data-ajax="true" data-update-target="#variants-table-body" data-update-action="prepend">
         <input type="hidden" name="action" value="add">
         <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
+            <label for="color" class="sr-only">Warna</label>
+            <input type="text" id="color" name="color" placeholder="Nama Warna (cth: Merah)" required class="form-control">
+        </div>
+        <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
             <label for="size" class="sr-only">Ukuran</label>
             <input type="text" id="size" name="size" placeholder="Nama Ukuran (cth: XL)" required class="form-control">
         </div>
@@ -20,7 +24,7 @@
         </div>
         <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
             <label for="sku_add" class="sr-only">SKU</label>
-            <input type="text" id="sku_add" name="sku" placeholder="SKU Varian (cth: KAOS-HW-XL)" class="form-control">
+            <input type="text" id="sku_add" name="sku" placeholder="SKU Varian (cth: KAOS-HW-MRH-XL)" class="form-control">
         </div>
         <button type="submit" class="cta-button">Tambah Varian</button>
     </form>
@@ -34,6 +38,7 @@
             <thead>
                 <tr>
                     <th>ID Varian</th>
+                    <th>Warna</th>
                     <th>Ukuran</th>
                     <th>Stok</th>
                     <th>Berat (gram)</th>

@@ -1,4 +1,3 @@
-{# Add data-ajax-nav="true" to the "Back to Collection" link #}
 <section class="product-detail-section">
     <div style="margin-bottom: 2rem;">
         <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary" data-ajax-nav="true">&larr; Kembali ke Koleksi</a>
@@ -49,35 +48,52 @@
                 <h3 class="details-title">Spesifikasi</h3>
                 <div class="details-content">
                     <ul>
-                        {% if product.colors %}<li><strong>Warna Tersedia:</strong> {{ product.colors }}</li>{% endif %}
+                        {% if product.colors %}<li><strong>Warna Deskriptif:</strong> {{ product.colors }}</li>{% endif %}
                         <li><strong>Stok:</strong>
                             <span id="stock-display">
-                                {% if product.stock > 10 %}<span style="color: #22c55e;">Tersedia</span>
-                                {% elif product.stock > 0 %}<span style="color: #f59e0b;">Tersisa {{ product.stock }}</span>
-                                {% else %}<span style="color: #ef4444;">Habis</span>{% endif %}
+                                {% if product.has_variants %}
+                                    <span style="color: var(--color-text-med);">Pilih varian</span>
+                                {% else %}
+                                    {% if product.stock > 10 %}<span style="color: #22c55e;">Tersedia</span>
+                                    {% elif product.stock > 0 %}<span style="color: #f59e0b;">Tersisa {{ product.stock }}</span>
+                                    {% else %}<span style="color: #ef4444;">Habis</span>{% endif %}
+                                {% endif %}
                             </span>
                         </li>
                     </ul>
                 </div>
 
                 {% if product.has_variants and product.variants %}
+                <script id="variant-data" type="application/json">
+                    {{ product.variant_json_data | safe }}
+                </script>
+                
+                <div class="product-color-selector">
+                    <h3 class="details-title">Pilih Warna</h3>
+                    <div class="color-options-wrapper" id="color-selector">
+                        {% for color in product.unique_colors %}
+                            <button class="color-option-btn" data-value="{{ color }}">{{ color }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                
                 <div class="product-size-selector">
                     <h3 class="details-title">Pilih Ukuran</h3>
                     <div class="size-options-wrapper" id="size-selector">
-                        {% for variant in product.variants %}
-                            <button class="size-option-btn" data-variant-id="{{ variant.id }}" data-stock="{{ variant.stock }}" {% if variant.stock == 0 %}disabled{% endif %}>{{ variant.size }}</button>
+                        {% for size in product.unique_sizes %}
+                            <button class="size-option-btn" data-value="{{ size }}" disabled>{{ size }}</button>
                         {% endfor %}
                     </div>
-                    <div id="size-warning" class="stock-warning-message"></div>
                 </div>
+                <div id="variant-warning" class="stock-warning-message"></div>
                 {% endif %}
 
-                {% if product.stock > 0 %}
+                {% if product.stock > 0 or product.has_variants %}
                 <div class="product-quantity-selector">
                     <h3 class="details-title">Jumlah</h3>
                     <div class="quantity-input-wrapper">
                         <button type="button" class="quantity-btn" id="quantity-minus">-</button>
-                        <input type="number" id="quantity-input" value="1" min="1" max="{{ product.stock }}" class="form-control quantity-input-field" readonly>
+                        <input type="number" id="quantity-input" value="1" min="1" max="{{ product.stock if not product.has_variants else 1 }}" class="form-control quantity-input-field" readonly>
                         <button type="button" class="quantity-btn" id="quantity-plus">+</button>
                     </div>
                     <div id="stock-warning" class="stock-warning-message"></div>
@@ -90,11 +106,10 @@
                         data-id="{{ product.id }}"
                         data-name="{{ product.name }}"
                         data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
-                        {% if product.stock == 0 %}disabled{% endif %}>
+                        {% if product.stock == 0 and not product.has_variants %}disabled{% endif %}>
                     <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
                 </button>
             </div>
-
 
             <div class="social-share-container animated-element" data-animation-delay="300">
                 <h3 class="details-title">Bagikan Produk Ini</h3>
@@ -113,15 +128,14 @@
         <h2 class="section-title">Produk Terkait yang Mungkin Anda Suka</h2>
         <div class="products-grid">
             {% for p in related_products %}
-            {# Related product cards might link to other product details - add data-ajax-nav #}
-            <div class="product-card animated-element {% if p.stock == 0 %}out-of-stock{% endif %}" data-animation-delay="{{ (loop.index0 % 4) * 100 }}">
+            <div class="product-card animated-element {% if not p.has_variants and p.stock == 0 %}out-of-stock{% endif %}" data-animation-delay="{{ (loop.index0 % 4) * 100 }}">
                 <a href="{{ url_for('product.product_detail', id=p.id) }}" class="product-card-link" data-ajax-nav="true"></a>
                 <div class="product-image">
                     {% if p.discount_price and p.discount_price > 0 %}
                         <span class="discount-badge">Hemat {{ p.discount_price|percentage(p.price) }}%</span>
                     {% endif %}
                     <img loading="lazy" src="{{ url_for('images.serve_image', filename=p.image_url) if p.image_url and p.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + p.name }}" alt="{{ p.name }}">
-                    {% if p.stock == 0 %}<div class="stock-overlay">Stok Habis</div>{% endif %}
+                    {% if not p.has_variants and p.stock == 0 %}<div class="stock-overlay">Stok Habis</div>{% endif %}
                 </div>
                 <div class="product-info">
                     <h3 class="product-name">{{ p.name }}</h3>
@@ -147,7 +161,7 @@
             {% if session.user_id and can_review %}
                 <div class="admin-card add-review-form">
                     <h3>Bagikan Pendapat Anda</h3>
-                    <form action="{{ url_for('product.add_review', id=product.id) }}" method="POST" id="add-review-form"> {# Review form submits via JS #}
+                    <form action="{{ url_for('product.add_review', id=product.id) }}" method="POST" id="add-review-form">
                         <div class="form-group">
                             <label for="rating">Rating Anda</label>
                             <div class="star-rating">
@@ -169,7 +183,7 @@
                 </div>
             {% else %}
                 <div class="admin-card add-review-form" style="text-align: center;">
-                    <p style="color: #94a3b8; margin:0;"><a href="{{ url_for('auth.login', next=request.url) }}" style="color: var(--color-primary);">Login</a> untuk memberikan ulasan.</p> {# Login link should be standard nav #}
+                    <p style="color: #94a3b8; margin:0;"><a href="{{ url_for('auth.login', next=request.url) }}" style="color: var(--color-primary);">Login</a> untuk memberikan ulasan.</p>
                 </div>
             {% endif %}
         </div>
@@ -190,7 +204,7 @@
             data-id="{{ product.id }}"
             data-name="{{ product.name }}"
             data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
-            {% if product.stock == 0 %}disabled{% endif %}>
+            {% if product.stock == 0 and not product.has_variants %}disabled{% endif %}>
         <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
     </button>
 </div>

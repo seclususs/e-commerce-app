@@ -41,10 +41,10 @@ class ProductQueryService:
     def get_filtered_products(
         self, filters: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
-        
+
         logger.debug(f"Mengambil produk yang difilter dengan filter: {filters}")
         conn: Optional[MySQLConnection] = None
-        
+
         try:
             conn = get_db_connection()
             products = self.product_repository.find_filtered(conn, filters)
@@ -52,7 +52,7 @@ class ProductQueryService:
                 f"Ditemukan {len(products)} produk yang cocok dengan filter."
             )
             return products
-        
+
         except mysql.connector.Error as e:
             logger.error(
                 f"Kesalahan database saat memfilter produk: {e}", exc_info=True
@@ -60,13 +60,13 @@ class ProductQueryService:
             raise DatabaseException(
                 f"Kesalahan database saat memfilter produk: {e}"
             )
-        
+
         except Exception as e:
             logger.error(f"Kesalahan saat memfilter produk: {e}", exc_info=True)
             raise ServiceLogicError(
                 f"Kesalahan layanan saat memfilter produk: {e}"
             )
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()
@@ -81,7 +81,7 @@ class ProductQueryService:
         category_id: Optional[Any] = None,
         stock_status: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        
+
         logger.debug(
             f"Mengambil semua produk. Pencarian: {search}, "
             f"Kategori: {category_id}, Status Stok: {stock_status}"
@@ -95,7 +95,7 @@ class ProductQueryService:
             )
             logger.info(f"Ditemukan {len(products)} produk.")
             return products
-        
+
         except mysql.connector.Error as e:
             logger.error(
                 f"Kesalahan database saat mengambil semua produk: {e}",
@@ -104,7 +104,7 @@ class ProductQueryService:
             raise DatabaseException(
                 f"Kesalahan database saat mengambil produk: {e}"
             )
-        
+
         except Exception as e:
             logger.error(
                 f"Kesalahan saat mengambil semua produk: {e}", exc_info=True
@@ -112,7 +112,7 @@ class ProductQueryService:
             raise ServiceLogicError(
                 f"Kesalahan layanan saat mengambil produk: {e}"
             )
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()
@@ -125,7 +125,7 @@ class ProductQueryService:
 
         logger.debug(f"Mengambil produk berdasarkan ID: {product_id}")
         conn: Optional[MySQLConnection] = None
-        
+
         try:
             conn = get_db_connection()
             conn.start_transaction()
@@ -136,7 +136,7 @@ class ProductQueryService:
                 logger.warning(f"ID Produk {product_id} tidak ditemukan.")
                 conn.rollback()
                 return None
-            
+
             logger.debug(
                 f"Meningkatkan popularitas untuk ID produk {product_id}"
             )
@@ -164,7 +164,14 @@ class ProductQueryService:
             logger.debug(
                 f"Mengambil {len(product['variants'])} varian untuk ID produk {product_id}"
             )
-            
+
+            unique_colors = sorted(
+                list(set(v['color'] for v in product['variants']))
+            )
+            unique_sizes = sorted(
+                list(set(v['size'] for v in product['variants']))
+            )
+
             if product["has_variants"]:
                 for variant in product["variants"]:
                     variant["stock"] = self.stock_service.get_available_stock(
@@ -174,6 +181,11 @@ class ProductQueryService:
                 product["stock"] = self.stock_service.get_available_stock(
                     product_id, None, conn
                 )
+
+            product["variant_json_data"] = json.dumps(product["variants"])
+            product["unique_colors"] = unique_colors
+            product["unique_sizes"] = unique_sizes
+
             logger.info(f"Detail ID produk {product_id} berhasil diambil.")
             return product
 
@@ -187,7 +199,7 @@ class ProductQueryService:
             raise DatabaseException(
                 f"Kesalahan database saat mengambil produk: {e}"
             )
-        
+
         except Exception as e:
             logger.error(
                 f"Kesalahan saat mengambil ID produk {product_id}: {e}",
@@ -198,7 +210,7 @@ class ProductQueryService:
             raise ServiceLogicError(
                 f"Kesalahan layanan saat mengambil produk: {e}"
             )
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()
@@ -210,7 +222,7 @@ class ProductQueryService:
     def get_related_products(
         self, product_id: Any, category_id: Any
     ) -> List[Dict[str, Any]]:
-        
+
         logger.debug(
             f"Mengambil produk terkait untuk ID produk: {product_id}, ID kategori: {category_id}"
         )
@@ -225,7 +237,7 @@ class ProductQueryService:
                 f"Ditemukan {len(related_products)} produk terkait untuk ID produk {product_id}"
             )
             return related_products
-        
+
         except mysql.connector.Error as e:
             logger.error(
                 f"Kesalahan database saat mengambil produk terkait {product_id}: {e}",
@@ -234,7 +246,7 @@ class ProductQueryService:
             raise DatabaseException(
                 f"Kesalahan database saat mengambil produk terkait: {e}"
             )
-        
+
         except Exception as e:
             logger.error(
                 f"Kesalahan saat mengambil produk terkait untuk ID {product_id}: {e}",
@@ -243,7 +255,7 @@ class ProductQueryService:
             raise ServiceLogicError(
                 f"Kesalahan layanan saat mengambil produk terkait: {e}"
             )
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()

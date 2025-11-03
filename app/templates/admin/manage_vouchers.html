@@ -4,51 +4,5 @@
 {% block adminheader %}Manajemen Voucher Diskon{% endblock %}
 
 {% block admincontent %}
-<div class="admin-card animated-element">
-    <h3>Tambah Voucher Baru</h3>
-    <form id="add-voucher-form" method="POST" action="{{ url_for('admin.admin_vouchers') }}" data-ajax="true" data-update-target="#vouchers-table-body" data-update-action="prepend">
-        <div class="form-grid" style="gap: 1rem 1.5rem;">
-            <div class="form-group">
-                <label for="code">Kode Voucher</label>
-                <input type="text" id="code" name="code" required style="text-transform: uppercase;">
-            </div>
-            <div class="form-group">
-                <label for="type">Tipe Diskon</label>
-                <select id="type" name="type" class="form-control" required>
-                    <option value="PERCENTAGE">Persentase (%)</option>
-                    <option value="FIXED_AMOUNT">Jumlah Tetap (Rp)</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="value">Nilai</label>
-                <input type="number" id="value" name="value" required placeholder="Cth: 10 atau 50000">
-            </div>
-            <div class="form-group">
-                <label for="min_purchase_amount">Min. Pembelian (Rp)</label>
-                <input type="number" id="min_purchase_amount" name="min_purchase_amount" placeholder="Opsional">
-            </div>
-            <div class="form-group">
-                <label for="max_uses">Maks. Penggunaan</label>
-                <input type="number" id="max_uses" name="max_uses" placeholder="Opsional">
-            </div>
-        </div>
-        <button type="submit" class="cta-button form-button" style="margin-top: 1rem;">Tambah Voucher</button>
-    </form>
-</div>
-
-<div class="admin-card animated-element" data-animation-delay="200">
-    <h3>Daftar Voucher</h3>
-    <div class="table-wrapper">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>Kode</th><th>Tipe</th><th>Nilai</th><th>Min. Beli</th><th>Digunakan</th><th>Status</th><th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody id="vouchers-table-body">
-                {% include 'partials/admin/_voucher_table_body.html' %}
-            </tbody>
-        </table>
-    </div>
-</div>
+{% include 'partials/admin/_manage_vouchers.html' %}
 {% endblock %}

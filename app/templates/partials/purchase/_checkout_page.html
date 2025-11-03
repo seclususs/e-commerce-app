@@ -19,7 +19,6 @@
                             <a href="{{ url_for('purchase.edit_address') }}" class="cta-button-secondary edit-address-btn">Ubah Alamat</a>
                         </div>
                     {% else %}
-                        <!-- Form untuk tamu -->
                         <h3>Kontak & Pengiriman</h3>
                         <div class="form-group"><label for="email">Alamat Email</label><input type="email" id="email" name="email" required></div>
                         <div class="form-group"><label for="full_name">Nama Lengkap Penerima</label><input type="text" id="full_name" name="full_name" required></div>
@@ -45,7 +44,7 @@
                         </div>
                         <div class="form-group"><label for="postal_code">Kode Pos</label><input type="text" id="postal_code" name="postal_code" required></div>
                     {% endif %}
-
+                    
                     <h3 style="margin-top: 2rem;">Metode Pembayaran</h3>
                     <div class="form-group">
                         <select name="payment_method" class="form-control" required>
@@ -60,17 +59,37 @@
                 <div class="cart-summary admin-card animated-element" data-animation-delay="400">
                     <h3>Ringkasan Pesanan</h3>
                     <div id="checkout-summary-items"><p>Memuat item...</p></div>
-
+                    
                     <div class="summary-row"><span>Subtotal</span><span id="checkoutSubtotal">Rp 0</span></div>
-
+                    
                     <div class="summary-row shipping-row" style="display: none;">
                         <span>Biaya Pengiriman</span>
                         <span id="checkoutShipping">Rp 0</span>
                     </div>
 
                     <div class="voucher-form-container">
+                        {% if session.user_id and my_vouchers %}
                         <div class="form-group">
-                            <label for="voucher_code" style="font-size: 0.9em;">Punya Kode Voucher?</label>
+                            <label for="user_voucher_id_select" style="font-size: 0.9em;">Voucher Saya (Pilih 1)</label>
+                            <select id="user_voucher_id_select" class="form-control">
+                                <option value="">Pilih dari voucher Anda...</option>
+                                {% for v in my_vouchers %}
+                                <option value="{{ v.user_voucher_id }}" data-code="{{ v.code }}">
+                                    {{ v.code }} - 
+                                    {% if v.type == 'PERCENTAGE' %}
+                                        Diskon {{ v.value|int }}%
+                                    {% else %}
+                                        Diskon {{ v.value|rupiah }}
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <p style="text-align: center; font-size: 0.9em; color: var(--color-text-med); margin: 0.5rem 0;">atau</p>
+                        {% endif %}
+
+                        <div class="form-group">
+                            <label for="voucher_code" style="font-size: 0.9em;">Masukkan Kode Voucher</label>
                             <div class="voucher-input-group">
                                 <input type="text" id="voucher_code" name="voucher_code" placeholder="Masukkan kode di sini" class="form-control">
                                 <button type="button" id="applyVoucherBtn" class="cta-button-secondary">Terapkan</button>
@@ -78,22 +97,23 @@
                         </div>
                         <div id="voucher-message" class="voucher-feedback"></div>
                     </div>
-
+                    
                     <div class="summary-row discount-row" style="display: none;">
                         <span>Diskon</span>
                         <span id="checkoutDiscount" style="color: var(--color-success);">- Rp 0</span>
                     </div>
 
                     <div class="summary-total"><span>Total</span><span id="checkoutTotal">Rp 0</span></div>
-
+                    
                     <div id="stock-hold-timer-container" class="stock-hold-timer">
                         Stok Anda ditahan selama: <strong id="timer">10:00</strong>
                     </div>
 
                     <input type="hidden" name="cart_data" id="cart_data_input">
                     <input type="hidden" name="shipping_cost" id="shipping_cost_input" value="0">
+                    <input type="hidden" name="user_voucher_id" id="user_voucher_id_input">
                     <input type="hidden" id="stock_hold_expires_at" value="{{ stock_hold_expires }}">
-
+                    
                     <div class="hide-on-mobile-cta">
                         <button id="placeOrderBtn" type="submit" class="cta-button cta-button-prominent" style="width: 100%;" disabled>
                             <span>Buat Pesanan</span>

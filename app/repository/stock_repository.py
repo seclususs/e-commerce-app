@@ -134,7 +134,7 @@ class StockRepository:
             cursor.execute(
                 """
                 SELECT p.id AS product_id, p.name, sh.quantity,
-                       sh.variant_id, pv.size
+                       sh.variant_id, pv.color, pv.size
                 FROM stock_holds sh
                 JOIN products p ON sh.product_id = p.id
                 LEFT JOIN product_variants pv ON sh.variant_id = pv.id
@@ -156,7 +156,7 @@ class StockRepository:
             cursor.execute(
                 """
                 SELECT p.id AS product_id, p.name, sh.quantity,
-                       sh.variant_id, pv.size
+                       sh.variant_id, pv.color, pv.size
                 FROM stock_holds sh
                 JOIN products p ON sh.product_id = p.id
                 LEFT JOIN product_variants pv ON sh.variant_id = pv.id

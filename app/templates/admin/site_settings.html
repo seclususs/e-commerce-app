@@ -4,55 +4,5 @@
 {% block adminheader %}Pengaturan Konten Website{% endblock %}
 
 {% block admincontent %}
-<div class="admin-card animated-element">
-    <form method="POST" action="{{ url_for('admin.admin_settings') }}" data-ajax="true">
-        <h3>Pengaturan Umum Situs</h3>
-        <div class="form-group">
-            <label for="app_name">Nama Aplikasi</label>
-            <input type="text" id="app_name" name="app_name" value="{{ content.app_name }}">
-        </div>
-        <div class="form-group">
-            <label for="short_description">Deskripsi Singkat (Tagline)</label>
-            <input type="text" id="short_description" name="short_description" value="{{ content.short_description }}">
-        </div>
-
-        <h3 style="margin-top:2rem;">Pratinjau "Tentang Kami" (Halaman Utama)</h3>
-        <div class="form-group">
-            <label for="about_teaser_title">Judul Pratinjau</label>
-            <input type="text" id="about_teaser_title" name="about_teaser_title" value="{{ content.about_teaser_title }}">
-        </div>
-        <div class="form-group">
-            <label for="about_teaser_text">Teks Pratinjau</label>
-            <textarea id="about_teaser_text" name="about_teaser_text" rows="3">{{ content.about_teaser_text }}</textarea>
-        </div>
-
-        <h3 style="margin-top:2rem;">Konten Halaman "Tentang Kami"</h3>
-        <div class="form-group"><label for="about_title">Judul Halaman</label><input type="text" id="about_title" name="about_title" value="{{ content.about_title }}"></div>
-        <div class="form-group"><label for="about_p1">Paragraf 1</label><textarea id="about_p1" name="about_p1" rows="4">{{ content.about_p1 }}</textarea></div>
-        <div class="form-group"><label for="about_p2">Paragraf 2</label><textarea id="about_p2" name="about_p2" rows="4">{{ content.about_p2 }}</textarea></div>
-        <div class="form-group"><label for="about_p3">Paragraf 3</label><textarea id="about_p3" name="about_p3" rows="4">{{ content.about_p3 }}</textarea></div>
-
-        <h3 style="margin-top:2rem;">Konten Kontak (Footer)</h3>
-         <div class="form-group"><label for="contact_email">Email Kontak</label><input type="email" id="contact_email" name="contact_email" value="{{ content.contact_email }}"></div>
-         <div class="form-group"><label for="contact_phone">Telepon Kontak</label><input type="text" id="contact_phone" name="contact_phone" value="{{ content.contact_phone }}"></div>
-         <div class="form-group"><label for="contact_location">Lokasi Kontak</label><input type="text" id="contact_location" name="contact_location" value="{{ content.contact_location }}"></div>
-
-        <h3 style="margin-top:2rem;">Sosial Media (Footer)</h3>
-        <p class="form-hint">Tambahkan tautan lengkap (contoh: https://instagram.com/username).</p>
-        <div class="form-group">
-            <label for="new_social_link">Tautan Sosial Media Baru</label>
-            <div class="form-actions" style="margin-top: 0; margin-bottom: 1rem;">
-                <input type="url" id="new_social_link" placeholder="https://..." class="form-control" style="flex-grow: 1; margin-bottom: 0;">
-                <button type="button" id="add-social-link" class="cta-button-secondary">Tambah Tautan</button>
-            </div>
-        </div>
-        <div id="social-links-container">
-            <!-- Tautan yang ditambahkan akan muncul di sini -->
-        </div>
-        <input type="hidden" name="social_links" id="social_links_input" value="{{ content.social_links or '[]' }}">
-
-
-        <button type="submit" class="cta-button form-button" style="margin-top: 2rem;">Simpan Pengaturan</button>
-    </form>
-</div>
+{% include 'partials/admin/_site_settings.html' %}
 {% endblock %}

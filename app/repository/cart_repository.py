@@ -4,7 +4,7 @@ from mysql.connector.connection import MySQLConnection
 
 
 class CartRepository:
-    
+
     def get_user_cart_items(
         self, conn: MySQLConnection, user_id: int
     ) -> List[Dict[str, Any]]:
@@ -14,7 +14,7 @@ class CartRepository:
                 SELECT
                     p.id, p.name, p.price, p.discount_price, p.image_url,
                     p.has_variants, uc.quantity, uc.variant_id,
-                    uc.id as cart_item_id, pv.size
+                    uc.id as cart_item_id, pv.color, pv.size
                 FROM user_carts uc
                 JOIN products p ON uc.product_id = p.id
                 LEFT JOIN product_variants pv ON uc.variant_id = pv.id

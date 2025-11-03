@@ -31,7 +31,7 @@ class VariantService:
     def get_variants_for_product(
         self, product_id: Any, conn: Optional[MySQLConnection] = None
     ) -> List[Dict[str, Any]]:
-        
+
         close_conn: bool = False
         if conn is None:
             conn = get_db_connection()
@@ -39,17 +39,17 @@ class VariantService:
 
         try:
             return self.variant_repository.find_by_product_id(conn, product_id)
-        
+
         except mysql.connector.Error as e:
             raise DatabaseException(
                 f"Kesalahan database saat mengambil varian: {e}"
             )
-        
+
         except Exception as e:
             raise ServiceLogicError(
                 f"Kesalahan layanan saat mengambil varian: {e}"
             )
-        
+
         finally:
             if close_conn and conn and conn.is_connected():
                 conn.close()
@@ -58,21 +58,26 @@ class VariantService:
     def add_variant(
         self,
         product_id: Any,
+        color: str,
         size: str,
         stock: Any,
         weight_grams: Any,
         sku: Optional[str],
     ) -> Dict[str, Any]:
-        
+
         try:
             stock_int: int = int(stock)
             weight_int: int = int(weight_grams)
-            if not size or not size.strip() or stock_int < 0 or weight_int < 0:
+            if (
+                not color or not color.strip() or
+                not size or not size.strip() or
+                stock_int < 0 or weight_int < 0
+            ):
                 raise ValidationError(
-                    "Ukuran, stok (>=0), dan berat (>=0) "
+                    "Warna, ukuran, stok (>=0), dan berat (>=0) "
                     "harus diisi dengan benar."
                 )
-            
+
         except (ValueError, TypeError):
             raise ValidationError("Stok dan berat harus berupa angka.")
 
@@ -83,25 +88,34 @@ class VariantService:
             conn = get_db_connection()
             conn.start_transaction()
             new_id = self.variant_repository.create(
-                conn, product_id, size, stock_int, weight_int, upper_sku
+                conn, product_id, color, size,
+                stock_int, weight_int, upper_sku
             )
             self.update_total_stock_from_variants(product_id, conn)
             conn.commit()
             new_variant = self.variant_repository.find_by_id(conn, new_id)
             return {
                 "success": True,
-                "message": f"Varian {size.upper()} berhasil ditambahkan.",
+                "message": (
+                    f"Varian {color.upper()} / {size.upper()} "
+                    "berhasil ditambahkan."
+                ),
                 "data": new_variant,
             }
-        
+
         except mysql.connector.IntegrityError as e:
             if conn and conn.is_connected():
                 conn.rollback()
             if e.errno == 1062:
-                field: str = "SKU" if "sku" in str(e).lower() else "ukuran"
-                value: Optional[str] = (
-                    upper_sku if field == "SKU" else size.upper()
-                )
+                field: str = "SKU"
+                value: Optional[str] = upper_sku
+                if "uk_product_color_size" in str(e).lower():
+                    field = "Kombinasi Warna/Ukuran"
+                    value = f"{color.upper()}/{size.upper()}"
+                elif "sku" not in str(e).lower():
+                    field = "Kombinasi Warna/Ukuran"
+                    value = f"{color.upper()}/{size.upper()}"
+
                 return {
                     "success": False,
                     "message": f'{field} "{value}" sudah ada untuk produk ini. '
@@ -110,19 +124,19 @@ class VariantService:
             raise DatabaseException(
                 "Terjadi kesalahan database (Integrity) saat menambah varian."
             )
-        
+
         except mysql.connector.Error as e:
             if conn and conn.is_connected():
                 conn.rollback()
             raise DatabaseException(
                 f"Kesalahan database saat menambahkan varian: {e}"
             )
-        
+
         except Exception as e:
             if conn and conn.is_connected():
                 conn.rollback()
             raise ServiceLogicError(f"Gagal menambahkan varian: {e}")
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()
@@ -132,21 +146,26 @@ class VariantService:
         self,
         product_id: Any,
         variant_id: Any,
+        color: str,
         size: str,
         stock: Any,
         weight_grams: Any,
         sku: Optional[str],
     ) -> Dict[str, Any]:
-        
+
         try:
             stock_int: int = int(stock)
             weight_int: int = int(weight_grams)
-            if not size or not size.strip() or stock_int < 0 or weight_int < 0:
+            if (
+                not color or not color.strip() or
+                not size or not size.strip() or
+                stock_int < 0 or weight_int < 0
+            ):
                 raise ValidationError(
-                    "Ukuran, stok (>=0), dan berat (>=0) "
+                    "Warna, ukuran, stok (>=0), dan berat (>=0) "
                     "harus diisi dengan benar."
                 )
-            
+
         except (ValueError, TypeError):
             raise ValidationError("Stok dan berat harus berupa angka.")
 
@@ -160,9 +179,10 @@ class VariantService:
                 conn,
                 variant_id,
                 product_id,
+                color,
                 size,
                 stock_int,
-                weight_int,
+                weight_grams,
                 upper_sku,
             )
             if rowcount > 0:
@@ -177,15 +197,20 @@ class VariantService:
                 raise RecordNotFoundError(
                     "Varian tidak ditemukan atau tidak sesuai."
                 )
-            
+
         except mysql.connector.IntegrityError as e:
             if conn and conn.is_connected():
                 conn.rollback()
             if e.errno == 1062:
-                field: str = "SKU" if "sku" in str(e).lower() else "ukuran"
-                value: Optional[str] = (
-                    upper_sku if field == "SKU" else size.upper()
-                )
+                field: str = "SKU"
+                value: Optional[str] = upper_sku
+                if "uk_product_color_size" in str(e).lower():
+                    field = "Kombinasi Warna/Ukuran"
+                    value = f"{color.upper()}/{size.upper()}"
+                elif "sku" not in str(e).lower():
+                    field = "Kombinasi Warna/Ukuran"
+                    value = f"{color.upper()}/{size.upper()}"
+
                 return {
                     "success": False,
                     "message": f'{field} "{value}" sudah ada untuk produk ini. '
@@ -195,14 +220,14 @@ class VariantService:
                 "Terjadi kesalahan database (Integrity) "
                 "saat memperbarui varian."
             )
-        
+
         except mysql.connector.Error as e:
             if conn and conn.is_connected():
                 conn.rollback()
             raise DatabaseException(
                 f"Kesalahan database saat memperbarui varian: {e}"
             )
-        
+
         except RecordNotFoundError as e:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -212,7 +237,7 @@ class VariantService:
             if conn and conn.is_connected():
                 conn.rollback()
             raise ServiceLogicError(f"Gagal memperbarui varian: {e}")
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()
@@ -221,7 +246,7 @@ class VariantService:
     def delete_variant(
         self, product_id: Any, variant_id: Any
     ) -> Dict[str, Any]:
-        
+
         conn: Optional[MySQLConnection] = None
         try:
             conn = get_db_connection()
@@ -240,19 +265,19 @@ class VariantService:
                 raise RecordNotFoundError(
                     "Varian tidak ditemukan atau tidak sesuai."
                 )
-            
+
         except mysql.connector.Error as e:
             if conn and conn.is_connected():
                 conn.rollback()
             raise DatabaseException(
                 f"Kesalahan database saat menghapus varian: {e}"
             )
-        
+
         except Exception as e:
             if conn and conn.is_connected():
                 conn.rollback()
             raise ServiceLogicError(f"Gagal menghapus varian: {e}")
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()
@@ -261,7 +286,7 @@ class VariantService:
     def delete_all_variants_for_product(
         self, product_id: Any, conn: MySQLConnection
     ) -> None:
-        
+
         try:
             self.variant_repository.delete_by_product_id(conn, product_id)
 
@@ -269,7 +294,7 @@ class VariantService:
             raise DatabaseException(
                 f"Kesalahan database saat menghapus varian: {e}"
             )
-        
+
         except Exception as e:
             raise ServiceLogicError(
                 f"Kesalahan layanan saat menghapus varian: {e}"
@@ -294,21 +319,21 @@ class VariantService:
             if close_conn:
                 conn.commit()
             return True
-        
+
         except mysql.connector.Error as e:
             if close_conn and conn and conn.is_connected():
                 conn.rollback()
             raise DatabaseException(
                 f"Kesalahan database saat memperbarui stok total: {e}"
             )
-        
+
         except Exception as e:
             if close_conn and conn and conn.is_connected():
                 conn.rollback()
             raise ServiceLogicError(
                 f"Kesalahan layanan saat memperbarui stok total: {e}"
             )
-        
+
         finally:
             if close_conn and conn and conn.is_connected():
                 conn.close()

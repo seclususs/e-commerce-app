@@ -36,12 +36,13 @@ def manage_variants(
 
         try:
             if action == "add":
+                color: str = request.form.get("color")
                 size: str = request.form.get("size")
                 stock: str = request.form.get("stock")
                 weight_grams: str = request.form.get("weight_grams")
                 sku: str = request.form.get("sku")
                 result = variant_service.add_variant(
-                    product_id, size, stock, weight_grams, sku
+                    product_id, color, size, stock, weight_grams, sku
                 )
 
                 if result.get("success"):
@@ -65,12 +66,14 @@ def manage_variants(
 
             elif action == "update":
                 variant_id: str = request.form.get("variant_id")
+                color: str = request.form.get("color")
                 size: str = request.form.get("size")
                 stock: str = request.form.get("stock")
                 weight_grams: str = request.form.get("weight_grams")
                 sku: str = request.form.get("sku")
                 result = variant_service.update_variant(
-                    product_id, variant_id, size, stock, weight_grams, sku
+                    product_id, variant_id, color, size,
+                    stock, weight_grams, sku
                 )
 
                 if result.get("success"):
@@ -88,10 +91,10 @@ def manage_variants(
 
         except ValidationError as ve:
             return jsonify({"success": False, "message": str(ve)}), 400
-        
+
         except RecordNotFoundError as rnfe:
             return jsonify({"success": False, "message": str(rnfe)}), 404
-        
+
         except DatabaseException:
             return (
                 jsonify(
@@ -99,7 +102,7 @@ def manage_variants(
                 ),
                 500,
             )
-        
+
         except ServiceLogicError:
             return (
                 jsonify(
@@ -107,7 +110,7 @@ def manage_variants(
                 ),
                 500,
             )
-        
+
         except Exception:
             return (
                 jsonify(
@@ -174,7 +177,7 @@ def manage_variants(
             return jsonify({"success": False, "message": message}), 500
         flash(message, "danger")
         return redirect(url_for("admin.admin_products"))
-    
+
     except Exception:
         message = "Gagal memuat halaman varian."
         if is_ajax:
@@ -203,7 +206,7 @@ def delete_variant(product_id: int, variant_id: int) -> Tuple[Response, int]:
 
     except RecordNotFoundError as rnfe:
         return jsonify({"success": False, "message": str(rnfe)}), 404
-    
+
     except DatabaseException:
         return (
             jsonify(
@@ -211,7 +214,7 @@ def delete_variant(product_id: int, variant_id: int) -> Tuple[Response, int]:
             ),
             500,
         )
-    
+
     except ServiceLogicError:
         return (
             jsonify(
@@ -219,7 +222,7 @@ def delete_variant(product_id: int, variant_id: int) -> Tuple[Response, int]:
             ),
             500,
         )
-    
+
     except Exception:
         return (
             jsonify(

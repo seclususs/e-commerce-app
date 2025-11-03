@@ -1,6 +1,10 @@
 import { cartStore } from '../store/cart-store.js';
 
-const formatRupiah = (num) => `Rp ${Number(num).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+const formatRupiah = (num) => (
+    `Rp ${Number(num).toLocaleString('id-ID', {
+        minimumFractionDigits: 0, maximumFractionDigits: 0
+    })}`
+);
 
 function renderCheckoutSummary(state) {
     const { items, subtotal } = state;
@@ -24,9 +28,23 @@ function renderCheckoutSummary(state) {
     summaryContainer.innerHTML = items.map(p => {
         const priceNum = Number(p.price) || 0;
         const discountPriceNum = Number(p.discount_price) || 0;
-        const effectivePrice = (discountPriceNum && discountPriceNum > 0) ? discountPriceNum : priceNum;
-        const sizeInfo = p.size ? ` (Ukuran: ${p.size})` : '';
-        return `<div class="summary-row"><span>${p.name}${sizeInfo} (x${p.quantity})</span><span>${formatRupiah(effectivePrice * p.quantity)}</span></div>`;
+        const effectivePrice = (
+            (discountPriceNum && discountPriceNum > 0)
+            ? discountPriceNum
+            : priceNum
+        );
+        const colorInfo = p.color ? `${p.color}` : '';
+        const sizeInfo = p.size ? `${p.size}` : '';
+        const variantInfo = (colorInfo || sizeInfo)
+            ? ` (${[colorInfo, sizeInfo].filter(Boolean).join(' / ')})`
+            : '';
+            
+        return (
+            `<div class="summary-row">
+                <span>${p.name}${variantInfo} (x${p.quantity})</span>
+                <span>${formatRupiah(effectivePrice * p.quantity)}</span>
+            </div>`
+        );
     }).join('');
 
     const subtotalNum = Number(subtotal) || 0;
@@ -35,14 +53,21 @@ function renderCheckoutSummary(state) {
 
     if (!window.IS_USER_LOGGED_IN && cartDataInput) {
         const guestCart = items.reduce((acc, item) => {
-            const key = item.variant_id ? `${item.id}-${item.variant_id}` : `${item.id}-null`;
+            const key = (
+                item.variant_id
+                ? `${item.id}-${item.variant_id}`
+                : `${item.id}-null`
+            );
             acc[key] = { quantity: item.quantity };
             return acc;
         }, {});
         cartDataInput.value = JSON.stringify(guestCart);
     }
 
-    const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
+    const cityElement = (
+        document.getElementById('city') ||
+        document.querySelector('.address-display-box')
+    );
     cityElement?.dispatchEvent(new Event('recalc'));
 }
 
@@ -73,7 +98,9 @@ function initCheckoutForm() {
         buttons.forEach(btn => {
             btn.disabled = true;
             btn.classList.add('is-loading');
-            btn.innerHTML = `<span class="spinner"></span><span>Memproses...</span>`;
+            btn.innerHTML = (
+                `<span class="spinner"></span><span>Memproses...</span>`
+            );
         });
     });
 }
@@ -109,7 +136,9 @@ function initVoucherHandler() {
     const voucherSelect = document.getElementById('user_voucher_id_select');
     const userVoucherIdInput = document.getElementById('user_voucher_id_input');
 
-    if (!applyBtn || !voucherCodeInput || !messageEl || !userVoucherIdInput) return;
+    if (!applyBtn || !voucherCodeInput || !messageEl || !userVoucherIdInput) {
+        return;
+    }
 
     const setVoucherLoading = (isLoading) => {
         if (applyBtn) applyBtn.disabled = isLoading;
@@ -135,7 +164,10 @@ function initVoucherHandler() {
         if (voucherSelect) voucherSelect.disabled = false;
         if (applyBtn) applyBtn.disabled = false;
 
-        const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
+        const cityElement = (
+            document.getElementById('city') ||
+            document.querySelector('.address-display-box')
+        );
         cityElement?.dispatchEvent(new Event('recalc'));
     };
 
@@ -158,13 +190,13 @@ function initVoucherHandler() {
             if (result.success) {
                 messageEl.textContent = result.message;
                 messageEl.classList.add('success');
-                
+
                 const discountAmount = result.discount_amount;
                 const discountEl = document.getElementById('checkoutDiscount');
                 discountEl.textContent = `- ${formatRupiah(discountAmount)}`;
                 discountEl.dataset.rawAmount = discountAmount;
                 document.querySelector('.discount-row').style.display = 'flex';
-                
+
                 if (result.user_voucher_id) {
                     userVoucherIdInput.value = result.user_voucher_id;
                     voucherCodeInput.value = '';
@@ -174,8 +206,11 @@ function initVoucherHandler() {
                     if (voucherSelect) voucherSelect.value = '';
                     if (voucherSelect) voucherSelect.disabled = true;
                 }
-                
-                const cityElement = document.getElementById('city') || document.querySelector('.address-display-box');
+
+                const cityElement = (
+                    document.getElementById('city') ||
+                    document.querySelector('.address-display-box')
+                );
                 cityElement?.dispatchEvent(new Event('recalc'));
             } else {
                 messageEl.textContent = result.message;
@@ -190,13 +225,19 @@ function initVoucherHandler() {
         } finally {
             setVoucherLoading(false);
             if (payload.voucher_code) {
-                if (voucherSelect) voucherSelect.disabled = !messageEl.classList.contains('error');
+                if (voucherSelect) {
+                    voucherSelect.disabled = !messageEl.classList.contains(
+                        'error'
+                    );
+                }
             } else if (payload.user_voucher_id) {
-                voucherCodeInput.disabled = !messageEl.classList.contains('error');
+                voucherCodeInput.disabled = !messageEl.classList.contains(
+                    'error'
+                );
             }
         }
     };
-    
+
     applyBtn.addEventListener('click', () => {
         const code = voucherCodeInput.value.trim();
         if (code) {
@@ -215,7 +256,10 @@ function initVoucherHandler() {
     });
 
     voucherCodeInput.addEventListener('input', () => {
-        if (messageEl.textContent !== '' || (voucherSelect && voucherSelect.value !== '')) {
+        if (
+            messageEl.textContent !== '' ||
+            (voucherSelect && voucherSelect.value !== '')
+        ) {
             resetDiscount();
         }
     });
@@ -237,7 +281,10 @@ function initStockHoldTimer(expiresAtIsoString) {
     const expiresAtInput = document.getElementById('stock_hold_expires_at');
     const timerEl = document.getElementById('timer');
     const container = document.getElementById('stock-hold-timer-container');
-    const expiryTime = expiresAtIsoString || (expiresAtInput ? expiresAtInput.value : null);
+    const expiryTime = (
+        expiresAtIsoString ||
+        (expiresAtInput ? expiresAtInput.value : null)
+    );
 
     if (!expiryTime || !timerEl || !container) {
         console.warn("Timer elements not found or expiry time missing.");
@@ -252,7 +299,11 @@ function initStockHoldTimer(expiresAtIsoString) {
         if (placeOrderBtn) placeOrderBtn.disabled = false;
         if (placeOrderBtnMobile) placeOrderBtnMobile.disabled = false;
     } else {
-        container.innerHTML = 'Waktu penahanan stok habis! <a href="/cart" style="color: white; text-decoration: underline;">Kembali ke keranjang</a> untuk validasi ulang.';
+        container.innerHTML = (
+            'Waktu penahanan stok habis! <a href="/cart" ' +
+            'style="color: white; text-decoration: underline;">' +
+            'Kembali ke keranjang</a> untuk validasi ulang.'
+        );
         container.classList.add('expired');
         const placeOrderBtn = document.getElementById('placeOrderBtn');
         const placeOrderBtnMobile = document.getElementById('placeOrderBtnMobile');
@@ -267,7 +318,11 @@ function initStockHoldTimer(expiresAtIsoString) {
 
         if (distance < 0) {
             clearInterval(interval);
-            container.innerHTML = 'Waktu penahanan stok habis! <a href="/cart" style="color: white; text-decoration: underline;">Kembali ke keranjang</a> untuk validasi ulang.';
+            container.innerHTML = (
+                'Waktu penahanan stok habis! <a href="/cart" ' +
+                'style="color: white; text-decoration: underline;">' +
+                'Kembali ke keranjang</a> untuk validasi ulang.'
+            );
             container.classList.add('expired');
             const placeOrderBtn = document.getElementById('placeOrderBtn');
             const placeOrderBtnMobile = document.getElementById('placeOrderBtnMobile');
@@ -278,7 +333,10 @@ function initStockHoldTimer(expiresAtIsoString) {
 
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        timerEl.textContent = (
+            `${minutes.toString().padStart(2, '0')}:` +
+            `${seconds.toString().padStart(2, '0')}`
+        );
     }, 1000);
 }
 
@@ -291,7 +349,9 @@ function initShippingCalculation() {
     const discountEl = document.getElementById('checkoutDiscount');
     const shippingCostInput = document.getElementById('shipping_cost_input');
 
-    if (!totalEl || !shippingRow || !shippingCostEl || !shippingCostInput) return;
+    if (!totalEl || !shippingRow || !shippingCostEl || !shippingCostInput) {
+        return;
+    }
 
     const calculateAndUpdate = () => {
         let city = '';
@@ -318,7 +378,9 @@ function initShippingCalculation() {
         }
 
         let shippingCost = 0;
-        const jabodetabek = ['jakarta', 'bogor', 'depok', 'tangerang', 'bekasi'];
+        const jabodetabek = [
+            'jakarta', 'bogor', 'depok', 'tangerang', 'bekasi'
+        ];
 
         if (city && jabodetabek.includes(city.toLowerCase())) {
             shippingCost = 10000;
@@ -336,7 +398,7 @@ function initShippingCalculation() {
 
         const subtotal = Number(cartStore.getState().subtotal) || 0;
         const discount = parseFloat(discountEl.dataset.rawAmount || '0') || 0;
-        const finalTotal = subtotal + shippingCost - discount; 
+        const finalTotal = subtotal + shippingCost - discount;
         totalEl.textContent = formatRupiah(finalTotal);
         shippingCostInput.value = shippingCost;
     };
@@ -383,7 +445,11 @@ async function prepareCheckout() {
     } catch (error) {
         console.error("Checkout preparation error:", error);
         if (timerContainer) {
-            timerContainer.innerHTML = `${error.message} <a href="/cart" style="color: white; text-decoration: underline;">Kembali ke keranjang</a>.`;
+            timerContainer.innerHTML = (
+                `${error.message} <a href="/cart" ` +
+                `style="color: white; text-decoration: underline;">` +
+                `Kembali ke keranjang</a>.`
+            );
             timerContainer.classList.add('expired');
         }
         if (form) {

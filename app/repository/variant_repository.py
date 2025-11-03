@@ -11,7 +11,7 @@ class VariantRepository:
         try:
             cursor.execute(
                 "SELECT * FROM product_variants "
-                "WHERE product_id = %s ORDER BY id",
+                "WHERE product_id = %s ORDER BY color, size",
                 (product_id,),
             )
             return cursor.fetchall()
@@ -34,7 +34,7 @@ class VariantRepository:
 
     def create(
         self, conn: MySQLConnection,
-        product_id: Any, size: str,
+        product_id: Any, color: str, size: str,
         stock: int, weight_grams: int,
         sku: Optional[str],
     ) -> int:
@@ -43,10 +43,13 @@ class VariantRepository:
             cursor.execute(
                 """
                 INSERT INTO product_variants
-                (product_id, size, stock, weight_grams, sku)
-                VALUES (%s, %s, %s, %s, %s)
+                (product_id, color, size, stock, weight_grams, sku)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 """,
-                (product_id, size.upper().strip(), stock, weight_grams, sku),
+                (
+                    product_id, color.upper().strip(), size.upper().strip(),
+                    stock, weight_grams, sku
+                ),
             )
             return cursor.lastrowid
         finally:
@@ -56,7 +59,7 @@ class VariantRepository:
     def update(
         self, conn: MySQLConnection,
         variant_id: Any, product_id: Any,
-        size: str, stock: int, weight_grams: int,
+        color: str, size: str, stock: int, weight_grams: int,
         sku: Optional[str],
     ) -> int:
         cursor = conn.cursor()
@@ -64,10 +67,12 @@ class VariantRepository:
             cursor.execute(
                 """
                 UPDATE product_variants
-                SET size = %s, stock = %s, weight_grams = %s, sku = %s
+                SET color = %s, size = %s, stock = %s, weight_grams = %s,
+                    sku = %s
                 WHERE id = %s AND product_id = %s
                 """,
                 (
+                    color.upper().strip(),
                     size.upper().strip(),
                     stock,
                     weight_grams,
@@ -151,7 +156,7 @@ class VariantRepository:
                 return []
             placeholders = ", ".join(["%s"] * len(variant_ids))
             query = (
-                f"SELECT id, product_id, size FROM product_variants "
+                f"SELECT id, product_id, color, size FROM product_variants "
                 f"WHERE id IN ({placeholders})"
             )
             cursor.execute(query, tuple(variant_ids))

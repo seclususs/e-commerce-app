@@ -1,10 +1,8 @@
-{# Add data-ajax-nav="true" to "Back to Profile" link #}
 <section class="user-profile-section">
     <div class="profile-container animated-element">
         <h2 class="section-title">Edit Profil</h2>
         <div class="admin-card animated-element" data-animation-delay="100">
             <h3>Informasi Akun</h3>
-             {# Forms submit via AJAX defined in profile.js, no changes needed here #}
             <form method="POST" action="{{ url_for('user.edit_profile') }}" data-ajax="true">
                 <input type="hidden" name="form_action" value="update_info">
                 <div class="form-group"><label for="username">Username</label><input type="text" id="username" name="username" value="{{ user.username }}" required></div>

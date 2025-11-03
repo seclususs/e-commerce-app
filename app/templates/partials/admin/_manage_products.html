@@ -12,13 +12,16 @@
                     {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" placeholder="cth: Hitam"></div>
+            <div class="form-group">
+                <label for="colors">Teks Deskripsi Warna</label>
+                <input type="text" id="colors" name="colors" placeholder="cth: Hitam, Putih, Biru">
+            </div>
         </div>
         <div class="form-group">
             <label class="custom-checkbox">
                 <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input" data-initial-state="false">
                 <span class="checkbox-box"><span class="checkmark"></span></span>
-                <span>Produk ini memiliki varian ukuran</span>
+                <span>Produk ini memiliki varian (Warna/Ukuran)</span>
             </label>
         </div>
         <div id="non-variant-fields">

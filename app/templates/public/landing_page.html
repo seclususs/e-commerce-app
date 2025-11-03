@@ -1,67 +1,6 @@
 {% extends "layouts/base_layout.html" %}
+{% set is_homepage = True %}
 
 {% block content %}
-    <section class="hero animated-element">
-        <div class="hero-content">
-            <h1>{{ content.app_name }}</h1>
-            <p class="tagline">{{ content.short_description }}</p>
-            <a href="{{ url_for('auth.register') }}" class="cta-button">Buat Akun & Mulai Belanja</a>
-        </div>
-    </section>
-
-    <section id="products" class="products-section animated-element">
-        <h2 class="section-title animated-element">Produk Teratas Kami</h2>
-        <div class="products-grid">
-            {% for product in products %}
-            <div class="product-card homepage-product-card animated-element" data-animation-delay="{{ loop.index * 100 }}">
-                <a href="{{ url_for('product.product_detail', id=product.id) }}" class="product-card-link" aria-label="Lihat detail untuk {{ product.name }}"></a>
-                <div class="product-image">
-                    <img loading="lazy" src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else url_for('static', filename='images/placeholder.png') + product.name }}" alt="{{ product.name }}">
-                </div>
-                <div class="product-info">
-                    <h3 class="product-name">{{ product.name }}</h3>
-                    <p class="product-category">{{ product.category }}</p>
-                    <div class="product-price-container" style="padding-top: 0.5rem;">
-                        {% if product.discount_price and product.discount_price > 0 %}
-                            <span class="product-price discount-price" style="font-size: 1.25rem;">{{ (product.discount_price or 0)|rupiah }}</span>
-                            <del class="original-price" style="font-size: 0.9rem;">{{ (product.price or 0)|rupiah }}</del>
-                        {% else %}
-                            <span class="product-price" style="font-size: 1.25rem;">{{ (product.price or 0)|rupiah }}</span>
-                        {% endif %}
-                    </div>
-                    <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}" style="z-index: 2; position: relative; margin-top: 1rem;">
-                        <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
-                    </button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-         <div style="text-align: center; margin-top: 3rem;">
-             <a href="{{ url_for('product.products_page') }}" class="cta-button cta-button-outline">Lihat Semua Produk</a>
-        </div>
-    </section>
-
-    <section id="about-teaser" class="about-section animated-element">
-        <div class="about-content">
-            <h2 class="section-title">{{ content.about_teaser_title }}</h2>
-            <p>{{ content.about_teaser_text }}</p>
-            <a href="{{ url_for('product.about') }}" class="cta-button cta-button-outline">Selengkapnya</a>
-        </div>
-    </section>
-
-    <section class="info-section animated-element">
-         <h2 class="section-title">Pembayaran & Pengiriman</h2>
-         <div class="info-icons">
-             <div class="info-category animated-element" data-animation-delay="100">
-                 <h4>Metode Pembayaran</h4>
-                 <div class="icons-container"><i class="fas fa-university"></i><i class="fas fa-hand-holding-usd"></i><i class="fas fa-wallet"></i></div>
-                 <span>Bank Transfer, COD, E-Wallet</span>
-             </div>
-             <div class="info-category animated-element" data-animation-delay="300">
-                 <h4>Jasa Pengiriman</h4>
-                 <div class="icons-container"><i class="fas fa-truck-fast"></i><i class="fas fa-box"></i><i class="fas fa-shipping-fast"></i></div>
-                 <span>JNE, SiCepat, J&T Express</span>
-             </div>
-         </div>
-    </section>
+{% include 'partials/public/_landing.html' %}
 {% endblock %}

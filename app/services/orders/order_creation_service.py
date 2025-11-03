@@ -84,7 +84,7 @@ class OrderCreationService:
         user_id: Optional[int],
         session_id: Optional[str]
     ) -> List[Dict[str, Any]]:
-        
+
         log_id = f"User {user_id}" if user_id else f"Session {session_id}"
         logger.debug(f"Mengambil item yang ditahan untuk {log_id}")
 
@@ -110,7 +110,7 @@ class OrderCreationService:
                 f"Menemukan {len(result)} item yang ditahan untuk {log_id}"
             )
             return result
-        
+
         except mysql.connector.Error as db_err:
             logger.error(
                 f"Kesalahan database saat mengambil item yang ditahan "
@@ -126,7 +126,7 @@ class OrderCreationService:
     def _prepare_items_for_order(
         self, conn: MySQLConnection, held_items: List[Dict[str, Any]]
     ) -> Tuple[List[Dict[str, Any]], Decimal]:
-        
+
         if not held_items:
             logger.warning(
                 "Persiapan item gagal: Tidak ada item yang ditahan "
@@ -182,6 +182,7 @@ class OrderCreationService:
                         "quantity": item["quantity"],
                         "price_at_order": effective_price,
                         "variant_id": item["variant_id"],
+                        "color": item["color"],
                         "size": item["size"],
                     }
                 )
@@ -191,7 +192,7 @@ class OrderCreationService:
                 f"Subtotal: {subtotal}"
             )
             return items_for_order, subtotal
-        
+
         except mysql.connector.Error as db_err:
             logger.error(
                 f"Kesalahan database saat mempersiapkan item pesanan: {db_err}",
@@ -218,7 +219,7 @@ class OrderCreationService:
         shipping_details: Dict[str, Any],
         items_for_order: List[Dict[str, Any]],
     ) -> int:
-        
+
         order_id: Optional[int] = None
 
         try:
@@ -253,6 +254,7 @@ class OrderCreationService:
                     item["variant_id"],
                     item["quantity"],
                     item["price_at_order"],
+                    item["color"],
                     item["size"],
                 )
                 for item in items_for_order
@@ -282,7 +284,7 @@ class OrderCreationService:
                 )
 
             return order_id
-        
+
         except mysql.connector.Error as db_err:
             logger.error(
                 f"Kesalahan database saat penyisipan pesanan untuk "
@@ -300,7 +302,7 @@ class OrderCreationService:
         order_id: int,
         items_for_order: List[Dict[str, Any]],
     ) -> None:
-        
+
         product_ids_with_variants: Set[int] = set()
 
         try:
@@ -374,7 +376,7 @@ class OrderCreationService:
         user_voucher_id: Optional[int],
         order_id: int,
     ) -> None:
-        
+
         try:
             if voucher_code:
                 self.voucher_repository.increment_use_count(
@@ -415,7 +417,7 @@ class OrderCreationService:
         user_voucher_id_str: Optional[str] = None,
         shipping_cost: float = 0.0,
     ) -> Dict[str, Any]:
-        
+
         log_id = f"User {user_id}" if user_id else f"Session {session_id}"
         logger.info(
             f"Pembuatan pesanan dimulai untuk {log_id}. "
@@ -442,7 +444,7 @@ class OrderCreationService:
             )
             discount_amount = Decimal("0")
             final_voucher_code = voucher_code
-            
+
             if user_id and user_voucher_id_str:
                 try:
                     user_voucher_id = int(user_voucher_id_str)
@@ -455,7 +457,7 @@ class OrderCreationService:
                         "success": False,
                         "message": "ID Voucher yang dipilih tidak valid.",
                     }
-                
+
                 voucher_result = (
                     self.discount_service.validate_and_calculate_by_id(
                         user_id, user_voucher_id, float(subtotal)
@@ -537,7 +539,7 @@ class OrderCreationService:
                 f"validasi/error: {ve}"
             )
             return {"success": False, "message": str(ve)}
-        
+
         except (mysql.connector.Error, DatabaseException) as db_err:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -550,7 +552,7 @@ class OrderCreationService:
                 "success": False,
                 "message": "Terjadi kesalahan database saat membuat pesanan.",
             }
-        
+
         except Exception as e:
             if conn and conn.is_connected():
                 conn.rollback()
@@ -562,7 +564,7 @@ class OrderCreationService:
                 "success": False,
                 "message": "Terjadi kesalahan internal saat membuat pesanan.",
             }
-        
+
         finally:
             if conn and conn.is_connected():
                 conn.close()

@@ -4,54 +4,5 @@
 {% block adminheader %}Manajemen Pesanan{% endblock %}
 
 {% block admincontent %}
-<!-- Form Filter & Pencarian -->
-<div class="admin-card animated-element">
-    <h3>Filter & Cari Pesanan</h3>
-    <form method="GET" action="{{ url_for('admin.admin_orders') }}" id="admin-order-filter-form">
-        <div class="form-grid" style="align-items: flex-end;">
-            <div class="form-group">
-                <label for="search">Cari ID Pesanan / Nama</label>
-                <input type="search" id="search" name="search" class="form-control" placeholder="cth: 12 atau John Doe" value="{{ request.args.get('search', '') }}">
-            </div>
-            <div class="form-group">
-                <label for="status">Filter Status</label>
-                <select id="status" name="status" class="form-control">
-                    <option value="">Semua Status</option>
-                    <option value="Menunggu Pembayaran" {% if request.args.get('status') == 'Menunggu Pembayaran' %}selected{% endif %}>Menunggu Pembayaran</option>
-                    <option value="Diproses" {% if request.args.get('status') == 'Diproses' %}selected{% endif %}>Diproses</option>
-                    <option value="Dikirim" {% if request.args.get('status') == 'Dikirim' %}selected{% endif %}>Dikirim</option>
-                    <option value="Selesai" {% if request.args.get('status') == 'Selesai' %}selected{% endif %}>Selesai</option>
-                    <option value="Dibatalkan" {% if request.args.get('status') == 'Dibatalkan' %}selected{% endif %}>Dibatalkan</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="start_date">Dari Tanggal</label>
-                <input type="date" id="start_date" name="start_date" class="form-control" value="{{ request.args.get('start_date', '') or '' }}">
-            </div>
-            <div class="form-group">
-                <label for="end_date">Sampai Tanggal</label>
-                <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.args.get('end_date', '') or '' }}">
-            </div>
-        </div>
-        <div class="form-actions" style="margin-top: 1.5rem;">
-            <button type="button" class="cta-button-secondary">Reset Filter</button>
-        </div>
-    </form>
-</div>
-
-<div class="admin-card animated-element" data-animation-delay="200">
-    <h3>Daftar Pesanan</h3>
-    <div class="table-wrapper">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>ID Pesanan</th><th>Tanggal</th><th>Pelanggan</th><th>Total</th><th>Status</th><th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody id="orders-table-body">
-                {% include 'partials/admin/_order_table_body.html' %}
-            </tbody>
-        </table>
-    </div>
-</div>
+{% include 'partials/admin/_manage_orders.html' %}
 {% endblock %}

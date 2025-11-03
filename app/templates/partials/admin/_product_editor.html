@@ -9,7 +9,10 @@
                     {% for cat in categories %}<option value="{{ cat.id }}" {% if cat.id == product.category_id %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
                 </select>
             </div>
-            <div class="form-group"><label for="colors">Warna</label><input type="text" id="colors" name="colors" value="{{ product.colors or '' }}" placeholder="cth: Hitam"></div>
+            <div class="form-group">
+                <label for="colors">Teks Deskripsi Warna</label>
+                <input type="text" id="colors" name="colors" value="{{ product.colors or '' }}" placeholder="cth: Hitam, Putih, Biru">
+            </div>
         </div>
 
         <div class="form-group" style="margin-top: 1.5rem;">
@@ -19,7 +22,7 @@
                        {% if product.has_variants %}checked{% endif %}
                        {% if product.variants and product.variants|length > 1 %}disabled title="Hapus semua varian kecuali satu untuk mengubah tipe produk."{% endif %}>
                 <span class="checkbox-box"><span class="checkmark"></span></span>
-                <span>Produk ini memiliki varian ukuran</span>
+                <span>Produk ini memiliki varian (Warna/Ukuran)</span>
             </label>
             {% if product.variants and product.variants|length > 1 %}
             <p class="form-hint" style="color: var(--color-warning); margin-top: 0.5rem;">Hapus semua varian kecuali satu untuk menonaktifkan fitur varian.</p>
@@ -44,7 +47,7 @@
         <div class="form-hint" id="variant-conversion-hint" style="display:none; margin-top: 1rem; padding: 1rem; background-color: rgba(59, 130, 246, 0.1); border: 1px solid var(--color-primary); border-radius: var(--border-radius-sm);">
             <strong>Anda akan mengubah produk ini menjadi produk bervarian.</strong>
             <ul style="margin-left: 1.5rem; margin-top: 0.5rem; font-size: 0.85rem;">
-                <li>Stok, berat, dan SKU saat ini akan diubah menjadi varian pertama dengan nama "STANDAR".</li>
+                <li>Stok, berat, dan SKU saat ini akan diubah menjadi varian pertama dengan Warna "STANDAR" dan Ukuran "STANDAR".</li>
                 <li>Setelah menyimpan, Anda dapat mengedit varian ini dan menambah varian lainnya melalui halaman "Kelola Varian".</li>
             </ul>
         </div>

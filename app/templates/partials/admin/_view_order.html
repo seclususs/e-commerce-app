@@ -6,7 +6,7 @@
     <div class="admin-card">
         <h3>Informasi Pesanan</h3>
         <p><strong>ID Pesanan:</strong> #{{ order.id }}</p>
-        <p><strong>Tanggal:</strong> {{ (order.order_date | datetime_from_string).strftime('%d %B %Y, %H:%M') }}</p> {# Format tanggal #}
+        <p><strong>Tanggal:</strong> {{ (order.order_date | datetime_from_string).strftime('%d %B %Y, %H:%M') }}</p>
         <p><strong>Pelanggan:</strong> {{ order.customer_name or 'Tamu' }} ({{ order.email or 'N/A' }})</p>
         <p><strong>Total Pembayaran:</strong> {{ order.total_amount|rupiah }}</p>
         <p><strong>Metode Pembayaran:</strong> {{ order.payment_method or 'N/A' }}</p>
@@ -53,7 +53,14 @@
             <tbody>
                 {% for item in items %}
                 <tr>
-                    <td>{{ item.name }} {% if item.size_at_order %}({{ item.size_at_order }}){% endif %}</td> {# Tampilkan ukuran jika ada #}
+                    <td>
+                        {{ item.name }}
+                        {% if item.color_at_order or item.size_at_order %}
+                            <span style="display: block; font-size: 0.9em; color: var(--color-text-secondary);">
+                                ({{ [item.color_at_order, item.size_at_order]|select('!=', None)|join(' / ') }})
+                            </span>
+                        {% endif %}
+                    </td>
                     <td>{{ item.quantity }}</td>
                     <td>{{ item.price|rupiah }}</td>
                     <td>{{ (item.price * item.quantity)|rupiah }}</td>

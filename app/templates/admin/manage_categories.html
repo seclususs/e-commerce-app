@@ -4,32 +4,5 @@
 {% block adminheader %}Manajemen Kategori Produk{% endblock %}
 
 {% block admincontent %}
-<div class="admin-card animated-element">
-    <h3>Tambah Kategori Baru</h3>
-    <form id="add-category-form" method="POST" action="{{ url_for('admin.admin_categories') }}" class="form-actions" data-ajax="true" data-update-target="#categories-table-body" data-update-action="prepend">
-        <input type="hidden" name="action" value="add">
-        <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
-             <label for="name" class="sr-only">Nama Kategori Baru</label>
-            <input type="text" id="name" name="name" placeholder="Nama Kategori Baru" required class="form-control">
-        </div>
-        <button type="submit" class="cta-button">Tambah</button>
-    </form>
-</div>
-
-<div class="admin-card animated-element" data-animation-delay="200">
-    <h3>Daftar Kategori</h3>
-    <div class="table-wrapper">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nama Kategori</th>
-                </tr>
-            </thead>
-            <tbody id="categories-table-body">
-                {% include '/partials/admin/_category_table_body.html' %}
-            </tbody>
-        </table>
-    </div>
-</div>
+{% include 'partials/admin/_manage_categories.html' %}
 {% endblock %}

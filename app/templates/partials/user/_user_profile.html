@@ -1,27 +1,30 @@
-<section class="user-profile-section">
-    <div class="profile-container animated-element">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-            <h2 class="section-title" style="margin: 0;">Profil Saya</h2>
-            <a href="{{ url_for('user.edit_profile') }}" class="cta-button-secondary" data-ajax-nav="true">Edit Profil</a>
+<section class="user-profile-section animated-element">
+    <div class="profile-container">
+        <div class="profile-header">
+            <h2 class="section-title">Profil Saya</h2>
+            <a href="{{ url_for('user.edit_profile') }}" class="cta-button-secondary" data-ajax-nav="true">
+                <i class="fas fa-pen"></i> <span>Edit Profil</span>
+            </a>
         </div>
 
-        <div class="admin-card animated-element" data-animation-delay="200">
-            <div class="order-detail-grid">
-                <div>
+        <div class="profile-info-card animated-element" data-animation-delay="200">
+            <div class="profile-info-grid">
+                <div class="info-item">
                     <h3>Informasi Akun</h3>
                     <p><strong>Username:</strong> {{ user.username }}</p>
                     <p><strong>Email:</strong> {{ user.email }}</p>
                 </div>
-                <div>
+                <div class="info-item">
                     <h3>Alamat Utama</h3>
                     {% if user.address_line_1 %}
                         <p><strong>Telepon:</strong> {{ user.phone }}</p>
-                        <p>{{ user.address_line_1 }}<br>
+                        <p class="address-text">
+                           {{ user.address_line_1 }}<br>
                            {% if user.address_line_2 %}{{ user.address_line_2 }}<br>{% endif %}
                            {{ user.city }}, {{ user.province }} {{ user.postal_code }}
                         </p>
                     {% else %}
-                        <p style="color: #94a3b8;">Anda belum mengatur alamat utama.</p>
+                        <p class="address-placeholder">Anda belum mengatur alamat utama.</p>
                     {% endif %}
                 </div>
             </div>
@@ -30,15 +33,15 @@
         <div class="profile-tabs-container animated-element" data-animation-delay="400">
             <div class="profile-tabs">
                 <button class="profile-tab-btn active" data-tab="tab-orders">
-                    <i class="fas fa-receipt"></i> Riwayat Pesanan
+                    <i class="fas fa-receipt"></i> <span>Riwayat Pesanan</span>
                 </button>
                 <button class="profile-tab-btn" data-tab="tab-vouchers">
-                    <i class="fas fa-ticket-alt"></i> Voucher Saya
+                    <i class="fas fa-ticket-alt"></i> <span>Voucher Saya</span>
                 </button>
             </div>
 
             <div id="tab-orders" class="profile-tab-content active">
-                <div class="admin-card">
+                <div class="profile-tab-card">
                     <h3>Riwayat Pesanan</h3>
                     <div class="table-wrapper">
                         <table class="admin-table user-profile-orders">

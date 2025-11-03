@@ -1,5 +1,6 @@
 import { showNotification } from './notification.js';
 import { cartStore } from '../store/cart-store.js';
+import { selectedVariantId } from '../pages/product-detail/variant-selector.js';
 
 async function handleAddToCart(btn) {
     if (!btn || btn.disabled || btn.classList.contains('is-added')) return;
@@ -9,39 +10,63 @@ async function handleAddToCart(btn) {
     const hasVariants = btn.dataset.hasVariants === 'true';
     const quantityInput = document.getElementById('quantity-input');
     const quantityToAdd = quantityInput ? parseInt(quantityInput.value, 10) : 1;
+    const isDetailPage = document.querySelector('.product-detail-section');
 
     let variantId = null;
     let stock = parseInt(btn.dataset.stock, 10);
 
-    const activeSizeBtn = document.querySelector('.size-option-btn.active');
-    if (hasVariants && activeSizeBtn) {
-        variantId = parseInt(activeSizeBtn.dataset.variantId, 10);
-        stock = parseInt(activeSizeBtn.dataset.stock, 10);
-    } else if (hasVariants && !activeSizeBtn && document.querySelector('.product-detail-section')) {
-        showNotification('Silakan pilih ukuran terlebih dahulu.', true);
-        return;
+    if (hasVariants) {
+        if (isDetailPage) {
+            if (selectedVariantId) {
+                variantId = parseInt(selectedVariantId, 10);
+                const variantDataEl = document.getElementById('variant-data');
+                const allVariants = JSON.parse(variantDataEl.textContent);
+                const variant = allVariants.find(v => v.id === variantId);
+                stock = variant ? variant.stock : 0;
+            } else {
+                showNotification(
+                    'Silakan pilih warna dan ukuran terlebih dahulu.', true
+                );
+                return;
+            }
+        } else {
+            showNotification('Silakan pilih varian di halaman detail produk.', true);
+            return;
+        }
     }
 
     btn.disabled = true;
     const btnTextEl = btn.querySelector('span');
     const originalText = btnTextEl ? btnTextEl.textContent : '';
     if (btnTextEl) {
-        btnTextEl.innerHTML = `<span class="spinner" style="display: inline-block; width: 1em; height: 1em; border-width: 2px;"></span>`;
+        btnTextEl.innerHTML = (
+            '<span class="spinner" style="display: inline-block; ' +
+            'width: 1em; height: 1em; border-width: 2px;"></span>'
+        );
     }
 
-    const success = await cartStore.addItem(id, quantityToAdd, variantId, name, stock);
+    const success = await cartStore.addItem(
+        id, quantityToAdd, variantId, name, stock
+    );
 
     if (success) {
         showNotification(`'${name}' x ${quantityToAdd} ditambahkan!`);
 
-        const icon = document.querySelector('#bottomCartIconContainer .fa-shopping-cart');
+        const icon = document.querySelector(
+            '#bottomCartIconContainer .fa-shopping-cart'
+        );
         if (icon) {
             icon.classList.add('is-animating');
             setTimeout(() => icon.classList.remove('is-animating'), 600);
         }
 
         btn.classList.add('is-added');
-        if (btnTextEl) btnTextEl.innerHTML = '<i class="fas fa-check checkmark-icon" style="display: inline-block;"></i> Ditambahkan!';
+        if (btnTextEl) {
+            btnTextEl.innerHTML = (
+                '<i class="fas fa-check checkmark-icon" ' +
+                'style="display: inline-block;"></i> Ditambahkan!'
+            );
+        }
 
         setTimeout(() => {
             btn.classList.remove('is-added');

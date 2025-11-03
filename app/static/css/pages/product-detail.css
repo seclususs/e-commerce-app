@@ -129,18 +129,21 @@
 }
 
 
-.product-size-selector {
+.product-size-selector,
+.product-color-selector {
   margin-top: 1.5rem;
 }
 
-.size-options-wrapper {
+.size-options-wrapper,
+.color-options-wrapper {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 0.5rem;
 }
 
-.size-option-btn {
+.size-option-btn,
+.color-option-btn {
   background-color: transparent;
   border: 1px solid var(--color-border-default);
   color: var(--color-text-primary);
@@ -149,15 +152,19 @@
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease-in-out;
+  min-width: 50px;
+  text-align: center;
 }
 
-.size-option-btn:hover:not(:disabled) {
+.size-option-btn:hover:not(:disabled),
+.color-option-btn:hover:not(:disabled) {
   background-color: var(--color-background-elevated);
   border-color: var(--color-primary);
   color: var(--color-text-primary);
 }
 
-.size-option-btn.active {
+.size-option-btn.active,
+.color-option-btn.active {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
   color: var(--color-white);
@@ -165,11 +172,13 @@
   box-shadow: 0 0 10px var(--color-shadow-primary);
 }
 
-html.light-theme .size-option-btn.active {
+html.light-theme .size-option-btn.active,
+html.light-theme .color-option-btn.active {
   color: var(--color-white);
 }
 
-.size-option-btn:disabled {
+.size-option-btn:disabled,
+.color-option-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   background-image: linear-gradient(45deg, rgba(128, 128, 128, 0.05) 25%, transparent 25%, transparent 50%, rgba(128, 128, 128, 0.05) 50%, rgba(128, 128, 128, 0.05) 75%, transparent 75%, transparent);

@@ -4,7 +4,7 @@ from mysql.connector.connection import MySQLConnection
 
 
 class OrderItemRepository:
-    
+
     def find_by_order_id(
         self, conn: MySQLConnection, order_id: int
     ) -> List[Dict[str, Any]]:
@@ -44,7 +44,8 @@ class OrderItemRepository:
         try:
             cursor.execute(
                 """
-                SELECT p.name, oi.quantity, oi.price, oi.size_at_order
+                SELECT p.name, oi.quantity, oi.price,
+                       oi.color_at_order, oi.size_at_order
                 FROM order_items oi
                 JOIN products p ON oi.product_id = p.id
                 WHERE oi.order_id = %s
@@ -65,8 +66,8 @@ class OrderItemRepository:
                 """
                 INSERT INTO order_items (
                     order_id, product_id, variant_id, quantity, price,
-                    size_at_order
-                ) VALUES (%s, %s, %s, %s, %s, %s)
+                    color_at_order, size_at_order
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 items_data,
             )
