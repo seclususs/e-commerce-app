@@ -29,6 +29,11 @@ export async function handleAjaxSubmit(form, button) {
 
     try {
         const formData = new FormData(form);
+
+        if (button && button.name) {
+            formData.append(button.name, button.value || '');
+        }
+
         const response = await fetch(form.getAttribute('action'), {
             method: form.method || 'POST',
             body: formData,
