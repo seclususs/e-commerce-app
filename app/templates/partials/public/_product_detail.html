@@ -10,7 +10,7 @@
                 <div class="gallery-slider" id="gallerySlider">
                     {% for image_file in product.all_images %}
                     <div class="gallery-slide">
-                        <img src="{{ url_for('images.serve_image', filename=image_file) if image_file else 'https://placehold.co/600x600/0f172a/f1f5f9?text=' + product.name }}" alt="Gambar produk {{ product.name }} {{ loop.index }}">
+                        <img src="{{ url_for('images.serve_image', filename=image_file) if image_file else url_for('static', filename='images/placeholder.png') + product.name }}" alt="Gambar produk {{ product.name }} {{ loop.index }}">
                     </div>
                     {% endfor %}
                 </div>

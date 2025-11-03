@@ -17,7 +17,6 @@
                 <input type="date" id="end_date" name="end_date" class="form-control" value="{{ request.args.get('end_date') or '' }}">
             </div>
             <div class="form-actions" style="align-items: flex-end;">
-                <button type="submit" class="cta-button">Terapkan Filter</button>
                 <a href="{{ url_for('admin.admin_reports') }}" class="cta-button-secondary">Reset</a>
             </div>
         </div>

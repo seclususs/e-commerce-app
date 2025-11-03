@@ -14,7 +14,6 @@
                     <option value="last_7_days" {% if selected_period == 'last_7_days' %}selected{% endif %}>7 Hari Terakhir</option>
                     <option value="last_30_days" {% if selected_period == 'last_30_days' %}selected{% endif %}>30 Hari Terakhir</option>
                     <option value="this_month" {% if selected_period == 'this_month' %}selected{% endif %}>Bulan Ini</option>
-                    <option value="custom" {% if selected_period == 'custom' %}selected{% endif %}>Rentang Kustom</option>
                 </select>
             </div>
             <div class="form-group">
@@ -24,9 +23,6 @@
             <div class="form-group">
                 <label for="custom_end">Tanggal Selesai (Kustom)</label>
                 <input type="date" name="custom_end" id="custom_end" class="form-control" value="{{ custom_end or '' }}">
-            </div>
-            <div class="form-actions" style="margin-bottom: 0;">
-                <button type="submit" class="cta-button">Terapkan Filter</button>
             </div>
         </div>
     </form>

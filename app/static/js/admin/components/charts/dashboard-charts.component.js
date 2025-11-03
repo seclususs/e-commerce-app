@@ -4,6 +4,7 @@ import { createLowStockChart } from './low-stock-chart.component.js';
 
 
 let chartInstances = {};
+let resizeTimer;
 
 export function destroyCharts() {
     Object.values(chartInstances).forEach(chart => {
@@ -56,4 +57,15 @@ window.addEventListener('themeChanged', () => {
     if (document.getElementById('salesChart')) {
         initDashboardCharts();
     }
+});
+
+window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+        if (document.getElementById('salesChart')) {
+            // Hanya jalankan jika kita di halaman dashboard
+            console.log("Debounced resize: Menggambar ulang charts.");
+            initDashboardCharts();
+        }
+    }, 300);
 });

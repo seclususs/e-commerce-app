@@ -6,7 +6,7 @@
         <span class="discount-badge">Hemat {{ (product.discount_price or 0)|percentage(product.price or 0) }}%</span>
       {% endif %}
       <img loading="lazy"
-           src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + product.name }}"
+           src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else url_for('static', filename='images/placeholder.png') + product.name }}"
            alt="{{ product.name }}">
       {% if product.stock == 0 %}
         <div class="stock-overlay">Stok Habis</div>

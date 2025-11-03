@@ -13,7 +13,7 @@
         <div class="product-card homepage-product-card animated-element" data-animation-delay="{{ loop.index * 100 }}">
             <a href="{{ url_for('product.product_detail', id=product.id) }}" class="product-card-link" aria-label="Lihat detail untuk {{ product.name }}"></a>
             <div class="product-image">
-                <img loading="lazy" src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + product.name }}" alt="{{ product.name }}">
+                <img loading="lazy" src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else url_for('static', filename='images/placeholder.png') + product.name }}" alt="{{ product.name }}">
             </div>
             <div class="product-info">
                 <h3 class="product-name">{{ product.name }}</h3>

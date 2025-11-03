@@ -1,3 +1,5 @@
+import { initDashboardCharts } from './charts/dashboard-charts.component.js';
+
 export function initSidebarToggle() {
     const desktopToggleBtn = document.getElementById('sidebarToggleBtn');
     const mobileToggleBtn = document.getElementById('mobileSidebarToggleBtn');
@@ -5,6 +7,11 @@ export function initSidebarToggle() {
     const overlay = document.getElementById('sidebarOverlay');
     const rootElement = document.documentElement;
     const desktopIcon = desktopToggleBtn ? desktopToggleBtn.querySelector('i') : null;
+    const chartWrappers = [
+        document.getElementById('salesChart')?.parentElement,
+        document.getElementById('topProductsChart')?.parentElement,
+        document.getElementById('lowStockChart')?.parentElement
+    ].filter(Boolean);
 
     const updateIcon = (isCollapsed) => {
         if (desktopIcon) {
@@ -16,6 +23,13 @@ export function initSidebarToggle() {
     const toggleSidebar = () => {
         const isMobile = window.innerWidth <= 767;
         let isCollapsedNow = false;
+        const isDashboard = chartWrappers.length > 0;
+
+        if (isDashboard) {
+            chartWrappers.forEach(wrapper => {
+                wrapper.style.display = 'none';
+            });
+        }
 
         if (isMobile) {
             rootElement.classList.toggle('sidebar-mobile-open');
@@ -27,6 +41,15 @@ export function initSidebarToggle() {
             rootElement.classList.remove('sidebar-mobile-open');
         }
         updateIcon(isCollapsedNow);
+
+        if (isDashboard) {
+            setTimeout(() => {
+                chartWrappers.forEach(wrapper => {
+                    wrapper.style.display = 'block';
+                });
+                initDashboardCharts();
+            }, 350);
+        }
     };
 
     if (desktopToggleBtn) {

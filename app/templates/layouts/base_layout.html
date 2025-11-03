@@ -92,7 +92,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    {% if request.endpoint not in ['auth.login', 'auth.register'] %}
+    {% if request.endpoint not in ['auth.login', 'auth.register', 'auth.forgot_password'] %}
     <footer id="contact" class="footer">
         {% if is_homepage is defined and is_homepage %}
         <div class="footer-content">

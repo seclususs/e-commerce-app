@@ -6,7 +6,7 @@
     <title>{% block admintitle %}{% endblock %} - Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"?v=2.0>
     <script>
         (function() {
             try {
@@ -87,24 +87,6 @@
              </div>
         </main>
     </div>
-
-    <nav class="bottom-navbar">
-        <a href="{{ url_for('admin.admin_dashboard') }}" class="bottom-nav-item ajax-link {{ 'active' if 'dashboard' in request.endpoint }}" data-endpoint="admin.admin_dashboard">
-            <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
-        </a>
-        <a href="{{ url_for('admin.admin_products') }}" class="bottom-nav-item ajax-link {{ 'active' if 'products' in request.endpoint or 'edit_product' in request.endpoint or 'manage_variants' in request.endpoint or 'categories' in request.endpoint }}" data-endpoint="admin.admin_products">
-            <i class="fas fa-box-open"></i> <span>Produk</span>
-        </a>
-        <a href="{{ url_for('admin.admin_orders') }}" class="bottom-nav-item ajax-link {{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}" data-endpoint="admin.admin_orders">
-            <i class="fas fa-receipt"></i> <span>Pesanan</span>
-        </a>
-         <a href="{{ url_for('admin.admin_reports') }}" class="bottom-nav-item ajax-link {{ 'active' if 'reports' in request.endpoint }}" data-endpoint="admin.admin_reports">
-            <i class="fas fa-chart-line"></i> <span>Laporan</span>
-        </a>
-        <a href="{{ url_for('admin.admin_settings') }}" class="bottom-nav-item ajax-link {{ 'active' if 'settings' in request.endpoint }}" data-endpoint="admin.admin_settings">
-            <i class="fas fa-cog"></i> <span>Atur</span>
-        </a>
-    </nav>
 
     <div class="confirm-modal" id="confirmModal">
         <div class="confirm-modal-content">

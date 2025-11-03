@@ -34,6 +34,7 @@ def admin_orders() -> Union[str, Response, Tuple[Response, int]]:
         start_date: str = request.args.get("start_date")
         end_date: str = request.args.get("end_date")
         search_query: str = request.args.get("search")
+        is_filter_request: bool = request.args.get("is_filter_request") == "true"
 
         orders: List[Dict[str, Any]] = (
             order_query_service.get_filtered_admin_orders(
@@ -45,7 +46,7 @@ def admin_orders() -> Union[str, Response, Tuple[Response, int]]:
         )
 
         if is_ajax:
-            if request.args:
+            if is_filter_request:
                 html: str = render_template(
                     "partials/admin/_order_table_body.html", orders=orders
                 )

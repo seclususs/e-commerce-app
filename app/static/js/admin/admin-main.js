@@ -12,6 +12,7 @@ import { initAdminOrderFilter } from './components/filters/order-filter.componen
 import { initDashboardFilter } from './components/filters/dashboard-filter.component.js';
 import { initCronButton } from './utils/cron-simulator.util.js';
 import { initSidebarToggle } from './components/sidebar-toggle.component.js';
+import { initReportFilter } from './components/filters/report-filter.component.js';
 
 export function reinitializeAdminScripts() {
     console.log("Reinitializing Admin Scripts...");
@@ -34,6 +35,10 @@ export function reinitializeAdminScripts() {
     if (document.getElementById('admin-order-filter-form')) {
          console.log("Initializing Order Filter...");
         initAdminOrderFilter();
+    }
+    if (document.getElementById('reports-filter-form')) {
+         console.log("Initializing Report Filter...");
+        initReportFilter();
     }
     if (document.getElementById('run-cron-btn')) {
          console.log("Initializing Cron Button...");

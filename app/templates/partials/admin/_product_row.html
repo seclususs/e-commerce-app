@@ -11,7 +11,7 @@
 
   <td data-label="ID:">{{ product.id }}</td>
   <td data-label="Gambar:">
-    <img src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url else 'https://placehold.co/60x60/1e293b/f1f5f9?text=Img' }}"
+    <img src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url else url_for('static', filename='images/placeholder.png') }}"
          alt="{{ product.name }}"
          width="50"
          style="border-radius: 5px; object-fit: cover;">
