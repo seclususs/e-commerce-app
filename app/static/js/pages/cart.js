@@ -23,13 +23,14 @@ function renderCartPage(state) {
             document.querySelector('.cart-page-section')?.dataset.productsUrl
             || '/products'
         );
-        container.innerHTML = (
-            `<div class="cart-empty-container">`
-            `<h2>Keranjang belanja Anda masih kosong</h2>`
-            `<p>Sepertinya Anda belum menambahkan produk apapun.</p>`
-            `<a href="${productsUrl}" class="cta-button">Lanjutkan Belanja</a>`
-            `</div>`
-        );
+        
+        container.innerHTML = 
+            `<div class="cart-empty-container">
+            <h2>Keranjang belanja Anda masih kosong</h2>
+            <p>Sepertinya Anda belum menambahkan produk apapun.</p>
+            <a href="${productsUrl}" class="cta-button">Lanjutkan Belanja</a>
+            </div>`;
+
         summary.style.display = 'none';
         if (checkoutLink) checkoutLink.classList.add('disabled-link');
         if (checkoutLinkMobile) {
@@ -46,12 +47,17 @@ function renderCartPage(state) {
         container.innerHTML = items.map(p => {
             const priceNum = Number(p.price) || 0;
             const discountPriceNum = Number(p.discount_price) || 0;
-            const effectivePrice = (
-                (discountPriceNum && discountPriceNum > 0)
-                ? discountPriceNum
-                : priceNum
-            );
-            const hasDiscount = (discountPriceNum && discountPriceNum > 0);
+            const effectivePrice = Number(p.effective_price) || 0;
+            
+            let originalPriceToShow = null;
+            if (p.original_effective_price) {
+                originalPriceToShow = Number(p.original_effective_price);
+            } else if (discountPriceNum > 0) {
+                originalPriceToShow = priceNum;
+            }
+            
+            const hasDiscount = originalPriceToShow !== null && originalPriceToShow > effectivePrice;
+
             const colorInfo = p.color
                 ? `<span>Warna: ${p.color}</span>`
                 : '';
@@ -71,8 +77,8 @@ function renderCartPage(state) {
                     ${sizeInfo}
                     <span>${
                         hasDiscount
-                        ? `<del style="opacity: 0.7;">${formatRupiah(priceNum)}</del> ${formatRupiah(effectivePrice)}`
-                        : formatRupiah(priceNum)
+                        ? `<del style="opacity: 0.7;">${formatRupiah(originalPriceToShow)}</del> ${formatRupiah(effectivePrice)}`
+                        : formatRupiah(effectivePrice)
                     }</span>
                     ${
                         isOutOfStock

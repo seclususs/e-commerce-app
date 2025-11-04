@@ -2,14 +2,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import mysql.connector
 from flask import (
-    current_app,
-    flash,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
+    current_app, flash, jsonify, redirect,
+    render_template, request, session, url_for
 )
 from flask.wrappers import Response
 from mysql.connector.connection import MySQLConnection
@@ -90,34 +84,53 @@ def payment_page(order_id: int) -> Union[str, WerkzeugResponse]:
             logger.info(
                 f"Halaman pembayaran diakses untuk pesanan {order_id}, tetapi statusnya adalah '{order['status']}', mengarahkan ulang."
             )
-            flash(
-                f"Status pesanan ini adalah '{order['status']}'. Tidak perlu pembayaran.",
-                "info",
-            )
+            
+            if (order.get("notes") or "").startswith("MEMBERSHIP_"):
+                flash(
+                    f"Langganan Anda sudah {order['status']}.",
+                    "info",
+                )
+            else:
+                flash(
+                    f"Status pesanan ini adalah '{order['status']}'. Tidak perlu pembayaran.",
+                    "info",
+                )
+
             if user_id:
                 return redirect(url_for("user.user_profile"))
             return redirect(url_for("product.index"))
 
-        cursor.execute(
-            """
-            SELECT p.name, oi.quantity, oi.price
-            FROM order_items oi
-            JOIN products p ON oi.product_id = p.id
-            WHERE oi.order_id = %s
-            """,
-            (order_id,),
-        )
-        items: List[Dict[str, Any]] = cursor.fetchall()
+        items: List[Dict[str, Any]] = []
+        is_membership = False
+        
+        if (order.get("notes") or "").startswith("MEMBERSHIP_"):
+            is_membership = True
+        else:
+            cursor.execute(
+                """
+                SELECT p.name, oi.quantity, oi.price
+                FROM order_items oi
+                JOIN products p ON oi.product_id = p.id
+                WHERE oi.order_id = %s
+                """,
+                (order_id,),
+            )
+            items = cursor.fetchall()
+            
         logger.info(
             f"Halaman pembayaran dimuat untuk ID Pesanan: {order_id}. Jumlah item: {len(items)}"
         )
         api_key: str = current_app.config["SECRET_KEY"]
+        success_url: str = url_for("purchase.order_success")
+        
         return render_template(
             "purchase/payment_page.html",
             order=order,
             items=items,
+            is_membership=is_membership,
             content=get_content(),
             api_key=api_key,
+            success_url=success_url,
         )
     
     except PermissionDeniedError as pde:
@@ -158,7 +171,7 @@ def order_success() -> str:
     guest_order_id: Optional[int] = session.pop("guest_order_id", None)
     log_identifier: str = (
         f"ID Pengguna {session.get('user_id')}"
-        if session.get("user_id")
+        if session.get('user_id')
         else f"ID Pesanan Tamu {guest_order_id}"
     )
     logger.info(

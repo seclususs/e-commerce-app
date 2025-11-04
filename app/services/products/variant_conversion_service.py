@@ -51,6 +51,7 @@ class VariantConversionService:
             add_result: Dict[str, Any] = self.variant_service.add_variant(
                 product_id,
                 "STANDAR",
+                "STANDAR",
                 initial_stock,
                 initial_weight,
                 initial_sku.upper() if initial_sku else None,
@@ -86,6 +87,10 @@ class VariantConversionService:
                 f"Kesalahan saat mengonversi produk {product_id} ke varian: {e}",
                 exc_info=True,
             )
+            if isinstance(e, TypeError):
+                 raise ServiceLogicError(
+                    f"Kesalahan layanan saat konversi ke varian: {e}"
+                )
             raise ServiceLogicError(
                 f"Kesalahan layanan saat konversi ke varian: {e}"
             )

@@ -1,0 +1,52 @@
+<section class="auth-section">
+    <div class="auth-container guest-subscribe-container animated-element">
+        
+        <div class="package-summary-column">
+            <div class="admin-card membership-summary-card">
+                <p class="summary-card-label">Anda akan membeli:</p>
+                <h3 class="summary-card-title">{{ membership.name }}</h3>
+                <div class="summary-card-price">
+                    {{ membership.price|rupiah }}
+                    <span class="summary-card-period">/ {{ 'Bulan' if membership.period == 'monthly' else 'Tahun' }}</span>
+                </div>
+
+                <ul class="summary-card-features">
+                    <li>
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Diskon Member {{ membership.discount_percent|float }}%</strong>
+                    </li>
+                    <li>
+                        <i class="fas {% if membership.free_shipping %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                        {% if membership.free_shipping %}
+                            <strong>Gratis Ongkir</strong>
+                        {% else %}
+                            <span>Gratis Ongkir (Tidak Termasuk)</span>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="form-container guest-subscribe-form">
+            <h2 class="section-title">Buat Akun Anda</h2>
+
+            <form method="POST" action="{{ url_for('user.guest_subscribe_submit') }}" id="guest-subscribe-form">
+                <input type="hidden" name="membership_id" value="{{ membership.id }}">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group"><label for="password">Password</label><input type="password" id="password" name="password" required></div>
+                <button type="submit" class="cta-button form-button cta-button-prominent">
+                    Daftar & Lanjut Bayar
+                </button>
+            </form>
+            <p class="form-switch">Sudah punya akun? <a href="{{ url_for('auth.login', next=url_for('user.membership_page')) }}">Login di sini</a></p>
+            <a href="{{ url_for('user.membership_page') }}" class="cta-button-secondary cancel-link">Batal</a>
+        </div>
+    </div>
+</section>

@@ -53,6 +53,7 @@
                 <a href="{{ url_for('admin.admin_categories') }}" class="ajax-link {{ 'active' if 'categories' in request.endpoint }}" data-endpoint="admin.admin_categories"><i class="fas fa-tags fa-fw"></i><span>Kategori</span></a>
                 <a href="{{ url_for('admin.admin_orders') }}" class="ajax-link {{ 'active' if 'order' in request.endpoint and 'admin' in request.endpoint }}" data-endpoint="admin.admin_orders"><i class="fas fa-receipt fa-fw"></i><span>Pesanan</span></a>
                 <a href="{{ url_for('admin.admin_vouchers') }}" class="ajax-link {{ 'active' if 'vouchers' in request.endpoint }}" data-endpoint="admin.admin_vouchers"><i class="fas fa-ticket-alt fa-fw"></i><span>Voucher</span></a>
+                <a href="{{ url_for('admin.admin_memberships') }}" class="ajax-link {{ 'active' if 'memberships' in request.endpoint }}" data-endpoint="admin.admin_memberships"><i class="fas fa-star fa-fw"></i><span>Membership</span></a>
                 <a href="{{ url_for('admin.admin_reports') }}" class="ajax-link {{ 'active' if 'reports' in request.endpoint }}" data-endpoint="admin.admin_reports"><i class="fas fa-chart-line fa-fw"></i><span>Laporan</span></a>
                 <a href="{{ url_for('admin.admin_settings') }}" class="ajax-link {{ 'active' if 'settings' in request.endpoint }}" data-endpoint="admin.admin_settings"><i class="fas fa-cog fa-fw"></i><span>Pengaturan</span></a>
                 <a href="{{ url_for('auth.logout') }}" id="logoutLink" class="logout-link"><i class="fas fa-sign-out-alt fa-fw"></i><span>Logout</span></a>

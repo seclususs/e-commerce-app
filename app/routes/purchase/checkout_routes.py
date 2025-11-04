@@ -31,6 +31,8 @@ def checkout() -> Union[str, WerkzeugResponse]:
     user_id: Optional[int] = session.get("user_id")
     user: Optional[Dict[str, Any]] = None
     my_vouchers: List[Dict[str, Any]] = []
+    is_member_free_shipping = False
+    member_discount_percent = 0.0
     user_log_id: str = (
         f"User {user_id}"
         if user_id
@@ -43,6 +45,12 @@ def checkout() -> Union[str, WerkzeugResponse]:
             my_vouchers = voucher_service.get_available_vouchers_for_user(
                 user_id
             )
+            subscription = user_service.get_active_subscription(user_id)
+            if subscription:
+                if subscription.get("free_shipping"):
+                    is_member_free_shipping = True
+                if subscription.get("discount_percent"):
+                    member_discount_percent = float(subscription.get("discount_percent", 0.0))
 
         if "session_id" not in session and not user_id:
             session["session_id"] = str(uuid.uuid4())
@@ -123,6 +131,8 @@ def checkout() -> Union[str, WerkzeugResponse]:
             content=get_content(),
             stock_hold_expires=stock_hold_expires,
             my_vouchers=my_vouchers,
+            is_member_free_shipping=is_member_free_shipping,
+            member_discount_percent=member_discount_percent,
         )
 
     except RecordNotFoundError:

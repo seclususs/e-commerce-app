@@ -14,3 +14,4 @@ from . import order_routes
 from . import report_routes
 from . import setting_routes
 from . import voucher_routes
+from . import membership_routes

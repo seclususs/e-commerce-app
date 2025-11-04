@@ -13,6 +13,7 @@ import { initDashboardFilter } from './components/filters/dashboard-filter.compo
 import { initCronButton } from './utils/cron-simulator.util.js';
 import { initSidebarToggle } from './components/sidebar-toggle.component.js';
 import { initReportFilter } from './components/filters/report-filter.component.js';
+import {initGlobalPriceFormatting} from './utils/price-formatting.js'
 
 export function reinitializeAdminScripts() {
     console.log("Reinitializing Admin Scripts...");
@@ -20,6 +21,7 @@ export function reinitializeAdminScripts() {
     initFlashMessages();
     initAjaxAdminForms();
     initAdminCardToggle();
+    initGlobalPriceFormatting();
 
     if (document.getElementById('salesChart') && typeof Chart !== 'undefined') {
         console.log("Initializing Dashboard Charts...");

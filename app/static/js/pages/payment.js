@@ -24,12 +24,14 @@ export function initPaymentPage() {
                     status: 'success'
                 })
             });
+            
+            const result = await response.json();
 
-            if (response.ok) {
+            if (response.ok && result.success) {
                 window.location.href = successUrl;
             } else {
-                const errorData = await response.json();
-                alert(`Simulasi gagal: ${errorData.description || 'Cek konsol untuk detail.'}`);
+                const errorData = result;
+                alert(`Simulasi gagal: ${errorData.message || 'Cek konsol untuk detail.'}`);
                 console.error('Webhook simulation failed:', response.status, errorData);
                 simulateBtn.disabled = false;
                 simulateBtn.textContent = 'Simulasikan Pembayaran Berhasil';

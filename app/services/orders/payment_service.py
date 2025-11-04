@@ -28,6 +28,9 @@ from app.services.orders.stock_service import StockService, stock_service
 from app.services.products.variant_service import (
     VariantService, variant_service
 )
+from app.services.member.membership_service import (
+    MembershipService, membership_service
+)
 from app.utils.logging_utils import get_logger
 
 
@@ -47,6 +50,7 @@ class PaymentService:
         variant_repo: VariantRepository = variant_repository,
         stock_svc: StockService = stock_service,
         variant_svc: VariantService = variant_service,
+        membership_svc: MembershipService = membership_service
     ):
         self.order_repository = order_repo
         self.item_repository = item_repo
@@ -55,6 +59,7 @@ class PaymentService:
         self.variant_repository = variant_repo
         self.stock_service = stock_svc
         self.variant_service = variant_svc
+        self.membership_service = membership_svc
 
 
     def process_successful_payment(
@@ -95,174 +100,245 @@ class PaymentService:
                     "message": "Pesanan sudah diproses sebelumnya atau dibatalkan.",
                 }
             
-            logger.debug(f"Mengambil item untuk pesanan {order_id}")
-            items = self.item_repository.find_by_order_id(conn, order_id)
-            logger.debug(
-                f"Memulai logika pemrosesan pembayaran pesanan {order_id} "
-                "(tanpa start_transaction eksplisit)."
-            )
-            stock_sufficient = True
-            failed_item_info = ""
+            notes = order.get("notes") or ""
+            
+            user_id = order.get("user_id")
 
-            for item in items:
-                available_stock = self.stock_service.get_available_stock(
-                    item["product_id"], item["variant_id"], conn
-                )
-                logger.debug(
-                    f"Memeriksa stok untuk item di pesanan {order_id}: "
-                    f"Produk {item['product_id']}, Varian {item['variant_id']}, "
-                    f"Diperlukan {item['quantity']}, Tersedia {available_stock}"
+            if notes and notes.startswith("MEMBERSHIP_PURCHASE:"):
+                if not user_id:
+                    raise ServiceLogicError(
+                        "Pesanan membership tidak memiliki user_id terkait."
+                        )
+                
+                membership_id = int(notes.split(":")[1])
+                self.membership_service.activate_subscription_from_order(
+                    conn, user_id, membership_id, order["total_amount"]
                 )
                 
-                if item["quantity"] > available_stock:
-                    stock_sufficient = False
-                    product_info = self.product_repository.find_minimal_by_id(
-                        conn, item["product_id"]
-                    )
-                    product_name = (
-                        product_info["name"]
-                        if product_info
-                        else f"ID {item['product_id']}"
-                    )
-                    size_info = ""
-
-                    if item["variant_id"]:
-                        variant_info = self.variant_repository.find_by_id(
-                            conn, item["variant_id"]
-                        )
-                        if variant_info:
-                            size_info = f" (Ukuran: {variant_info['size']})"
-
-                    failed_item_info = (
-                        f"'{product_name}'{size_info}. Diminta: {item['quantity']}, "
-                        f"Tersedia: {available_stock}"
-                    )
-                    logger.error(
-                        f"Stok tidak mencukupi untuk pesanan {order_id}, "
-                        f"{failed_item_info}"
-                    )
-                    break
-
-            if not stock_sufficient:
-                logger.warning(
-                    f"Membatalkan pesanan {order_id} karena stok tidak "
-                    "mencukupi saat konfirmasi pembayaran."
+                self.order_repository.update_status(
+                    conn, order_id, "Selesai"
                 )
-                notes = "Dibatalkan otomatis karena stok habis saat pembayaran dikonfirmasi."
-                self.order_repository.update_status_and_notes(
-                    conn, order_id, "Dibatalkan", notes
-                )
+                history_notes = "Langganan membership berhasil diaktifkan."
                 self.history_repository.create(
-                    conn, order_id, "Dibatalkan", notes
-                )
-                self.stock_service.release_stock_holds(
-                    order.get("user_id"), None, conn
-                )
-                logger.info(
-                    "Melepaskan penahanan stok (jika ada) untuk "
-                    f"pesanan {order_id} karena pembatalan."
+                    conn, order_id, "Selesai", history_notes
                 )
                 conn.commit()
+                
+                logger.info(
+                    f"Langganan membership untuk Pesanan #{order_id} berhasil diaktifkan."
+                )
                 return {
-                    "success": False,
-                    "message": f"Pembayaran gagal karena stok habis "
-                    f"untuk {failed_item_info}.",
+                    "success": True,
+                    "message": f"Langganan membership untuk Pesanan #{order_id} berhasil diaktifkan.",
                 }
 
-            logger.debug(f"Mengurangi stok untuk pesanan {order_id}")
-            product_ids_with_variants = set()
-
-            for item in items:
-                if item["variant_id"]:
-                    lock_id = item["variant_id"]
-                    current_stock_row = self.variant_repository.lock_stock(
-                        conn, lock_id
-                    )
-                else:
-                    lock_id = item["product_id"]
-                    current_stock_row = self.product_repository.lock_stock(
-                        conn, lock_id
-                    )
+            elif notes and notes.startswith("MEMBERSHIP_UPGRADE:"):
+                if not user_id:
+                    raise ServiceLogicError(
+                        "Pesanan upgrade membership tidak memiliki user_id terkait."
+                        )
                 
-                if (
-                    not current_stock_row
-                    or current_stock_row["stock"] < item["quantity"]
-                ):
+                parts = notes.split(":")
+                new_membership_id = int(parts[1])
+                user_subscription_id = int(parts[3])
+                
+                self.membership_service.activate_upgrade_from_order(
+                    conn, user_id, new_membership_id, 
+                    user_subscription_id, order["total_amount"]
+                )
+                
+                self.order_repository.update_status(
+                    conn, order_id, "Selesai"
+                )
+                history_notes = "Upgrade langganan membership berhasil diaktifkan."
+                self.history_repository.create(
+                    conn, order_id, "Selesai", history_notes
+                )
+                conn.commit()
+                
+                logger.info(
+                    f"Upgrade membership untuk Pesanan #{order_id} berhasil diaktifkan."
+                )
+                return {
+                    "success": True,
+                    "message": f"Upgrade membership untuk Pesanan #{order_id} berhasil diaktifkan.",
+                }
+
+            else:
+                logger.debug(f"Mengambil item untuk pesanan produk {order_id}")
+                items = self.item_repository.find_by_order_id(conn, order_id)
+                
+                if not items:
                     conn.rollback()
-                    failed_item_info = f"item ID {'variant ' + str(lock_id) if item['variant_id'] else str(lock_id)}"
-                    logger.error(
-                        "Stok habis saat mencoba mengurangi untuk "
-                        f"{failed_item_info} di pesanan {order_id}"
+                    logger.error(f"Pesanan produk reguler #{order_id} tidak memiliki item terkait.")
+                    raise ServiceLogicError(f"Pesanan #{order_id} tidak memiliki item.")
+
+                logger.debug(
+                    f"Memulai logika pemrosesan pembayaran pesanan {order_id}"
+                )
+                
+                stock_sufficient = True
+                failed_item_info = ""
+
+                for item in items:
+                    available_stock = self.stock_service.get_available_stock(
+                        item["product_id"], item["variant_id"], conn
                     )
-                    self._cancel_order_due_to_stock_failure(
-                        order_id, failed_item_info
+                    logger.debug(
+                        f"Memeriksa stok untuk item di pesanan {order_id}: "
+                        f"Produk {item['product_id']}, Varian {item['variant_id']}, "
+                        f"Diperlukan {item['quantity']}, Tersedia {available_stock}"
                     )
+                    
+                    if item["quantity"] > available_stock:
+                        stock_sufficient = False
+                        product_info = self.product_repository.find_minimal_by_id(
+                            conn, item["product_id"]
+                        )
+                        product_name = (
+                            product_info["name"]
+                            if product_info
+                            else f"ID {item['product_id']}"
+                        )
+                        size_info = ""
+
+                        if item["variant_id"]:
+                            variant_info = self.variant_repository.find_by_id(
+                                conn, item["variant_id"]
+                            )
+                            if variant_info:
+                                size_info = f" (Ukuran: {variant_info['size']})"
+
+                        failed_item_info = (
+                            f"'{product_name}'{size_info}. Diminta: {item['quantity']}, "
+                            f"Tersedia: {available_stock}"
+                        )
+                        logger.error(
+                            f"Stok tidak mencukupi untuk pesanan {order_id}, "
+                            f"{failed_item_info}"
+                        )
+                        break
+
+                if not stock_sufficient:
+                    logger.warning(
+                        f"Membatalkan pesanan {order_id} karena stok tidak "
+                        "mencukupi saat konfirmasi pembayaran."
+                    )
+                    notes = "Dibatalkan otomatis karena stok habis saat pembayaran dikonfirmasi."
+                    self.order_repository.update_status(
+                        conn, order_id, "Dibatalkan"
+                    )
+                    self.history_repository.create(
+                        conn, order_id, "Dibatalkan", notes
+                    )
+                    self.stock_service.release_stock_holds(
+                        order.get("user_id"), None, conn
+                    )
+                    logger.info(
+                        "Melepaskan penahanan stok (jika ada) untuk "
+                        f"pesanan {order_id} karena pembatalan."
+                    )
+                    conn.commit()
                     return {
                         "success": False,
                         "message": f"Pembayaran gagal karena stok habis "
                         f"untuk {failed_item_info}.",
                     }
 
-                if item["variant_id"]:
-                    rowcount = self.variant_repository.decrease_stock(
-                        conn, lock_id, item["quantity"]
-                    )
-                else:
-                    rowcount = self.product_repository.decrease_stock(
-                        conn, lock_id, item["quantity"]
-                    )
-                
-                if rowcount == 0:
-                    conn.rollback()
-                    err_msg = (
-                        f"Gagal mengurangi stok (rowcount 0) untuk "
-                        f"{'varian' if item['variant_id'] else 'produk'} "
-                        f"ID {lock_id}"
-                    )
-                    logger.error(err_msg)
-                    raise ServiceLogicError(err_msg)
-                
-                if item["variant_id"]:
-                    product_ids_with_variants.add(item["product_id"])
+                logger.debug(f"Mengurangi stok untuk pesanan {order_id}")
+                product_ids_with_variants = set()
 
-            logger.info(f"Stok berhasil dikurangi untuk pesanan {order_id}")
-            logger.debug(
-                "Memperbarui status pesanan menjadi 'Diproses' untuk "
-                f"pesanan {order_id}"
-            )
-            self.order_repository.update_status(conn, order_id, "Diproses")
-            history_notes = (
-                f'Pembayaran via {order["payment_method"]} berhasil '
-                "dikonfirmasi."
-            )
-            self.history_repository.create(
-                conn, order_id, "Diproses", history_notes
-            )
-            self.stock_service.release_stock_holds(
-                order.get("user_id"), None, conn
-            )
-            logger.info(
-                "Melepaskan penahanan stok untuk pesanan {order_id} "
-                "yang berhasil diproses."
-            )
-            conn.commit()
+                for item in items:
+                    if item["variant_id"]:
+                        lock_id = item["variant_id"]
+                        current_stock_row = self.variant_repository.lock_stock(
+                            conn, lock_id
+                        )
+                    else:
+                        lock_id = item["product_id"]
+                        current_stock_row = self.product_repository.lock_stock(
+                            conn, lock_id
+                        )
+                    
+                    if (
+                        not current_stock_row
+                        or current_stock_row["stock"] < item["quantity"]
+                    ):
+                        conn.rollback()
+                        failed_item_info = f"item ID {'variant ' + str(lock_id) if item['variant_id'] else str(lock_id)}"
+                        logger.error(
+                            "Stok habis saat mencoba mengurangi untuk "
+                            f"{failed_item_info} di pesanan {order_id}"
+                        )
+                        self._cancel_order_due_to_stock_failure(
+                            order_id, failed_item_info
+                        )
+                        return {
+                            "success": False,
+                            "message": f"Pembayaran gagal karena stok habis "
+                            f"untuk {failed_item_info}.",
+                        }
 
-            logger.info(
-                "Transaksi pemrosesan pembayaran di-commit untuk "
-                f"pesanan {order_id}."
-            )
-            if product_ids_with_variants:
-                self._update_variant_parent_stock(
-                    product_ids_with_variants, order_id
+                    if item["variant_id"]:
+                        rowcount = self.variant_repository.decrease_stock(
+                            conn, lock_id, item["quantity"]
+                        )
+                    else:
+                        rowcount = self.product_repository.decrease_stock(
+                            conn, lock_id, item["quantity"]
+                        )
+                    
+                    if rowcount == 0:
+                        conn.rollback()
+                        err_msg = (
+                            f"Gagal mengurangi stok (rowcount 0) untuk "
+                            f"{'varian' if item['variant_id'] else 'produk'} "
+                            f"ID {lock_id}"
+                        )
+                        logger.error(err_msg)
+                        raise ServiceLogicError(err_msg)
+                    
+                    if item["variant_id"]:
+                        product_ids_with_variants.add(item["product_id"])
+
+                logger.info(f"Stok berhasil dikurangi untuk pesanan {order_id}")
+                logger.debug(
+                    "Memperbarui status pesanan menjadi 'Diproses' untuk "
+                    f"pesanan {order_id}"
                 )
-            logger.info(
-                f"Pembayaran berhasil diproses untuk transaksi {transaction_id}, "
-                f"ID Pesanan {order_id}. Status diatur ke 'Diproses'."
-            )
-            return {
-                "success": True,
-                "message": f"Pesanan #{order_id} berhasil diproses.",
-            }
+                self.order_repository.update_status(conn, order_id, "Diproses")
+                history_notes = (
+                    f'Pembayaran via {order["payment_method"]} berhasil '
+                    "dikonfirmasi."
+                )
+                self.history_repository.create(
+                    conn, order_id, "Diproses", history_notes
+                )
+                self.stock_service.release_stock_holds(
+                    order.get("user_id"), None, conn
+                )
+                logger.info(
+                    "Melepaskan penahanan stok untuk pesanan {order_id} "
+                    "yang berhasil diproses."
+                )
+                conn.commit()
+
+                logger.info(
+                    "Transaksi pemrosesan pembayaran di-commit untuk "
+                    f"pesanan {order_id}."
+                )
+                if product_ids_with_variants:
+                    self._update_variant_parent_stock(
+                        product_ids_with_variants, order_id
+                    )
+                logger.info(
+                    f"Pembayaran berhasil diproses untuk transaksi {transaction_id}, "
+                    f"ID Pesanan {order_id}. Status diatur ke 'Diproses'."
+                )
+                return {
+                    "success": True,
+                    "message": f"Pesanan #{order_id} berhasil diproses.",
+                }
         
         except (mysql.connector.Error, DatabaseException) as e:
             if conn and conn.is_connected():
@@ -353,12 +429,13 @@ class PaymentService:
         conn_cancel: Optional[MySQLConnection] = None
         try:
             conn_cancel = get_db_connection()
+            conn_cancel.start_transaction()
             notes = (
                 f"Dibatalkan otomatis karena stok habis "
                 f"({failed_item_info}) saat konfirmasi pembayaran."
             )
-            self.order_repository.update_status_and_notes(
-                conn_cancel, order_id, "Dibatalkan", notes
+            self.order_repository.update_status(
+                conn_cancel, order_id, "Dibatalkan"
             )
             self.history_repository.create(
                 conn_cancel, order_id, "Dibatalkan", notes
@@ -448,5 +525,6 @@ class PaymentService:
 
 payment_service = PaymentService(
     order_repository, order_item_repository, order_status_history_repository,
-    product_repository, variant_repository, stock_service, variant_service
+    product_repository, variant_repository, stock_service, variant_service,
+    membership_service
 )

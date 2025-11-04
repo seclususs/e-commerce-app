@@ -73,6 +73,7 @@ CREATE TABLE orders (
     shipping_province VARCHAR(100),
     shipping_postal_code VARCHAR(10),
     shipping_email VARCHAR(120) NULL,
+    notes VARCHAR(255) DEFAULT NULL,
     tracking_number VARCHAR(100),
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
 );
@@ -166,4 +167,40 @@ CREATE TABLE user_vouchers (
     FOREIGN KEY (voucher_id) REFERENCES vouchers(id) ON DELETE CASCADE,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
     INDEX idx_user_status (user_id, status)
+);
+
+CREATE TABLE memberships (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL,
+    period ENUM('monthly', 'yearly') NOT NULL,
+    discount_percent DECIMAL(5, 2) DEFAULT 0.00,
+    free_shipping TINYINT(1) DEFAULT 0,
+    description TEXT,
+    is_active TINYINT(1) DEFAULT 1
+);
+
+CREATE TABLE user_subscriptions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    membership_id INT NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    status ENUM('active', 'expired', 'cancelled') NOT NULL DEFAULT 'active',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (membership_id) REFERENCES memberships(id) ON DELETE RESTRICT,
+    INDEX idx_user_status (user_id, status),
+    INDEX idx_end_date (end_date)
+);
+
+CREATE TABLE subscription_transactions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    membership_id INT,
+    transaction_type ENUM('new', 'renew', 'upgrade', 'cancel') NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    transaction_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    notes TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (membership_id) REFERENCES memberships(id) ON DELETE SET NULL
 );

@@ -1,5 +1,8 @@
 <section class="checkout-page-section">
-    <div class="checkout-page-container animated-element">
+    <div class="checkout-page-container animated-element" 
+         id="checkout-data-container"
+         data-is-member-free-shipping="{{ 'true' if is_member_free_shipping else 'false' }}"
+         data-member-discount-percent="{{ member_discount_percent or '0' }}">
         <h2 class="section-title">Checkout</h2>
         <form id="checkout-form" method="POST" action="{{ url_for('purchase.checkout') }}">
             <div class="cart-layout">

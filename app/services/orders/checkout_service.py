@@ -38,6 +38,16 @@ class CheckoutService:
         cart_data: Optional[Dict[str, Any]] = None
         shipping_details: Dict[str, Any] = {}
 
+        subscription = None
+        if user_id:
+            subscription = user_service.get_active_subscription(user_id)
+        
+        is_member_free_shipping = (
+            subscription and subscription.get("free_shipping")
+        )
+        if is_member_free_shipping:
+            logger.info(f"Menerapkan gratis ongkir member untuk pengguna {user_id}")
+
         try:
             if user_id:
 
@@ -210,6 +220,8 @@ class CheckoutService:
 
             try:
                 shipping_cost: float = float(form_data.get("shipping_cost", 0))
+                if is_member_free_shipping:
+                    shipping_cost = 0.0
 
             except ValueError:
                 logger.warning(
@@ -217,6 +229,8 @@ class CheckoutService:
                     f"{form_data.get('shipping_cost')}. Diubah ke 0."
                 )
                 shipping_cost = 0.0
+                if is_member_free_shipping:
+                    shipping_cost = 0.0
 
             logger.info(
                 f"Membuat pesanan untuk {user_log_id}. "

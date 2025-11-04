@@ -35,7 +35,7 @@ class OrderRepository:
         try:
             cursor.execute(
                 """
-                SELECT id, status, payment_method, user_id
+                SELECT *
                 FROM orders
                 WHERE payment_transaction_id = %s
                 """,
@@ -204,6 +204,7 @@ class OrderRepository:
         shipping_cost: Decimal, final_total: Decimal,
         voucher_code: Optional[str], payment_method: str,
         transaction_id: Optional[str], shipping_details: Dict[str, Any],
+        notes: Optional[str] = None,
     ) -> int:
         cursor = conn.cursor()
         try:
@@ -215,11 +216,11 @@ class OrderRepository:
                     payment_transaction_id, shipping_name, shipping_phone,
                     shipping_address_line_1, shipping_address_line_2,
                     shipping_city, shipping_province, shipping_postal_code,
-                    shipping_email
+                    shipping_email, notes 
                 )
                 VALUES (
                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s
+                    %s, %s, %s, %s
                 )
                 """,
                 (
@@ -240,6 +241,7 @@ class OrderRepository:
                     shipping_details["province"],
                     shipping_details["postal_code"],
                     shipping_details["email"],
+                    notes,
                 ),
             )
             return cursor.lastrowid

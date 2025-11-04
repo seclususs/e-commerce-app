@@ -6,6 +6,7 @@ import { initCartPage } from '../pages/cart.js';
 import { initCheckoutPage } from '../pages/checkout.js';
 import { initPaymentPage } from '../pages/payment.js';
 import { initProfileEditor, initUserProfile } from '../pages/profile.js';
+import { initMembershipPage } from '../pages/membership.js';
 
 const contentWrapperSelector = 'main.page-content-wrapper';
 const loadingClass = 'page-loading';
@@ -51,6 +52,10 @@ function reinitializePublicScripts() {
      }
      if (document.querySelector('.hero')) {
          console.log("Initializing Landing Page...");
+     }
+     if (document.querySelector('.membership-page-section')) {
+         console.log("Initializing Membership Page...");
+         initMembershipPage();
      }
 }
 

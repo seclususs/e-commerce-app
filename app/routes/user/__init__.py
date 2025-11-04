@@ -9,3 +9,4 @@ user_bp = Blueprint("user", __name__)
 
 from . import order_routes
 from . import profile_routes
+from . import membership_routes

@@ -19,6 +19,7 @@ from app.repository.product_repository import (
 from app.repository.variant_repository import (
     VariantRepository, variant_repository
 )
+from app.services.users.user_service import UserService, user_service
 from app.services.orders.stock_service import stock_service
 
 
@@ -29,12 +30,14 @@ class CartService:
         cart_repo: CartRepository = cart_repository,
         product_repo: ProductRepository = product_repository,
         variant_repo: VariantRepository = variant_repository,
-        stock_svc: Any = stock_service
+        stock_svc: Any = stock_service,
+        user_svc: UserService = user_service
     ):
         self.cart_repository = cart_repo
         self.product_repository = product_repo
         self.variant_repository = variant_repo
         self.stock_service = stock_svc
+        self.user_service = user_svc
 
 
     def get_cart_details(self, user_id: int) -> Dict[str, Any]:
@@ -43,6 +46,14 @@ class CartService:
 
         try:
             conn = get_db_connection()
+            
+            subscription = self.user_service.get_active_subscription(user_id, conn)
+            member_discount_percent = Decimal("0")
+            if subscription and subscription.get("discount_percent"):
+                member_discount_percent = Decimal(
+                    str(subscription["discount_percent"])
+                )
+
             cart_items = self.cart_repository.get_user_cart_items(conn, user_id)
             subtotal = Decimal("0.0")
             items: List[Dict[str, Any]] = []
@@ -67,8 +78,19 @@ class CartService:
                     if discount_price and discount_price > Decimal("0.0")
                     else price
                 )
+                
+                if member_discount_percent > 0:
+                    discount_amount = (
+                        effective_price * (member_discount_percent / Decimal("100"))
+                    )
+                    item["original_effective_price"] = effective_price
+                    effective_price = (effective_price - discount_amount).quantize(
+                        Decimal("0.01")
+                    )
+
                 item["line_total"] = effective_price * Decimal(item["quantity"])
                 subtotal += item["line_total"]
+                item["effective_price"] = effective_price
                 items.append(item)
 
             return {"items": items, "subtotal": float(subtotal)}
@@ -418,6 +440,19 @@ class CartService:
                     continue
 
                 final_item = {**product_info}
+                
+                price = Decimal(str(final_item.get("price", 0)))
+                discount_price = Decimal(
+                    str(final_item.get("discount_price", 0))
+                )
+                
+                effective_price = (
+                    discount_price
+                    if discount_price and discount_price > 0
+                    else price
+                )
+                final_item["effective_price"] = effective_price
+
                 final_item["stock"] = self.stock_service.get_available_stock(
                     product_id, db_variant_id, conn
                 )
@@ -451,5 +486,6 @@ class CartService:
                 conn.close()
 
 cart_service = CartService(
-    cart_repository, product_repository, variant_repository, stock_service
+    cart_repository, product_repository, variant_repository, 
+    stock_service, user_service
 )

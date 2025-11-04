@@ -6,26 +6,33 @@ const initConfirmModalSingleton = () => {
     const cancelBtn = document.getElementById('confirmCancelBtn');
     const titleEl = document.getElementById('confirmModalTitle');
     const textEl = document.getElementById('confirmModalText');
-    let callback = null;
+    let onConfirmCallback = null;
+    let onCancelCallback = null;
 
-    const show = (title, text, onConfirm) => {
+    const show = (title, text, onConfirm, onCancel = null) => {
         titleEl.textContent = title;
         textEl.textContent = text;
-        callback = onConfirm;
+        onConfirmCallback = onConfirm;
+        onCancelCallback = onCancel;
         modal.classList.add('active');
     };
 
-    const hide = () => {
+    const hide = (isCancel = false) => {
         modal.classList.remove('active');
-        callback = null;
+        if (isCancel && onCancelCallback) {
+            onCancelCallback();
+        }
+        onConfirmCallback = null;
+        onCancelCallback = null;
     };
 
     okBtn.addEventListener('click', () => {
-        if (callback) callback();
-        hide();
+        if (onConfirmCallback) onConfirmCallback();
+        hide(false);
     });
-    cancelBtn.addEventListener('click', hide);
-    modal.addEventListener('click', (e) => (e.target === modal) && hide());
+    
+    cancelBtn.addEventListener('click', () => hide(true));
+    modal.addEventListener('click', (e) => (e.target === modal) && hide(true));
 
     return { show, hide };
 };

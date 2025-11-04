@@ -1,0 +1,116 @@
+.guest-subscribe-container {
+  max-width: 800px;
+}
+
+.package-summary-column {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem;
+  background-color: var(--color-auth-image-bg);
+  border-right: 1px solid var(--color-border-subtle);
+}
+
+.membership-summary-card {
+  background-color: var(--color-background-surface);
+  padding: 1.5rem;
+  margin-bottom: 0;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--border-radius-md);
+  width: 100%;
+}
+
+.summary-card-label {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+}
+
+.summary-card-title {
+  margin: 0.5rem 0 0.5rem 0;
+  color: var(--color-primary);
+  font-size: 1.3rem;
+  font-family: var(--font-secondary);
+}
+
+.summary-card-price {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.summary-card-period {
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.summary-card-features {
+  list-style: none;
+  padding: 1rem 0 0 0;
+  margin: 1rem 0 0 0;
+  border-top: 1px solid var(--color-border-default);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.summary-card-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.summary-card-features li i {
+  color: var(--color-success);
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.summary-card-features li i.fa-times-circle {
+  color: var(--color-danger);
+  opacity: 0.7;
+}
+
+.summary-card-features li strong {
+  color: var(--color-text-primary);
+}
+
+.guest-subscribe-form {
+  padding: 2rem 2.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.guest-subscribe-form .section-title {
+  text-align: left;
+}
+
+.guest-subscribe-form .form-button {
+  margin-top: 1.5rem;
+}
+
+.cancel-link {
+  width: 100%;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+@media (max-width: 767px) {
+  .package-summary-column {
+    padding: 2rem 1.5rem 1.5rem 1.5rem;
+    border-right: none;
+  }
+  
+  .guest-subscribe-form {
+    padding: 1.5rem;
+  }
+
+  .guest-subscribe-form .section-title {
+    text-align: center;
+  }
+}

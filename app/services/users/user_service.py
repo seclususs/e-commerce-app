@@ -10,6 +10,9 @@ from app.exceptions.database_exceptions import (
     DatabaseException, RecordNotFoundError
 )
 from app.exceptions.service_exceptions import ServiceLogicError
+from app.repository.membership_repository import (
+    MembershipRepository, membership_repository
+)
 from app.repository.user_repository import UserRepository, user_repository
 from app.utils.logging_utils import get_logger
 
@@ -18,8 +21,13 @@ logger = get_logger(__name__)
 
 class UserService:
 
-    def __init__(self, user_repo: UserRepository = user_repository):
+    def __init__(
+        self,
+        user_repo: UserRepository = user_repository,
+        member_repo: MembershipRepository = membership_repository
+    ):
         self.user_repository = user_repo
+        self.membership_repository = member_repo
 
 
     def get_user_by_id(self, user_id: int) -> Dict[str, Any]:
@@ -259,4 +267,51 @@ class UserService:
                     f"(ID: {user_id}, koneksi eksternal)."
                 )
 
-user_service = UserService(user_repository)
+    def get_active_subscription(
+        self, user_id: int, conn: Optional[MySQLConnection] = None
+    ) -> Optional[Dict[str, Any]]:
+        
+        logger.debug(f"Mengecek langganan aktif untuk pengguna ID: {user_id}")
+        close_conn: bool = False
+        if conn is None:
+            conn = get_db_connection()
+            close_conn = True
+        
+        try:
+            subscription = (
+                self.membership_repository.find_active_subscription_by_user_id(
+                    conn, user_id
+                )
+            )
+            if subscription:
+                logger.debug(
+                    f"Langganan aktif ditemukan untuk pengguna {user_id}: "
+                    f"{subscription.get('name')}"
+                )
+            else:
+                logger.debug(
+                    f"Tidak ada langganan aktif ditemukan untuk pengguna {user_id}"
+                )
+            return subscription
+        
+        except mysql.connector.Error as db_err:
+            logger.error(
+                f"Kesalahan database saat mengecek langganan untuk pengguna {user_id}: {db_err}",
+                exc_info=True,
+            )
+            raise DatabaseException(
+                f"Kesalahan database saat mengecek langganan: {db_err}"
+            )
+        
+        except Exception as e:
+            logger.error(
+                f"Kesalahan saat mengecek langganan untuk pengguna {user_id}: {e}",
+                exc_info=True,
+            )
+            raise ServiceLogicError(f"Gagal mengecek status langganan: {e}")
+        
+        finally:
+            if close_conn and conn and conn.is_connected():
+                conn.close()
+
+user_service = UserService(user_repository, membership_repository)

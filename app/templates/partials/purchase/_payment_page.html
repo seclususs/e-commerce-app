@@ -2,7 +2,12 @@
     <div class="payment-container animated-element">
         <div class="admin-card">
             <h2 class="section-title" style="margin-bottom: 1.5rem;">Selesaikan Pembayaran</h2>
+            
+            {% if is_membership %}
+            <p class="payment-intro">Pesanan langganan Anda <strong>#{{ order.id }}</strong> telah kami terima. Segera selesaikan pembayaran untuk mengaktifkan paket VIP Anda.</p>
+            {% else %}
             <p class="payment-intro">Pesanan Anda <strong>#{{ order.id }}</strong> telah kami terima. Segera selesaikan pembayaran agar pesanan dapat kami proses.</p>
+            {% endif %}
 
             <div class="payment-details">
                 <div class="payment-method-info">
@@ -16,13 +21,22 @@
                 <div class="payment-summary">
                     <h3>Ringkasan Pesanan</h3>
                     <div class="summary-items-list">
-                        {% for item in items %}
+                        {% if is_membership %}
                         <div class="summary-row">
-                            <span>{{ item.name }} (x{{ item.quantity }})</span>
-                            <span>{{ (item.price * item.quantity)|rupiah }}</span>
+                            <span>Langganan Membership ({{ (order.notes or "").split(':')[0].replace('MEMBERSHIP_', '') }})</span>
+                            <span>{{ order.subtotal|rupiah }}</span>
                         </div>
-                        {% endfor %}
+                        {% else %}
+                            {% for item in items %}
+                            <div class="summary-row">
+                                <span>{{ item.name }} (x{{ item.quantity }})</span>
+                                <span>{{ (item.price * item.quantity)|rupiah }}</span>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
                     </div>
+                    
+                    {% if not is_membership %}
                      <div class="summary-row"><span>Subtotal</span><span>{{ order.subtotal|rupiah }}</span></div>
                      {% if order.shipping_cost > 0 %}
                      <div class="summary-row">
@@ -36,6 +50,8 @@
                         <span>- {{ order.discount_amount|rupiah }}</span>
                     </div>
                     {% endif %}
+                    {% endif %}
+                    
                     <div class="summary-total">
                         <span>Total</span>
                         <span>{{ order.total_amount|rupiah }}</span>
@@ -51,7 +67,7 @@
                         class="cta-button-secondary"
                         data-webhook-url="{{ url_for('api.payment_webhook') }}"
                         data-api-key="{{ api_key }}"
-                        data-success-url="{{ url_for('purchase.order_success') }}"
+                        data-success-url="{{ success_url }}" 
                         data-transaction-id="{{ order.payment_transaction_id }}">
                     Simulasikan Pembayaran Berhasil
                 </button>

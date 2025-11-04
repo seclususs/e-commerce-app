@@ -6,14 +6,31 @@
     </div>
 </section>
 
+<section id="vip-promo" class="about-section vip-promo-canvas animated-element" style="background: linear-gradient(45deg, var(--color-primary), var(--color-primary-dark)); color: #fff;">
+    <div class="about-content" style="text-align: center;">
+        <i class="fas fa-star fa-3x" style="margin-bottom: 1rem; color: #FFD700;"></i>
+        <h2 class="section-title" style="color: #fff;">Jadi Anggota VIP</h2>
+        <p style="color: rgba(255, 255, 255, 0.9);">Nikmati gratis ongkir tanpa batas dan diskon member eksklusif untuk semua produk. Upgrade pengalaman belanjamu!</p>
+        <a href="{{ url_for('user.membership_page') }}"
+           data-ajax-nav="true"
+           class="cta-button cta-button-outline" 
+           style="color: #fff; border-color: #fff; background: transparent;">
+           Lihat Paket VIP
+        </a>
+    </div>
+</section>
+
 <section id="products" class="products-section animated-element">
     <h2 class="section-title animated-element">Produk Teratas Kami</h2>
     <div class="products-grid">
         {% for product in products %}
         <div class="product-card homepage-product-card animated-element" data-animation-delay="{{ loop.index * 100 }}">
-            <a href="{{ url_for('product.product_detail', id=product.id) }}" class="product-card-link" aria-label="Lihat detail untuk {{ product.name }}"></a>
+            <a href="{{ url_for('product.product_detail', id=product.id) }}" class="product-card-link" aria-label="Lihat detail untuk {{ product.name }}" data-ajax-nav="true"></a>
             <div class="product-image">
-                <img loading="lazy" src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else url_for('static', filename='images/placeholder.png') + product.name }}" alt="{{ product.name }}">
+                <img loading="lazy" src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + product.name }}" alt="{{ product.name }}">
+                 {% if not product.has_variants and product.stock == 0 %}
+                    <div class="stock-overlay">Stok Habis</div>
+                 {% endif %}
             </div>
             <div class="product-info">
                 <h3 class="product-name">{{ product.name }}</h3>
@@ -26,15 +43,30 @@
                         <span class="product-price" style="font-size: 1.25rem;">{{ (product.price or 0)|rupiah }}</span>
                     {% endif %}
                 </div>
-                <button class="cta-button add-to-cart-btn" data-id="{{ product.id }}" data-name="{{ product.name }}" data-stock="{{ product.stock }}" style="z-index: 2; position: relative; margin-top: 1rem;">
-                    <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
+                <button class="cta-button add-to-cart-btn"
+                        data-id="{{ product.id }}"
+                        data-name="{{ product.name }}"
+                        data-stock="{{ product.stock }}"
+                        data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
+                        {% if product.has_variants or product.stock == 0 %}disabled{% endif %}
+                        style="z-index: 2; position: relative; margin-top: 1rem;">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>
+                      {% if product.has_variants %}
+                        Pilih Varian
+                      {% elif product.stock > 0 %}
+                        Tambah ke Keranjang
+                      {% else %}
+                        Stok Habis
+                      {% endif %}
+                    </span>
                 </button>
             </div>
         </div>
         {% endfor %}
     </div>
      <div style="text-align: center; margin-top: 3rem;">
-         <a href="{{ url_for('product.products_page') }}" class="cta-button cta-button-outline">Lihat Semua Produk</a>
+         <a href="{{ url_for('product.products_page') }}" class="cta-button cta-button-outline" data-ajax-nav="true">Lihat Semua Produk</a>
     </div>
 </section>
 
@@ -42,7 +74,7 @@
     <div class="about-content">
         <h2 class="section-title">{{ content.about_teaser_title }}</h2>
         <p>{{ content.about_teaser_text }}</p>
-        <a href="{{ url_for('product.about') }}" class="cta-button cta-button-outline">Selengkapnya</a>
+        <a href="{{ url_for('product.about') }}" class="cta-button cta-button-outline" data-ajax-nav="true">Selengkapnya</a>
     </div>
 </section>
 

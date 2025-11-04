@@ -186,52 +186,6 @@ export function initAdminImagePreviews() {
     }
 }
 
-export function initAdminPriceFormatting() {
-    const productForms = document.querySelectorAll('form[action*="/admin/products"], form[action*="/admin/edit_product"]');
-    if (productForms.length === 0) return;
-
-    const formatPrice = (value) => {
-        const numStr = String(value).replace(/[^0-9]/g, '');
-        if (!numStr) return '';
-        return parseInt(numStr, 10).toLocaleString('id-ID');
-    };
-
-    const unformatPrice = (value) => String(value).replace(/[^0-9]/g, '');
-
-    productForms.forEach(form => {
-        const priceInputs = form.querySelectorAll('input[name="price"], input[name="discount_price"]');
-
-        priceInputs.forEach(input => {
-            input.type = 'text';
-            input.setAttribute('inputmode', 'numeric');
-            input.setAttribute('pattern', '[0-9.,]*');
-
-            input.value = formatPrice(input.value);
-
-            input.addEventListener('input', (e) => {
-                const cursorPosition = e.target.selectionStart;
-                const originalValue = e.target.value;
-                const originalLength = originalValue.length;
-                const unformatted = unformatPrice(originalValue);
-                const formatted = formatPrice(unformatted);
-                e.target.value = formatted;
-                const newLength = formatted.length;
-
-                let newCursorPosition = cursorPosition + (newLength - originalLength);
-                newCursorPosition = Math.max(0, newCursorPosition);
-                newCursorPosition = Math.min(newLength, newCursorPosition);
-
-                if (originalLength > newLength && cursorPosition === originalLength) {
-                    newCursorPosition = newLength;
-                }
-
-                e.target.setSelectionRange(newCursorPosition, newCursorPosition);
-            });
-        });
-
-    });
-}
-
 function initVariantCheckbox() {
     const checkbox = document.getElementById('has-variants-checkbox');
     if (!checkbox) return;
@@ -277,6 +231,5 @@ function initVariantCheckbox() {
 
 export function initProductForms() {
     initAdminImagePreviews();
-    initAdminPriceFormatting();
     initVariantCheckbox();
 }

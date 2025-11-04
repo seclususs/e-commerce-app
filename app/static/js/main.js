@@ -15,6 +15,7 @@ import { initProfileEditor, initUserProfile } from './pages/profile.js';
 import { initCartPage } from './pages/cart.js';
 import { initRegisterPage } from './pages/auth/register.js';
 import { initForgotPasswordPage } from './pages/auth/forgot-password.js';
+import { initMembershipPage } from './pages/membership.js';
 
 function initializePageScripts() {
     initAnimations();
@@ -49,6 +50,9 @@ function initializePageScripts() {
     }
     if (document.getElementById('forgot-password-form')) {
         initForgotPasswordPage();
+    }
+    if (document.querySelector('.membership-page-section')) {
+        initMembershipPage();
     }
 }
 

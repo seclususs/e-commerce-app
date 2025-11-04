@@ -35,6 +35,9 @@
                 <button class="profile-tab-btn active" data-tab="tab-orders">
                     <i class="fas fa-receipt"></i> <span>Riwayat Pesanan</span>
                 </button>
+                <button class="profile-tab-btn" data-tab="tab-membership">
+                    <i class="fas fa-star"></i> <span>Keanggotaan</span>
+                </button>
                 <button class="profile-tab-btn" data-tab="tab-vouchers">
                     <i class="fas fa-ticket-alt"></i> <span>Voucher Saya</span>
                 </button>
@@ -56,7 +59,14 @@
                                     <td data-label="No. Resi:">{{ order.tracking_number or '-' }}</td>
                                     <td data-label="Aksi:" class="profile-order-actions">
                                         <div class="action-buttons-container">
-                                            <a href="{{ url_for('user.track_order', order_id=order.id) }}" class="cta-button-secondary action-btn" data-ajax-nav="true">Lacak</a>
+                                            {% if order.notes and ('MEMBERSHIP_PURCHASE' in order.notes or 'MEMBERSHIP_UPGRADE' in order.notes) and order.status == 'Menunggu Pembayaran' %}
+                                                <a href="{{ url_for('purchase.payment_page', order_id=order.id) }}" class="cta-button-secondary action-btn">Bayar</a>
+                                            {% elif order.status != 'Menunggu Pembayaran' and not (order.notes and ('MEMBERSHIP' in order.notes)) %}
+                                                <a href="{{ url_for('user.track_order', order_id=order.id) }}" class="cta-button-secondary action-btn" data-ajax-nav="true">Lacak</a>
+                                            {% elif order.status == 'Menunggu Pembayaran' %}
+                                                <a href="{{ url_for('purchase.payment_page', order_id=order.id) }}" class="cta-button-secondary action-btn">Bayar</a>
+                                            {% endif %}
+                                            
                                             {% if order.status in ['Menunggu Pembayaran', 'Diproses'] %}
                                                 <button class="btn-cancel ajax-cancel-order action-btn"
                                                         data-order-id="{{ order.id }}"
@@ -73,6 +83,51 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </div>
+
+            <div id="tab-membership" class="profile-tab-content">
+                <div class="profile-tab-card">
+                    <h3>Status Keanggotaan</h3>
+                    {% if current_subscription %}
+                        <div class="membership-status-container">
+                            <div class="membership-badge">
+                                <i class="fas fa-star"></i>
+                                <h4>{{ current_subscription.name }}</h4>
+                                <p class="status-active">Aktif</p>
+                                <p class="expires">Berlaku hingga:<br><strong>{{ (current_subscription.end_date | datetime_from_string).strftime('%d %B %Y') }}</strong></p>
+                            </div>
+                            <div class="membership-details">
+                                <h4>Keuntungan Anda Saat Ini:</h4>
+                                <ul class="pricing-plan-features" style="text-align: left; margin: 1rem 0;">
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        <div><strong>Diskon Member {{ current_subscription.discount_percent|float }}%</strong> untuk semua produk.</div>
+                                    </li>
+                                    <li>
+                                        <i class="fas {% if current_subscription.free_shipping %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                                        {% if current_subscription.free_shipping %}
+                                            <div><strong>Gratis Ongkir</strong> Tanpa Batas.</div>
+                                        {% else %}
+                                            <div style="opacity: 0.7;">Gratis Ongkir (Tidak Termasuk).</div>
+                                        {% endif %}
+                                    </li>
+                                </ul>
+                                <a href="{{ url_for('user.membership_page') }}" class="cta-button-secondary" style="margin-top: 1rem;" data-ajax-nav="true">
+                                    Kelola Langganan
+                                </a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="membership-inactive-prompt">
+                            <i class="fas fa-star"></i>
+                            <h4>Anda Saat Ini Bukan Anggota VIP</h4>
+                            <p>Upgrade keanggotaan Anda untuk menikmati diskon eksklusif dan gratis ongkir.</p>
+                            <a href="{{ url_for('user.membership_page') }}" class="cta-button" style="margin-top: 1.5rem;" data-ajax-nav="true">
+                                Lihat Paket VIP
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 

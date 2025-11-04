@@ -73,16 +73,22 @@ def user_profile() -> Union[str, Response, Tuple[Response, int]]:
         my_vouchers: List[Dict[str, Any]] = (
             voucher_service.get_available_vouchers_for_user(user_id)
         )
+        
+        current_subscription = user_service.get_active_subscription(user_id, conn)
 
         logger.info(
             f"Berhasil mengambil profil, {len(orders)} pesanan, "
             f"dan {len(my_vouchers)} voucher untuk ID pengguna: {user_id}"
         )
+        logger.debug(
+            f"Status langganan aktif pengguna {user_id}: {bool(current_subscription)}"
+            )
 
         render_args = {
             "user": user,
             "orders": orders,
             "my_vouchers": my_vouchers,
+            "current_subscription": current_subscription,
             "content": get_content(),
         }
 

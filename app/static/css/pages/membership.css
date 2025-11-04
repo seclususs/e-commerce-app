@@ -1,0 +1,142 @@
+.membership-page-section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex-grow: 1;
+    padding: 3rem 5%;
+}
+
+.membership-container {
+    width: 100%;
+    max-width: 1100px;
+    margin: auto;
+}
+
+.section-subtitle {
+    max-width: 600px;
+    margin: 0 auto 3rem auto;
+    color: var(--color-text-secondary);
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.pricing-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    align-items: stretch;
+}
+
+.pricing-card {
+    background: var(--color-card-bg);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid var(--color-border-subtle);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 4px 6px -1px var(--color-shadow-dark);
+    padding: 2rem;
+    text-align: center;
+}
+
+.pricing-card:hover {
+    transform: scale(1.03) translateY(-5px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-primary);
+    z-index: 10;
+}
+
+.pricing-plan-name {
+    font-family: var(--font-secondary);
+    font-size: 1.5rem;
+    color: var(--color-primary);
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.pricing-plan-price {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+}
+
+.pricing-plan-period {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+}
+
+.pricing-plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex-grow: 1;
+    color: var(--color-text-secondary);
+}
+
+.pricing-plan-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.pricing-plan-features li i {
+    color: var(--color-success);
+    margin-top: 5px;
+    flex-shrink: 0;
+}
+
+.pricing-plan-features li i.fa-times-circle {
+    color: var(--color-danger);
+    opacity: 0.7;
+}
+
+.pricing-plan-features li strong {
+    color: var(--color-text-primary);
+}
+
+.current-plan-badge {
+    position: absolute;
+    top: 0;
+    right: 1.5rem;
+    background: var(--color-info);
+    color: var(--color-white);
+    padding: 0.3rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pricing-card.current-plan {
+    border-color: var(--color-info);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+.pricing-card .membership-action-form {
+    margin-top: auto;
+}
+
+.pricing-card .cta-button,
+.pricing-card .cta-button-secondary {
+    width: 100%;
+}
+
+@media (max-width: 639px) {
+    .membership-page-section {
+        padding: 2rem 1rem;
+    }
+
+    .pricing-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}

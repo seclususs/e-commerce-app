@@ -1,0 +1,80 @@
+<section class="membership-page-section animated-element">
+    <div class="membership-container">
+        <h2 class="section-title">Paket Keanggotaan VIP</h2>
+        <p class="section-subtitle">
+            Nikmati berbagai keuntungan eksklusif dengan bergabung.
+        </p>
+
+        <div class="pricing-toggle-container" style="display: none; visibility: hidden;">
+            <span>Bulanan</span>
+            <label class="switch">
+                <input type="checkbox" id="period-toggle">
+                <span class="slider round"></span>
+            </label>
+            <span>Tahunan (Hemat 20%)</span>
+        </div>
+
+        <div class="pricing-cards-grid">
+            {% for pkg in all_memberships %}
+                {% set is_current_plan = current_subscription and current_subscription.membership_id == pkg.id %}
+                {% set is_monthly_plan = pkg.period == 'monthly' %}
+                {% set can_upgrade = current_subscription and current_subscription.period == 'monthly' and pkg.period == 'yearly' %}
+                
+                <div class="pricing-card {% if is_current_plan %}current-plan{% endif %}" data-period="{{ pkg.period }}">
+                    {% if is_current_plan %}
+                        <div class="current-plan-badge">Paket Anda</div>
+                    {% endif %}
+                    <h3 class="pricing-plan-name">{{ pkg.name }}</h3>
+                    <div class="pricing-plan-price">
+                        {{ pkg.price|rupiah }}
+                        <span class="pricing-plan-period">/ {{ 'Bulan' if is_monthly_plan else 'Tahun' }}</span>
+                    </div>
+                    <ul class="pricing-plan-features">
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Diskon Member {{ pkg.discount_percent|float }}%</strong> untuk semua produk
+                        </li>
+                        <li>
+                            <i class="fas {% if pkg.free_shipping %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+                            {% if pkg.free_shipping %}
+                                <strong>Gratis Ongkir</strong> Tanpa Batas
+                            {% else %}
+                                <span {% if not pkg.free_shipping %}style="opacity: 0.6;"{% endif %}>Gratis Ongkir (Tidak Termasuk)</span>
+                            {% endif %}
+                        </li>
+                        {% if pkg.description and false %}
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            {{ pkg.description }}
+                        </li>
+                        {% endif %}
+                    </ul>
+
+                    {% if session.user_id %}
+                        <form method="POST" action="{{ url_for('user.membership_page') }}" class="membership-action-form" data-ajax="true">
+                            <input type="hidden" name="membership_id" value="{{ pkg.id }}">
+                            
+                            {% if is_current_plan %}
+                                <button type="button" class="cta-button-secondary" disabled>Aktif</button>
+                            {% elif can_upgrade %}
+                                <input type="hidden" name="action" value="upgrade">
+                                <button type="submit" class="cta-button cta-button-prominent">Upgrade Sekarang</button>
+                            {% elif current_subscription %}
+                                <button type="button" class="cta-button-secondary" disabled title="Anda hanya dapat upgrade dari bulanan ke tahunan.">Tidak Tersedia</button>
+                            {% else %}
+                                <input type="hidden" name="action" value="subscribe">
+                                <button type="submit" class="cta-button">Beli Paket</button>
+                            {% endif %}
+                        </form>
+                    {% else %}
+                         <a href="{{ url_for('user.guest_subscribe_page', membership_id=pkg.id) }}" class="cta-button">Beli Paket</a>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p style="color: var(--color-text-med); text-align: center; grid-column: 1 / -1;">
+                    Saat ini belum ada paket membership yang tersedia.
+                </p>
+            {% endfor %}
+        </div>
+    </div>
+</section>

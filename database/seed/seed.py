@@ -35,6 +35,9 @@ def seed_database():
         os.path.join(os.path.dirname(__file__), "..", "..")
     )
     instance_dir = os.path.join(project_root, "database")
+    if not os.path.exists(instance_dir):
+         instance_dir = os.path.join(project_root)
+
     schema_file = os.path.join(instance_dir, "seed", "schema.sql")
     data_file = os.path.join(instance_dir, "seed", "data.json")
 
@@ -315,6 +318,74 @@ def seed_database():
                 VALUES (%s, %s, %s, %s)
                 """,
                 user_carts_data,
+            )
+
+        if "memberships" in data:
+            memberships_data = [
+                (
+                    item["id"],
+                    item["name"],
+                    item["price"],
+                    item["period"],
+                    item.get("discount_percent", 0),
+                    item.get("free_shipping", 0),
+                    item.get("description"),
+                    item.get("is_active", 1),
+                )
+                for item in data["memberships"]
+            ]
+            cursor.executemany(
+                """
+                INSERT INTO memberships (
+                    id, name, price, period, discount_percent,
+                    free_shipping, description, is_active
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                memberships_data,
+            )
+
+        if "user_subscriptions" in data:
+            subscriptions_data = [
+                (
+                    item["id"],
+                    item["user_id"],
+                    item["membership_id"],
+                    item["start_date"],
+                    item["end_date"],
+                    item["status"],
+                )
+                for item in data["user_subscriptions"]
+            ]
+            cursor.executemany(
+                """
+                INSERT INTO user_subscriptions (
+                    id, user_id, membership_id, start_date, end_date, status
+                ) VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                subscriptions_data,
+            )
+
+        if "subscription_transactions" in data:
+            transactions_data = [
+                (
+                    item["id"],
+                    item["user_id"],
+                    item["membership_id"],
+                    item["transaction_type"],
+                    item["amount"],
+                    item.get("transaction_date", datetime.now()),
+                    item.get("notes"),
+                )
+                for item in data["subscription_transactions"]
+            ]
+            cursor.executemany(
+                """
+                INSERT INTO subscription_transactions (
+                    id, user_id, membership_id, transaction_type,
+                    amount, transaction_date, notes
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                transactions_data,
             )
 
         connection.commit()

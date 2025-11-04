@@ -233,7 +233,25 @@ class ProductService:
                 raise ValidationError(image_error)
 
             old_has_variants: bool = product.get("has_variants", False)
-            new_has_variants: bool = "has_variants" in form_data
+            form_has_variants_key: bool = "has_variants" in form_data
+            
+            new_has_variants: bool
+            
+            if old_has_variants and not form_has_variants_key:
+                variants = self.variant_service.get_variants_for_product(product_id, conn)
+                if variants and len(variants) > 1:
+                    new_has_variants = True
+                    logger.debug(
+                        f"Service: Checkbox 'has_variants' tidak ada di form (disabled?), tapi >1 varian ada. Mempertahankan has_variants=True."
+                        )
+                else:
+                    new_has_variants = False
+                    logger.debug(
+                        f"Service: Checkbox 'has_variants' tidak ada di form (unchecked?). 0-1 varian ada. Mengubah has_variants=False."
+                        )
+            else:
+                new_has_variants = form_has_variants_key
+            
             logger.debug(
                 f"Service: Perubahan status varian: {old_has_variants} -> {new_has_variants}"
             )

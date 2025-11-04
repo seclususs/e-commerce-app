@@ -39,6 +39,7 @@ from app.services.orders.voucher_service import (
 from app.services.products.variant_service import (
     VariantService, variant_service
 )
+from app.services.users.user_service import UserService, user_service
 from app.utils.logging_utils import get_logger
 
 
@@ -62,7 +63,8 @@ class OrderCreationService:
         stock_svc: StockService = stock_service,
         variant_svc: VariantService = variant_service,
         voucher_svc: VoucherService = voucher_service,
-        user_voucher_repo: UserVoucherRepository = user_voucher_repository
+        user_voucher_repo: UserVoucherRepository = user_voucher_repository,
+        user_svc: UserService = user_service
     ):
         self.stock_repository = stock_repo
         self.product_repository = product_repo
@@ -76,6 +78,7 @@ class OrderCreationService:
         self.variant_service = variant_svc
         self.voucher_service = voucher_svc
         self.user_voucher_repository = user_voucher_repo
+        self.user_service = user_svc
 
 
     def _get_held_items(
@@ -124,7 +127,8 @@ class OrderCreationService:
 
 
     def _prepare_items_for_order(
-        self, conn: MySQLConnection, held_items: List[Dict[str, Any]]
+        self, conn: MySQLConnection, held_items: List[Dict[str, Any]],
+        user_id: Optional[int]
     ) -> Tuple[List[Dict[str, Any]], Decimal]:
 
         if not held_items:
@@ -146,6 +150,20 @@ class OrderCreationService:
                 "Persiapan item gagal: Daftar item yang ditahan kosong."
             )
             raise ValidationError("Item yang ditahan tidak valid.")
+        
+        member_discount_percent = Decimal("0")
+        if user_id:
+            subscription = self.user_service.get_active_subscription(
+                user_id, conn
+            )
+            if subscription and subscription.get("discount_percent"):
+                member_discount_percent = Decimal(
+                    str(subscription["discount_percent"])
+                )
+                logger.debug(
+                    f"Menerapkan diskon member {member_discount_percent}% "
+                    f"untuk pengguna {user_id}"
+                )
 
         try:
             products_db = self.product_repository.find_batch_for_order(
@@ -173,6 +191,15 @@ class OrderCreationService:
                     and product["discount_price"] > 0
                     else product["price"]
                 )
+                
+                if member_discount_percent > 0:
+                    discount_amount = (
+                        effective_price * (member_discount_percent / Decimal("100"))
+                    )
+                    effective_price = (effective_price - discount_amount).quantize(
+                        Decimal("0.01")
+                    )
+
                 subtotal += Decimal(str(effective_price)) * Decimal(
                     str(item["quantity"])
                 )
@@ -240,6 +267,7 @@ class OrderCreationService:
                 payment_method,
                 transaction_id,
                 shipping_details,
+                notes=None
             )
             self.history_repository.create(
                 conn,
@@ -440,7 +468,7 @@ class OrderCreationService:
                 )
 
             items_for_order, subtotal = self._prepare_items_for_order(
-                conn, held_items
+                conn, held_items, user_id
             )
             discount_amount = Decimal("0")
             final_voucher_code = voucher_code
@@ -576,5 +604,5 @@ order_creation_service = OrderCreationService(
     stock_repository, product_repository, order_repository,
     order_item_repository, order_status_history_repository, voucher_repository,
     cart_repository, discount_service, stock_service, variant_service,
-    voucher_service, user_voucher_repository
+    voucher_service, user_voucher_repository, user_service
 )

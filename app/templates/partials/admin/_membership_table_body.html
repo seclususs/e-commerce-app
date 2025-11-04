@@ -1,0 +1,9 @@
+{% for membership in memberships %}
+  {% include 'partials/admin/_membership_row.html' %}
+{% else %}
+  <tr class="no-items-row">
+    <td colspan="8" style="text-align: center;">
+      Belum ada paket membership yang dibuat.
+    </td>
+  </tr>
+{% endfor %}

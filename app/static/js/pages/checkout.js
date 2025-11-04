@@ -15,6 +15,8 @@ function renderCheckoutSummary(state) {
     const totalEl = document.getElementById('checkoutTotal');
     const placeOrderBtn = document.getElementById('placeOrderBtn');
     const cartDataInput = document.getElementById('cart_data_input');
+    const dataContainer = document.getElementById('checkout-data-container');
+    const memberDiscountPercent = dataContainer ? parseFloat(dataContainer.dataset.memberDiscountPercent || '0') : 0;
 
     if (items.length === 0) {
         summaryContainer.innerHTML = '<p>Keranjang Anda kosong.</p>';
@@ -28,21 +30,46 @@ function renderCheckoutSummary(state) {
     summaryContainer.innerHTML = items.map(p => {
         const priceNum = Number(p.price) || 0;
         const discountPriceNum = Number(p.discount_price) || 0;
-        const effectivePrice = (
-            (discountPriceNum && discountPriceNum > 0)
-            ? discountPriceNum
-            : priceNum
-        );
+        const memberPrice = Number(p.effective_price) || 0;
+        const priceBeforeMemberDiscount = Number(p.original_effective_price) || 0;
+
+        const hasProductDiscount = discountPriceNum > 0 && discountPriceNum < priceNum;
+        const hasMemberDiscount = priceBeforeMemberDiscount > 0 && priceBeforeMemberDiscount > memberPrice;
+
         const colorInfo = p.color ? `${p.color}` : '';
         const sizeInfo = p.size ? `${p.size}` : '';
         const variantInfo = (colorInfo || sizeInfo)
             ? ` (${[colorInfo, sizeInfo].filter(Boolean).join(' / ')})`
             : '';
-            
+        
+        let priceDisplayHTML = '';
+
+        if (hasMemberDiscount) {
+            if (hasProductDiscount) {
+                priceDisplayHTML = `
+                    <br><small style="color: var(--color-text-med); text-decoration: line-through; opacity: 0.7;">${formatRupiah(priceNum)}</small>
+                    <br><small style="color: var(--color-text-med); text-decoration: line-through;">${formatRupiah(priceBeforeMemberDiscount)} (Diskon Produk)</small>
+                    <br><small style="color: var(--color-success);">Diskon Member ${memberDiscountPercent}%</small>
+                `;
+            } else {
+                priceDisplayHTML = `
+                    <br><small style="color: var(--color-text-med); text-decoration: line-through;">${formatRupiah(priceBeforeMemberDiscount)}</small>
+                    <br><small style="color: var(--color-success);">Diskon Member ${memberDiscountPercent}%</small>
+                `;
+            }
+        } else if (hasProductDiscount) {
+            priceDisplayHTML = `
+                <br><small style="color: var(--color-text-med); text-decoration: line-through;">${formatRupiah(priceNum)}</small>
+            `;
+        }
+
         return (
             `<div class="summary-row">
-                <span>${p.name}${variantInfo} (x${p.quantity})</span>
-                <span>${formatRupiah(effectivePrice * p.quantity)}</span>
+                <span>
+                    ${p.name}${variantInfo} (x${p.quantity})
+                    ${priceDisplayHTML}
+                </span>
+                <span>${formatRupiah(memberPrice * p.quantity)}</span>
             </div>`
         );
     }).join('');
@@ -348,6 +375,9 @@ function initShippingCalculation() {
     const totalEl = document.getElementById('checkoutTotal');
     const discountEl = document.getElementById('checkoutDiscount');
     const shippingCostInput = document.getElementById('shipping_cost_input');
+    const dataContainer = document.getElementById('checkout-data-container');
+    const isMemberFreeShipping = dataContainer && dataContainer.dataset.isMemberFreeShipping === 'true';
+
 
     if (!totalEl || !shippingRow || !shippingCostEl || !shippingCostInput) {
         return;
@@ -378,22 +408,29 @@ function initShippingCalculation() {
         }
 
         let shippingCost = 0;
-        const jabodetabek = [
-            'jakarta', 'bogor', 'depok', 'tangerang', 'bekasi'
-        ];
-
-        if (city && jabodetabek.includes(city.toLowerCase())) {
-            shippingCost = 10000;
-        } else if (city && city !== "") {
-            shippingCost = 20000;
-        }
-
-        if (shippingCost > 0) {
+        
+        if (isMemberFreeShipping) {
+            shippingCost = 0;
             shippingRow.style.display = 'flex';
-            shippingCostEl.textContent = formatRupiah(shippingCost);
+            shippingCostEl.textContent = 'Gratis (Member)';
         } else {
-            shippingRow.style.display = 'none';
-            shippingCostEl.textContent = formatRupiah(0);
+            const jabodetabek = [
+                'jakarta', 'bogor', 'depok', 'tangerang', 'bekasi'
+            ];
+
+            if (city && jabodetabek.includes(city.toLowerCase())) {
+                shippingCost = 10000;
+            } else if (city && city !== "") {
+                shippingCost = 20000;
+            }
+
+            if (shippingCost > 0) {
+                shippingRow.style.display = 'flex';
+                shippingCostEl.textContent = formatRupiah(shippingCost);
+            } else {
+                shippingRow.style.display = 'none';
+                shippingCostEl.textContent = formatRupiah(0);
+            }
         }
 
         const subtotal = Number(cartStore.getState().subtotal) || 0;
