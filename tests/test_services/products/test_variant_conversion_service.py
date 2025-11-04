@@ -39,7 +39,7 @@ class TestVariantConversionService(BaseTestCase):
         )
         
         self.mock_variant_svc.add_variant.assert_called_once_with(
-            1, "STANDAR", 10, 100, "P123"
+            1, "STANDAR", "STANDAR", 10, 100, "P123"
         )
         (
             self.mock_product_repo.

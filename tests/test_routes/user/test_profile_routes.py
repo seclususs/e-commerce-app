@@ -66,6 +66,7 @@ class TestUserProfileRoutes(BaseTestCase):
             }
         ]
         self.mock_voucher_service.get_available_vouchers_for_user.return_value = mock_vouchers
+        self.mock_user_service.get_active_subscription.return_value = None
         
         response = self.client.get(url_for("user.user_profile"))
         
@@ -76,6 +77,7 @@ class TestUserProfileRoutes(BaseTestCase):
         self.assertIn(b"TESTV", response.data)
         self.assertIn(b"Min. Belanja: Rp 0", response.data)
         self.mock_voucher_service.get_available_vouchers_for_user.assert_called_with(1)
+        self.mock_user_service.get_active_subscription.assert_called_with(1, self.db_conn)
 
 
     def test_user_profile_get_user_not_found(self):

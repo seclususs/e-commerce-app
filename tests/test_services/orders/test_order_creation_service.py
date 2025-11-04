@@ -51,7 +51,7 @@ class TestOrderCreationService(BaseTestCase):
         }
         self.held_items = [
             {"product_id": 1, "name": "Prod A", "quantity": 1,
-             "variant_id": None, "size": None}
+             "variant_id": None, "size": None, "color": None}
         ]
         self.products_db = [
             {"id": 1, "name": "Prod A", "price": 100, "discount_price": None}
@@ -59,7 +59,7 @@ class TestOrderCreationService(BaseTestCase):
         self.items_for_order = [
             {"id": 1, "name": "Prod A", "price": 100, "discount_price": None,
              "quantity": 1, "price_at_order": 100, "variant_id": None,
-             "size": None}
+             "size": None, "color": None}
         ]
 
     def tearDown(self):
@@ -93,7 +93,7 @@ class TestOrderCreationService(BaseTestCase):
         self.mock_order_repo.create.assert_called_once_with(
             self.db_conn, 1, Decimal("100"), Decimal("0"), Decimal("10.0"),
             Decimal("110.0"), None, "BANK_TRANSFER", "TX-12345678",
-            self.shipping_details
+            self.shipping_details, notes=None
         )
         self.mock_order_item_repo.create_batch.assert_called_once()
         self.mock_history_repo.create.assert_called()
@@ -140,7 +140,7 @@ class TestOrderCreationService(BaseTestCase):
         self.mock_order_repo.create.assert_called_once_with(
             self.db_conn, None, Decimal("100"), Decimal("10.0"),
             Decimal("5.0"), Decimal("95.0"), "DISKON10", "COD", None,
-            self.shipping_details
+            self.shipping_details, notes=None
         )
         self.mock_order_repo.update_status.assert_called_once_with(
             self.db_conn, 2, "Diproses"
@@ -185,7 +185,7 @@ class TestOrderCreationService(BaseTestCase):
         self.mock_order_repo.create.assert_called_once_with(
             self.db_conn, 1, Decimal("100"), Decimal("10.0"),
             Decimal("5.0"), Decimal("95.0"), "DISKON10", "BANK_TRANSFER",
-            ANY, self.shipping_details
+            ANY, self.shipping_details, notes=None
         )
         self.assertEqual(result, {"success": True, "order_id": 3})
 

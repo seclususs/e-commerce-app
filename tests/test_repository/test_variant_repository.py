@@ -24,7 +24,7 @@ class TestVariantRepository(BaseTestCase):
         
         self.mock_cursor.execute.assert_called_once_with(
             "SELECT * FROM product_variants "
-            "WHERE product_id = %s ORDER BY id",
+            "WHERE product_id = %s ORDER BY color, size",
             (1,)
         )
         self.mock_cursor.close.assert_called_once()
@@ -33,15 +33,15 @@ class TestVariantRepository(BaseTestCase):
         self.mock_cursor.lastrowid = 10
         
         result = self.repository.create(
-            self.db_conn, 1, " m ", 10, 100, "SKU1"
+            self.db_conn, 1, "RED", "M", 10, 100, "SKU1"
         )
 
         self.mock_cursor.execute.assert_called_once_with(
             "\n                INSERT INTO product_variants\n"
-            "                (product_id, size, stock, weight_grams, sku)\n"
-            "                VALUES (%s, %s, %s, %s, %s)\n"
+            "                (product_id, color, size, stock, weight_grams, sku)\n"
+            "                VALUES (%s, %s, %s, %s, %s, %s)\n"
             "                ",
-            (1, "M", 10, 100, "SKU1")
+            (1, "RED", "M", 10, 100, "SKU1")
         )
         self.assertEqual(result, 10)
         self.mock_cursor.close.assert_called_once()
@@ -50,16 +50,16 @@ class TestVariantRepository(BaseTestCase):
         self.mock_cursor.rowcount = 1
         
         result = self.repository.update(
-            self.db_conn, 10, 1, " l ", 20, 150, "SKU2"
+            self.db_conn, 10, 1, "BLUE", "L", 20, 150, "SKU2"
         )
 
         self.mock_cursor.execute.assert_called_once_with(
             "\n                UPDATE product_variants\n"
-            "                SET size = %s, stock = %s, "
-            "weight_grams = %s, sku = %s\n"
+            "                SET color = %s, size = %s, stock = %s, weight_grams = %s,\n"
+            "                    sku = %s\n"
             "                WHERE id = %s AND product_id = %s\n"
             "                ",
-            ("L", 20, 150, "SKU2", 10, 1)
+            ("BLUE", "L", 20, 150, "SKU2", 10, 1)
         )
         self.assertEqual(result, 1)
         self.mock_cursor.close.assert_called_once()
@@ -131,8 +131,8 @@ class TestVariantRepository(BaseTestCase):
         self.repository.find_batch_minimal(self.db_conn, [10, 11])
         
         self.mock_cursor.execute.assert_called_once_with(
-            "SELECT id, product_id, size FROM product_variants "
-            "WHERE id IN (%s, %s)",
+            f"SELECT id, product_id, color, size FROM product_variants "
+            f"WHERE id IN (%s, %s)",
             (10, 11)
         )
         self.mock_cursor.close.assert_called_once()

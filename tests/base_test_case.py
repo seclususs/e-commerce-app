@@ -51,6 +51,7 @@ class BaseTestCase(unittest.TestCase):
         self.patch_service_db_calls('app.services.users.user_service.get_db_connection')
         self.patch_service_db_calls('app.services.utils.scheduler_service.get_db_connection')
         self.patch_service_db_calls('app.services.utils.validation_service.get_db_connection')
+        self.patch_service_db_calls('app.services.member.membership_service.get_db_connection')
         self.patch_service_db_calls('app.routes.admin.setting_routes.get_db_connection')
         self.patch_service_db_calls('app.routes.auth.login_routes.get_db_connection')
         self.patch_service_db_calls('app.routes.auth.register_routes.get_db_connection')

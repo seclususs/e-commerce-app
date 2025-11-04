@@ -24,7 +24,9 @@ class TestProductGeneralRoutes(BaseTestCase):
 
     def test_index_get_not_logged_in(self):
         self.mock_cursor.fetchall.return_value = [
-            {"id": 1, "name": "Top Product", "price": 10000, "discount_price": 0, "image_url": "test.jpg", "category": "Test"}
+            {"id": 1, "name": "Top Product", "price": 10000, 
+             "discount_price": 0, "image_url": "test.jpg", "category": "Test",
+             "stock": 10, "has_variants": False}
         ]
         response = self.client.get(url_for("product.index"))
         self.assertEqual(response.status_code, 200)

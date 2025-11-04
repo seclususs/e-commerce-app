@@ -19,6 +19,8 @@ class TestVariantService(BaseTestCase):
             variant_repo=self.mock_variant_repo,
             product_repo=self.mock_product_repo
         )
+        
+        self.color = "DEFAULT_COLOR"
 
     def tearDown(self):
         super().tearDown()
@@ -36,14 +38,14 @@ class TestVariantService(BaseTestCase):
 
     def test_add_variant_success(self):
         self.mock_variant_repo.create.return_value = 1
-        new_variant = {"id": 1, "size": "M"}
+        new_variant = {"id": 1, "size": "M", "color": self.color}
         self.mock_variant_repo.find_by_id.return_value = new_variant
         self.mock_variant_repo.get_total_stock.return_value = 10
         
-        result = self.variant_service.add_variant(1, "M", 10, 100, "SKU1")
+        result = self.variant_service.add_variant(1, self.color, "M", 10, 100, "SKU1")
         
         self.mock_variant_repo.create.assert_called_once_with(
-            self.db_conn, 1, "M", 10, 100, "SKU1"
+            self.db_conn, 1, self.color, "M", 10, 100, "SKU1"
         )
         self.mock_variant_repo.get_total_stock.assert_called_once_with(
             self.db_conn, 1
@@ -56,18 +58,18 @@ class TestVariantService(BaseTestCase):
 
     def test_add_variant_validation_error_stock(self):
         with self.assertRaises(ValidationError):
-            self.variant_service.add_variant(1, "M", -1, 100, "SKU1")
+            self.variant_service.add_variant(1, self.color, "M", -1, 100, "SKU1")
 
     def test_add_variant_validation_error_type(self):
         with self.assertRaises(ValidationError):
-            self.variant_service.add_variant(1, "M", "abc", 100, "SKU1")
+            self.variant_service.add_variant(1, self.color, "M", "abc", 100, "SKU1")
 
     def test_add_variant_integrity_error(self):
         self.mock_variant_repo.create.side_effect = (
             mysql.connector.IntegrityError(errno=1062, msg="sku")
         )
         
-        result = self.variant_service.add_variant(1, "M", 10, 100, "SKU1")
+        result = self.variant_service.add_variant(1, self.color, "M", 10, 100, "SKU1")
 
         self.assertEqual(result["success"], False)
         self.assertIn("SKU", result["message"])
@@ -77,11 +79,11 @@ class TestVariantService(BaseTestCase):
         self.mock_variant_repo.get_total_stock.return_value = 20
         
         result = self.variant_service.update_variant(
-            1, 5, "L", 20, 150, "SKU2"
+            1, 5, self.color, "L", 20, 150, "SKU2"
         )
         
         self.mock_variant_repo.update.assert_called_once_with(
-            self.db_conn, 5, 1, "L", 20, 150, "SKU2"
+            self.db_conn, 5, 1, self.color, "L", 20, 150, "SKU2"
         )
         self.mock_product_repo.update_stock.assert_called_once_with(
             self.db_conn, 1, 20
@@ -92,7 +94,7 @@ class TestVariantService(BaseTestCase):
         self.mock_variant_repo.update.return_value = 0
         
         with self.assertRaises(RecordNotFoundError):
-            self.variant_service.update_variant(1, 5, "L", 20, 150, "SKU2")
+            self.variant_service.update_variant(1, 5, self.color, "L", 20, 150, "SKU2")
 
     def test_delete_variant_success(self):
         self.mock_variant_repo.delete.return_value = 1

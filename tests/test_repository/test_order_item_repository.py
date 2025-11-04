@@ -57,8 +57,8 @@ class TestOrderItemRepository(BaseTestCase):
 
     def test_create_batch(self):
         items_data = [
-            (100, 1, 1, 1, 10000, "M"),
-            (100, 2, None, 2, 20000, None)
+            (100, 1, 1, 1, 10000, "RED", "M"),
+            (100, 2, None, 2, 20000, None, None)
         ]
         self.mock_cursor.rowcount = 2
         
@@ -66,9 +66,9 @@ class TestOrderItemRepository(BaseTestCase):
 
         self.mock_cursor.executemany.assert_called_once_with(
             "\n                INSERT INTO order_items (\n"
-            "                    order_id, product_id, variant_id, quantity, "
-            "price,\n                    size_at_order\n"
-            "                ) VALUES (%s, %s, %s, %s, %s, %s)\n"
+            "                    order_id, product_id, variant_id, quantity, price,\n"
+            "                    color_at_order, size_at_order\n"
+            "                ) VALUES (%s, %s, %s, %s, %s, %s, %s)\n"
             "                ",
             items_data
         )

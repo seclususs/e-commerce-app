@@ -101,14 +101,14 @@ class TestPaymentService(BaseTestCase):
         self.mock_item_repo.find_by_order_id.return_value = self.mock_items
         self.mock_stock_svc.get_available_stock.side_effect = [10, 1]
         self.mock_product_repo.find_minimal_by_id.return_value = {"name": "Prod B"}
-        self.mock_variant_repo.find_by_id.return_value = {"size": "L"}
+        self.mock_variant_repo.find_by_id.return_value = {"size": "L", "color": "Blue"}
         
         result = self.payment_service.process_successful_payment(
             self.transaction_id
         )
         
-        self.mock_order_repo.update_status_and_notes.assert_called_once_with(
-            self.db_conn, self.order_id, "Dibatalkan", ANY
+        self.mock_order_repo.update_status.assert_called_once_with(
+            self.db_conn, self.order_id, "Dibatalkan"
         )
         self.mock_history_repo.create.assert_called_once_with(
             self.db_conn, self.order_id, "Dibatalkan", ANY
@@ -130,7 +130,10 @@ class TestPaymentService(BaseTestCase):
             self.transaction_id
         )
         
-        self.mock_order_repo.update_status_and_notes.assert_called_once_with(
+        self.mock_order_repo.update_status.assert_called_once_with(
+            ANY, self.order_id, "Dibatalkan"
+        )
+        self.mock_history_repo.create.assert_called_once_with(
             ANY, self.order_id, "Dibatalkan", ANY
         )
         self.assertFalse(result["success"])

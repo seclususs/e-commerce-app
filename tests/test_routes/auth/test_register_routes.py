@@ -15,6 +15,11 @@ class TestAuthRegisterRoutes(BaseTestCase):
             "app.routes.auth.register_routes.registration_service"
         )
         self.mock_service = self.service_patch.start()
+        
+        self.user_service_patch = patch(
+            "app.routes.user.profile_routes.user_service"
+        )
+        self.mock_user_service = self.user_service_patch.start()
 
         self.get_content_patch = patch(
             "app.routes.auth.register_routes.get_content"
@@ -73,6 +78,8 @@ class TestAuthRegisterRoutes(BaseTestCase):
             "is_admin": False,
         }
         order_details = {"email": "guest@b.c", "name": "Guest"}
+
+        self.mock_user_service.get_active_subscription.return_value = None
         
         self.mock_cursor.rowcount = 1
         
@@ -86,6 +93,7 @@ class TestAuthRegisterRoutes(BaseTestCase):
             follow_redirects=True
         )
         self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Profil Saya", response.data)
         self.assertIn(b"Akun berhasil dibuat! Voucher selamat datang", response.data)
 
         with self.client.session_transaction() as sess:

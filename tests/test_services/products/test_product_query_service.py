@@ -87,7 +87,10 @@ class TestProductQueryService(BaseTestCase):
             "id": 1, "name": "Test", "has_variants": True,
             "image_url": "main.jpg", "additional_image_urls": None
         }
-        mock_variants = [{"id": 10, "size": "M"}, {"id": 11, "size": "L"}]
+        mock_variants = [
+            {"id": 10, "size": "M", "color": "RED"}, 
+            {"id": 11, "size": "L", "color": "BLUE"}
+        ]
         self.mock_product_repo.find_with_category.return_value = mock_product
         
         self.mock_variant_svc.get_variants_for_product.return_value = (
@@ -103,6 +106,8 @@ class TestProductQueryService(BaseTestCase):
         self.assertEqual(result["variants"][0]["stock"], 5)
         self.assertEqual(result["variants"][1]["stock"], 8)
         self.assertNotIn("stock", result)
+        self.assertEqual(result["unique_colors"], ["BLUE", "RED"])
+        self.assertEqual(result["unique_sizes"], ["L", "M"])
 
     def test_get_product_by_id_not_found(self):
         self.mock_product_repo.find_with_category.return_value = None
