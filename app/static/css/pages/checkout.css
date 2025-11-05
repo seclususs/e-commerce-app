@@ -15,7 +15,7 @@
 
 .cart-layout {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 3fr 2fr;
   gap: 2rem;
   align-items: flex-start;
 }
@@ -78,26 +78,24 @@
   border-bottom: 1px solid var(--color-border-default);
 }
 
-.voucher-input-group {
-  display: flex;
-  gap: 0.5rem;
-}
-
 .voucher-input-group input {
   flex-grow: 1;
 }
 
 .voucher-input-group button {
   white-space: nowrap;
-  padding: 0.8rem 1.2rem;
+  flex-shrink: 0;
 }
 
+
 .voucher-feedback {
-  font-size: 0.9em;
-  margin-top: 0.75rem;
-  text-align: center;
+  font-size: 0.85em;
   font-weight: 500;
   min-height: 1.2em;
+  text-align: left;
+  line-height: 1.3;
+  padding-top: 4px; 
+  width: 100%;
 }
 
 .voucher-feedback.success {
@@ -138,6 +136,108 @@ html.light-theme .stock-hold-timer.expired {
   max-width: 600px;
 }
 
+.floating-voucher-container {
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.floating-voucher-group {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch; 
+    gap: 0.5rem; 
+    width: 100%;
+}
+.floating-voucher-group .form-control {
+    flex-grow: 0;
+    min-width: 0;
+    width: 100%;
+}
+
+.floating-voucher-group .voucher-input-group {
+    min-width: 0;
+}
+
+.voucher-button-group {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.voucher-button-group #applyVoucherBtnFloating {
+    flex-grow: 1;
+    height: 40px; 
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+}
+
+.voucher-button-group .voucher-toggle-btn {
+    flex-shrink: 0;
+}
+
+.floating-voucher-group .form-control,
+.floating-voucher-group .voucher-input-group input {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+    height: 40px;
+}
+.floating-voucher-group .voucher-input-group button {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    height: 40px;
+}
+
+.voucher-toggle-btn {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: 1px solid var(--color-border-default);
+    color: var(--color-text-secondary);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.voucher-toggle-btn:hover {
+    background: var(--color-background-elevated);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.applied-voucher-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.8rem;
+    background: rgba(22, 163, 74, 0.1);
+    border: 1px solid var(--color-success);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.9rem;
+    height: 40px;
+    width: 100%;
+}
+
+.applied-voucher-display span {
+    color: var(--color-success);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 0.5rem;
+}
+
+.remove-voucher-btn {
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 0.25rem;
+    line-height: 1;
+}
+
 @media (max-width: 767px) {
   .cart-layout {
     grid-template-columns: 1fr;
@@ -147,10 +247,19 @@ html.light-theme .stock-hold-timer.expired {
     position: static;
     margin-top: 2rem;
   }
+  
+  .floating-voucher-container {
+      width: 100%;
+  }
 }
 
 @media (max-width: 639px) {
   .checkout-page-section {
     padding: 2rem 1rem;
   }
+}
+
+.cart-summary .summary-total,
+.cart-summary .stock-hold-timer {
+    display: none;
 }

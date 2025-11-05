@@ -67,61 +67,10 @@
                 <script id="variant-data" type="application/json">
                     {{ product.variant_json_data | safe }}
                 </script>
-                
-                <div class="product-color-selector">
-                    <h3 class="details-title">Pilih Warna</h3>
-                    <div class="color-options-wrapper" id="color-selector">
-                        {% for color in product.unique_colors %}
-                            <button class="color-option-btn" data-value="{{ color }}">{{ color }}</button>
-                        {% endfor %}
-                    </div>
-                </div>
-                
-                <div class="product-size-selector">
-                    <h3 class="details-title">Pilih Ukuran</h3>
-                    <div class="size-options-wrapper" id="size-selector">
-                        {% for size in product.unique_sizes %}
-                            <button class="size-option-btn" data-value="{{ size }}" disabled>{{ size }}</button>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div id="variant-warning" class="stock-warning-message"></div>
-                {% endif %}
-
-                {% if product.stock > 0 or product.has_variants %}
-                <div class="product-quantity-selector">
-                    <h3 class="details-title">Jumlah</h3>
-                    <div class="quantity-input-wrapper">
-                        <button type="button" class="quantity-btn" id="quantity-minus">-</button>
-                        <input type="number" id="quantity-input" value="1" min="1" max="{{ product.stock if not product.has_variants else 1 }}" class="form-control quantity-input-field" readonly>
-                        <button type="button" class="quantity-btn" id="quantity-plus">+</button>
-                    </div>
-                    <div id="stock-warning" class="stock-warning-message"></div>
-                </div>
                 {% endif %}
             </div>
-
-            <div class="hide-on-mobile-cta" style="margin-top: 2rem;">
-                <button class="cta-button add-to-cart-btn"
-                        data-id="{{ product.id }}"
-                        data-name="{{ product.name }}"
-                        data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
-                        {% if product.stock == 0 and not product.has_variants %}disabled{% endif %}>
-                    <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
-                </button>
-            </div>
-
-            <div class="social-share-container animated-element" data-animation-delay="300">
-                <h3 class="details-title">Bagikan Produk Ini</h3>
-                <div class="social-share-buttons" id="social-share-links">
-                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}" class="social-share-btn facebook" aria-label="Bagikan ke Facebook" target="_blank"><i class="fab fa-facebook-f"></i></a>
-                    <a href="https://api.whatsapp.com/send?text=Lihat produk keren ini: {{ product.name }} - {{ request.url }}" class="social-share-btn whatsapp" aria-label="Bagikan ke WhatsApp" target="_blank"><i class="fab fa-whatsapp"></i></a>
-                </div>
-            </div>
-
         </div>
     </div>
-
 
     {% if related_products %}
     <div class="related-products-section animated-element" data-animation-delay="300" style="margin-top: 4rem; padding-top: 3rem; border-top: 1px solid var(--color-background-light); margin-bottom: 4rem;">
@@ -199,12 +148,61 @@
     </div>
 </section>
 
-<div class="mobile-cta-bar">
-    <button class="cta-button add-to-cart-btn"
-            data-id="{{ product.id }}"
-            data-name="{{ product.name }}"
-            data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
-            {% if product.stock == 0 and not product.has_variants %}disabled{% endif %}>
-        <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
-    </button>
+<div class="floating-cta-bar product-detail-bar">
+    <div class="floating-bar-content">
+        
+        {% if product.has_variants and product.variants %}
+        <div class="product-color-selector floating-group">
+            <h3 class="details-title-floating">Warna</h3>
+            <div class="color-options-wrapper" id="color-selector">
+                {% for color in product.unique_colors %}
+                    <button class="color-option-btn" data-value="{{ color }}">{{ color }}</button>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="product-size-selector floating-group">
+            <h3 class="details-title-floating">Ukuran</h3>
+            <div class="size-options-wrapper" id="size-selector">
+                {% for size in product.unique_sizes %}
+                    <button class="size-option-btn" data-value="{{ size }}" disabled>{{ size }}</button>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if product.stock > 0 or product.has_variants %}
+        <div class="product-quantity-selector floating-group">
+            <h3 class="details-title-floating">Jumlah</h3>
+            <div class="quantity-input-wrapper">
+                <button type="button" class="quantity-btn" id="quantity-minus">-</button>
+                <input type="number" id="quantity-input" value="1" min="1" max="{{ product.stock if not product.has_variants else 1 }}" class="form-control quantity-input-field" readonly>
+                <button type="button" class="quantity-btn" id="quantity-plus">+</button>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="social-share-container floating-group">
+            <h3 class="details-title-floating">Bagikan</h3>
+            <div class="social-share-buttons" id="social-share-links">
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}" class="social-share-btn facebook" aria-label="Bagikan ke Facebook" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://api.whatsapp.com/send?text=Lihat produk keren ini: {{ product.name }} - {{ request.url }}" class="social-share-btn whatsapp" aria-label="Bagikan ke WhatsApp" target="_blank"><i class="fab fa-whatsapp"></i></a>
+            </div>
+        </div>
+
+    </div>
+    
+    <div class="floating-bar-action">
+        <div class="floating-bar-warnings">
+            <div id="variant-warning" class="stock-warning-message"></div>
+        </div>
+
+        <button class="cta-button add-to-cart-btn"
+                data-id="{{ product.id }}"
+                data-name="{{ product.name }}"
+                data-has-variants="{{ 'true' if product.has_variants else 'false' }}"
+                {% if product.stock == 0 and not product.has_variants %}disabled{% endif %}>
+            <i class="fas fa-shopping-cart"></i> <span>Tambah ke Keranjang</span>
+        </button>
+    </div>
 </div>

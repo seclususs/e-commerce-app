@@ -179,6 +179,7 @@ def edit_profile() -> Union[str, Response, Tuple[Response, int]]:
 
             elif action == "update_address":
                 address_data: Dict[str, str] = {
+                    "full_name": request.form["full_name"],
                     "phone": request.form["phone"],
                     "address1": request.form["address_line_1"],
                     "address2": request.form.get("address_line_2", ""),

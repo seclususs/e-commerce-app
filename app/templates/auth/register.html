@@ -4,15 +4,15 @@
 
 {% block content %}
 <section class="auth-section">
-    <div class="auth-container animated-element">
-        <div class="auth-image">
+    <div class="auth-container">
+        <div class="auth-image slide-in-from-left">
             <div class="shape shape-1"></div><div class="shape shape-2"></div><div class="shape shape-3"></div>
              <div class="auth-image-overlay">
                 <h3>Inisialisasi Profil Anda</h3>
                 <p>Jadilah bagian dari kami.</p>
             </div>
         </div>
-        <div class="form-container">
+        <div class="form-container slide-in-from-right" data-animation-delay="100">
             <h2 class="section-title">Pendaftaran</h2>
             <form method="POST" action="{{ url_for('auth.register') }}" id="register-form">
                 <div class="form-group">
@@ -26,7 +26,7 @@
                     <div class="validation-feedback" id="email-feedback"></div>
                 </div>
                 <div class="form-group"><label for="password">Password</label><input type="password" id="password" name="password" required></div>
-                <button type="submit" class="cta-button form-button">Daftar</button>
+                <button type="submit" class="cta-button form-button" style="margin-top: 0.5rem;">Daftar</button>
             </form>
             <p class="form-switch">Sudah punya akun? <a href="{{ url_for('auth.login') }}">Login di sini</a></p>
             <a href="{{ url_for('product.index') }}" class="cta-button-secondary" style="width: 100%; text-align:center; margin-top: 1rem;">Kembali ke Beranda</a>

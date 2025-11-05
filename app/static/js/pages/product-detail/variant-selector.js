@@ -15,6 +15,11 @@ export function initVariantSelector() {
     const quantityInput = document.getElementById('quantity-input');
     const stockDisplay = document.getElementById('stock-display');
     const originalStockText = stockDisplay ? stockDisplay.innerHTML : '';
+    const colorStock = new Map();
+    allVariants.forEach(v => {
+        const stock = v.stock || 0;
+        colorStock.set(v.color, (colorStock.get(v.color) || 0) + stock);
+    });
 
     let selectedColor = null;
     let selectedSize = null;
@@ -32,11 +37,18 @@ export function initVariantSelector() {
                 btn.classList.remove('out-of-stock');
             }
         );
+        
         document.querySelectorAll('.size-option-btn').forEach(
             btn => btn.disabled = true
         );
+        
         document.querySelectorAll('.color-option-btn').forEach(
-            btn => btn.disabled = false
+            btn => {
+                const color = btn.dataset.value;
+                const stock = colorStock.get(color) || 0;
+                btn.disabled = (stock <= 0);
+                btn.classList.toggle('out-of-stock', stock <= 0);
+            }
         );
 
         if (warningEl) {
@@ -78,10 +90,10 @@ export function initVariantSelector() {
             if (stockDisplay) {
                 if (stock > 0) {
                     stockDisplay.innerHTML =
-                        `<span style="color: #f59e0b;">Stok ${selectedVariant.color} / ${selectedVariant.size}: ${stock}</span>`;
+                        `<span style="color: #f59e0b;"> ${selectedVariant.color} / ${selectedVariant.size}: ${stock}</span>`;
                 } else {
                      stockDisplay.innerHTML =
-                        `<span style="color: var(--color-danger);">Stok ${selectedVariant.color} / ${selectedVariant.size}: HABIS</span>`;
+                        `<span style="color: var(--color-danger);"> ${selectedVariant.color} / ${selectedVariant.size}: HABIS</span>`;
                 }
             }
         } else {
@@ -130,7 +142,7 @@ export function initVariantSelector() {
             const stock = availableSizes.get(size);
 
             if (stock !== undefined) {
-                btn.disabled = false;
+                btn.disabled = (stock <= 0);
                 btn.classList.toggle('out-of-stock', stock <= 0);
             } else {
                 btn.disabled = true;
@@ -150,14 +162,17 @@ export function initVariantSelector() {
 
         document.querySelectorAll('.color-option-btn').forEach(btn => {
             const color = btn.dataset.value;
-            const stock = availableColors.get(color);
+            const stock = (selectedSize) ? (availableColors.get(color)) : (colorStock.get(color) || 0);
+
             if (stock !== undefined) {
-                btn.disabled = false;
+                btn.disabled = (stock <= 0);
                  btn.classList.toggle('out-of-stock', stock <= 0);
             } else {
-                btn.disabled = true;
-                btn.classList.remove('active');
-                btn.classList.remove('out-of-stock');
+                if (selectedSize) {
+                    btn.disabled = true;
+                    btn.classList.remove('active');
+                    btn.classList.remove('out-of-stock');
+                }
             }
         });
     };

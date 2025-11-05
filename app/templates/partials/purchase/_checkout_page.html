@@ -11,7 +11,7 @@
                         <h3>Alamat Pengiriman</h3>
                         <div class="address-display-box">
                             {% if user.address_line_1 and user.phone %}
-                                <p><strong>{{ user.username }}</strong> ({{ user.phone }})</p>
+                                <p><strong>{{ user.full_name or user.username }}</strong> ({{ user.phone }})</p>
                                 <p>{{ user.address_line_1 }}<br>
                                    {% if user.address_line_2 %}{{ user.address_line_2 }}<br>{% endif %}
                                    {{ user.city }}, {{ user.province }} {{ user.postal_code }}
@@ -23,7 +23,6 @@
                         </div>
                     {% else %}
                         <h3>Kontak & Pengiriman</h3>
-                        <div class="form-group"><label for="email">Alamat Email</label><input type="email" id="email" name="email" required></div>
                         <div class="form-group"><label for="full_name">Nama Lengkap Penerima</label><input type="text" id="full_name" name="full_name" required></div>
                         <div class="form-group"><label for="phone">Nomor Telepon</label><input type="tel" id="phone" name="phone" required></div>
                         <div class="form-group"><label for="address_line_1">Alamat Lengkap</label><input type="text" id="address_line_1" name="address_line_1" placeholder="Nama jalan, nomor rumah, RT/RW" required></div>
@@ -69,55 +68,18 @@
                         <span>Biaya Pengiriman</span>
                         <span id="checkoutShipping">Rp 0</span>
                     </div>
-
-                    <div class="voucher-form-container">
-                        {% if session.user_id and my_vouchers %}
-                        <div class="form-group">
-                            <label for="user_voucher_id_select" style="font-size: 0.9em;">Voucher Saya (Pilih 1)</label>
-                            <select id="user_voucher_id_select" class="form-control">
-                                <option value="">Pilih dari voucher Anda...</option>
-                                {% for v in my_vouchers %}
-                                <option value="{{ v.user_voucher_id }}" data-code="{{ v.code }}">
-                                    {{ v.code }} - 
-                                    {% if v.type == 'PERCENTAGE' %}
-                                        Diskon {{ v.value|int }}%
-                                    {% else %}
-                                        Diskon {{ v.value|rupiah }}
-                                    {% endif %}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <p style="text-align: center; font-size: 0.9em; color: var(--color-text-med); margin: 0.5rem 0;">atau</p>
-                        {% endif %}
-
-                        <div class="form-group">
-                            <label for="voucher_code" style="font-size: 0.9em;">Masukkan Kode Voucher</label>
-                            <div class="voucher-input-group">
-                                <input type="text" id="voucher_code" name="voucher_code" placeholder="Masukkan kode di sini" class="form-control">
-                                <button type="button" id="applyVoucherBtn" class="cta-button-secondary">Terapkan</button>
-                            </div>
-                        </div>
-                        <div id="voucher-message" class="voucher-feedback"></div>
-                    </div>
                     
                     <div class="summary-row discount-row" style="display: none;">
                         <span>Diskon</span>
                         <span id="checkoutDiscount" style="color: var(--color-success);">- Rp 0</span>
                     </div>
-
-                    <div class="summary-total"><span>Total</span><span id="checkoutTotal">Rp 0</span></div>
                     
-                    <div id="stock-hold-timer-container" class="stock-hold-timer">
-                        Stok Anda ditahan selama: <strong id="timer">10:00</strong>
-                    </div>
-
                     <input type="hidden" name="cart_data" id="cart_data_input">
                     <input type="hidden" name="shipping_cost" id="shipping_cost_input" value="0">
                     <input type="hidden" name="user_voucher_id" id="user_voucher_id_input">
                     <input type="hidden" id="stock_hold_expires_at" value="{{ stock_hold_expires }}">
                     
-                    <div class="hide-on-mobile-cta">
+                    <div class="hide-on-mobile-cta" style="display: none;">
                         <button id="placeOrderBtn" type="submit" class="cta-button cta-button-prominent" style="width: 100%;" disabled>
                             <span>Buat Pesanan</span>
                         </button>
@@ -128,8 +90,75 @@
     </div>
 </section>
 
-<div class="mobile-cta-bar">
-    <button id="placeOrderBtnMobile" type="button" class="cta-button cta-button-prominent" disabled>
-        <span>Buat Pesanan</span>
-    </button>
+<div class="floating-cta-bar checkout-bar">
+    
+    <div class="floating-cta-info">
+        <div class="summary-total floating-total">
+            <span>Total</span>
+            <span id="checkoutTotal">Rp 0</span>
+        </div>
+        <div id="stock-hold-timer-container" class="stock-hold-timer">
+            Stok Anda ditahan selama: <strong id="timer">10:00</strong>
+        </div>
+    </div>
+
+    <div class="floating-voucher-container" id="floating-voucher-area">
+
+        <div id="applied-voucher-floating" style="display: none;" class="applied-voucher-display">
+            <span id="applied-voucher-name-floating"></span>
+            <button type="button" id="remove-voucher-btn" class="remove-voucher-btn" title="Hapus Voucher">&times;</button>
+        </div>
+
+        {% set has_my_vouchers = session.user_id and my_vouchers %}
+        
+        <div class="floating-voucher-group" id="voucher-code-group" style="display: flex;">
+            <label for="voucher_code_floating" class="sr-only">Kode Voucher</label>
+            
+            <input type="text" id="voucher_code_floating" placeholder="Masukkan kode voucher" class="form-control">
+            
+            <div class="voucher-button-group">
+                <button type="button" id="applyVoucherBtnFloating" class="cta-button-secondary">Terapkan</button>
+                {% if has_my_vouchers %}
+                <button type="button" id="voucher-toggle-to-select" class="voucher-toggle-btn" title="Ganti ke Voucher Saya">
+                    <i class="fas fa-ticket-alt"></i>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="floating-voucher-group" id="voucher-select-group" style="display: none;">
+            {% if has_my_vouchers %}
+            <label for="user_voucher_id_select_floating" class="sr-only">Voucher Saya</label>
+            
+            <select id="user_voucher_id_select_floating" class="form-control">
+                <option value="">Pilih Voucher...</option>
+                {% for v in my_vouchers %}
+                <option value="{{ v.user_voucher_id }}" data-code="{{ v.code }}">
+                    {{ v.code }} - 
+                    {% if v.type == 'PERCENTAGE' %}
+                        Diskon {{ v.value|int }}%
+                    {% else %}
+                        Diskon {{ v.value|rupiah }}
+                    {% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <div class="voucher-button-group">
+                <div style="flex-grow: 1;"></div> 
+                <button type="button" id="voucher-toggle-to-code" class="voucher-toggle-btn" title="Ganti ke Input Kode">
+                    <i class="fas fa-keyboard"></i>
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div id="voucher-message-floating" class="voucher-feedback"></div>
+    </div>
+
+    <div class="floating-cta-action">
+        <button id="placeOrderBtnMobile" type="button" class="cta-button cta-button-prominent" disabled>
+            <span>Buat Pesanan</span>
+        </button>
+    </div>
 </div>

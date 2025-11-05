@@ -16,6 +16,8 @@ import { initCartPage } from './pages/cart.js';
 import { initRegisterPage } from './pages/auth/register.js';
 import { initForgotPasswordPage } from './pages/auth/forgot-password.js';
 import { initMembershipPage } from './pages/membership.js';
+import { initSuccessPage } from './pages/success.js';
+import { initGuestSubscribePage } from './pages/guest-subscribe.js';
 
 function initializePageScripts() {
     initAnimations();
@@ -53,6 +55,12 @@ function initializePageScripts() {
     }
     if (document.querySelector('.membership-page-section')) {
         initMembershipPage();
+    }
+    if (document.querySelector('.guest-subscribe-page')) {
+        initGuestSubscribePage();
+    }
+    if (document.querySelector('.order-success-page')) {
+        initSuccessPage();
     }
 }
 

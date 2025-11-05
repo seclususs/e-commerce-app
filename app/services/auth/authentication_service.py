@@ -22,33 +22,37 @@ class AuthenticationService:
 
 
     def verify_user_login(
-        self, username: str, password: str
+        self, username_or_email: str, password: str
     ) -> Dict[str, Any]:
         logger.debug(
-            f"Mencoba memverifikasi login untuk nama pengguna: {username}"
+            f"Mencoba memverifikasi login untuk: {username_or_email}"
         )
 
         conn: Optional[MySQLConnection] = None
 
         try:
             conn = get_db_connection()
-            user = self.user_repository.find_by_username(conn, username)
+            
+            user = self.user_repository.find_by_username(conn, username_or_email)
+            if not user:
+                logger.debug(f"Username '{username_or_email}' tidak ditemukan, mencoba email...")
+                user = self.user_repository.find_by_email(conn, username_or_email)
 
             if user and check_password_hash(user["password"], password):
                 logger.info(
-                    f"Login berhasil untuk pengguna: {username} (ID: {user['id']})"
+                    f"Login berhasil untuk pengguna: {user['username']} (ID: {user['id']})"
                 )
                 return user
             else:
                 logger.warning(
-                    f"Login gagal untuk nama pengguna: {username}. "
+                    f"Login gagal untuk: {username_or_email}. "
                     f"Pengguna ditemukan: {'Ya' if user else 'Tidak'}"
                 )
-                raise AuthError("Username atau password salah.")
+                raise AuthError("Username/Email atau password salah.")
 
         except mysql.connector.Error as db_err:
             logger.error(
-                f"Kesalahan database saat verifikasi login untuk {username}: {db_err}",
+                f"Kesalahan database saat verifikasi login untuk {username_or_email}: {db_err}",
                 exc_info=True,
             )
             raise DatabaseException(
@@ -60,7 +64,7 @@ class AuthenticationService:
         
         except Exception as e:
             logger.error(
-                f"Kesalahan tak terduga saat verifikasi login untuk {username}: {e}",
+                f"Kesalahan tak terduga saat verifikasi login untuk {username_or_email}: {e}",
                 exc_info=True,
             )
             raise ServiceLogicError(
@@ -72,7 +76,7 @@ class AuthenticationService:
                 conn.close()
             logger.debug(
                 f"Koneksi database ditutup untuk verify_user_login "
-                f"(nama pengguna: {username})."
+                f"(input: {username_or_email})."
             )
 
 authentication_service = AuthenticationService(user_repository)

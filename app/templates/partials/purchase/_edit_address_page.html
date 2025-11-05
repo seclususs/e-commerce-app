@@ -3,18 +3,48 @@
         <h2 class="section-title">Edit Alamat Pengiriman</h2>
         <div class="admin-card animated-element" data-animation-delay="100">
             <form method="POST" action="{{ url_for('purchase.edit_address') }}">
-                <div class="form-group"><label for="phone">Nomor Telepon</label><input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}" required></div>
-                <div class="form-group"><label for="address_line_1">Alamat Lengkap</label><input type="text" id="address_line_1" name="address_line_1" value="{{ user.address_line_1 or '' }}" placeholder="Nama jalan, nomor rumah, RT/RW" required></div>
-                <div class="form-group"><label for="address_line_2">Detail Alamat (Opsional)</label><input type="text" id="address_line_2" name="address_line_2" value="{{ user.address_line_2 or '' }}" placeholder="Contoh: Apartemen, lantai, unit"></div>
-                <div class="form-grid">
-                    <div class="form-group"><label for="city">Kota/Kabupaten</label><input type="text" id="city" name="city" value="{{ user.city or '' }}" required></div>
-                    <div class="form-group"><label for="province">Provinsi</label><input type="text" id="province" name="province" value="{{ user.province or '' }}" required></div>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="full_name">Nama Lengkap Penerima</label>
+                    <input type="text" id="full_name" name="full_name" value="{{ user.full_name or user.username }}" required>
                 </div>
-                <div class="form-group"><label for="postal_code">Kode Pos</label><input type="text" id="postal_code" name="postal_code" value="{{ user.postal_code or '' }}" required></div>
 
-                <div class="form-actions" style="margin-top: 2rem; display: flex; flex-direction: column; gap: 1rem;">
-                    <button type="submit" name="update_address" class="cta-button form-button">Simpan Alamat</button>
-                    <a href="{{ url_for('purchase.checkout') }}" class="cta-button-secondary" style="width: 100%; text-align: center;">Kembali ke Checkout</a>
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem 2rem;">
+                    
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="phone">Nomor Telepon</label>
+                            <input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="address_line_1">Alamat Lengkap</label>
+                            <input type="text" id="address_line_1" name="address_line_1" value="{{ user.address_line_1 or '' }}" placeholder="Nama jalan, nomor rumah, RT/RW" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="address_line_2">Detail Alamat (Opsional)</label>
+                            <input type="text" id="address_line_2" name="address_line_2" value="{{ user.address_line_2 or '' }}" placeholder="Contoh: Apartemen, lantai, unit">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="city">Kota/Kabupaten</label>
+                            <input type="text" id="city" name="city" value="{{ user.city or '' }}" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="province">Provinsi</label>
+                            <input type="text" id="province" name="province" value="{{ user.province or '' }}" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="postal_code">Kode Pos</label>
+                            <input type="text" id="postal_code" name="postal_code" value="{{ user.postal_code or '' }}" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions" style="margin-top: 2rem; display: flex; flex-direction: row-reverse; gap: 1rem;">
+                    <button type="submit" name="update_address" class="cta-button form-button" style="width: auto;">Simpan Alamat</button>
+                    <a href="{{ url_for('purchase.checkout') }}" class="cta-button-secondary" style="width: auto; text-align: center;">Kembali ke Checkout</a>
                 </div>
             </form>
         </div>

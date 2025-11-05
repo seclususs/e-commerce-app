@@ -64,7 +64,7 @@ async function handleAddToCart(btn) {
         if (btnTextEl) {
             btnTextEl.innerHTML = (
                 '<i class="fas fa-check checkmark-icon" ' +
-                'style="display: inline-block;"></i> Ditambahkan!'
+                'style="display: inline-block;"></i> Berhasil Ditambahkan!'
             );
         }
 

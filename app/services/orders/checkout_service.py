@@ -119,7 +119,7 @@ class CheckoutService:
                     }
 
                 shipping_details = {
-                    "name": user.get("username"),
+                    "name": user.get("full_name") or user.get("username"),
                     "email": user.get("email"),
                     "phone": user.get("phone"),
                     "address1": user.get("address_line_1"),
@@ -161,22 +161,9 @@ class CheckoutService:
                         "message": "Data keranjang tidak valid.",
                         "flash_category": "danger",
                     }
-
+                
                 email_for_order: Optional[str] = form_data.get("email")
-
-                if not email_for_order:
-                    logger.warning(
-                        f"Checkout tamu gagal: Email tidak diisi. "
-                        f"Session ID: {session_id}"
-                    )
-                    return {
-                        "success": False,
-                        "redirect": url_for("purchase.checkout"),
-                        "message": "Email wajib diisi untuk checkout.",
-                        "flash_category": "danger",
-                    }
-
-                if checkout_validation_service.check_guest_email_exists(
+                if email_for_order and checkout_validation_service.check_guest_email_exists(
                     email_for_order
                 ):
                     logger.warning(

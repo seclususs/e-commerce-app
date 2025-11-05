@@ -441,9 +441,15 @@ class CartService:
 
                 final_item = {**product_info}
                 
-                price = Decimal(str(final_item.get("price", 0)))
-                discount_price = Decimal(
-                    str(final_item.get("discount_price", 0))
+                price = (
+                    Decimal(str(final_item.get("price")))
+                    if final_item.get("price") is not None
+                    else Decimal("0.0")
+                )
+                discount_price = (
+                    Decimal(str(final_item.get("discount_price")))
+                    if final_item.get("discount_price") is not None
+                    else Decimal("0.0")
                 )
                 
                 effective_price = (

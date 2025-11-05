@@ -96,21 +96,37 @@ def register_from_order() -> Response:
     logger.info(
         f"Mencoba mendaftarkan pengguna dari pesanan tamu dengan ID: {order_id}"
     )
-
-    if not order_details_str or not password or not order_id:
-        logger.warning(
-            f"Registrasi dari pesanan gagal: Data tidak lengkap. "
-            f"ID Pesanan: {order_id}"
-        )
-        flash("Data pendaftaran tidak lengkap.", "danger")
-        return redirect(url_for("purchase.order_success"))
+    
+    order_details: Dict[str, Any] = {}
+    email: Optional[str] = None
 
     try:
-        order_details: Dict[str, Any] = json.loads(order_details_str)
-        email: Optional[str] = order_details.get("email")
+        if not order_details_str or not password or not order_id:
+            logger.warning(
+                f"Registrasi dari pesanan gagal: Data tidak lengkap. "
+                f"ID Pesanan: {order_id}"
+            )
+            raise ValidationError("Data pendaftaran tidak lengkap.")
 
+        order_details = json.loads(order_details_str)
+
+        email = order_details.get("email")
         if not email:
-            raise ValidationError("Email tidak ditemukan dalam detail pesanan")
+            email_from_form = request.form.get("email")
+            if not email_from_form:
+                 logger.warning(
+                     f"Form registrasi pesanan {order_id} tidak memiliki email."
+                     )
+                 raise ValidationError("Email wajib diisi untuk membuat akun.")
+            email = email_from_form
+            order_details["email"] = email
+        
+        is_email_available, msg = (
+            registration_service.validation_service.validate_email_availability(email)
+        )
+        if not is_email_available:
+            logger.warning(f"Registrasi dari pesanan {order_id} gagal: {msg}")
+            raise ValidationError(msg)
 
         logger.debug(
             f"Detail pesanan berhasil dimuat untuk registrasi. Email: {email}"
@@ -135,9 +151,9 @@ def register_from_order() -> Response:
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute(
-                "UPDATE orders SET user_id = %s "
+                "UPDATE orders SET user_id = %s, shipping_email = %s "
                 "WHERE id = %s AND user_id IS NULL",
-                (new_user["id"], order_id),
+                (new_user["id"], email, order_id),
             )
 
             conn.commit()
@@ -145,7 +161,7 @@ def register_from_order() -> Response:
             if cursor.rowcount > 0:
                 logger.info(
                     f"Pesanan {order_id} berhasil dikaitkan dengan "
-                    f"pengguna baru {new_user['id']}."
+                    f"pengguna baru {new_user['id']} dan email diperbarui."
                 )
 
             else:

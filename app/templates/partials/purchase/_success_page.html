@@ -1,32 +1,66 @@
 <section class="order-success-page">
-    <div class="success-container animated-element">
-        <div class="success-icon">
-            <i class="fas fa-check-circle"></i>
-        </div>
-        <h2 class="section-title">Pesanan Berhasil!</h2>
-        {% if guest_order_details %}
-            <p class="success-message">Terima kasih telah berbelanja di {{ content.app_name }}. Pesanan Anda <strong>#{{ guest_order_id }}</strong> sedang kami proses.</p>
-            <div class="admin-card create-account-prompt">
-                <h3>Buat Akun untuk Lacak Pesanan</h3>
-                <p>Buat akun dengan detail di bawah untuk melacak pesanan Anda dan checkout lebih cepat di lain waktu.</p>
-                <form method="POST" action="{{ url_for('auth.register_from_order') }}">
-                    <input type="hidden" name="order_details" value='{{ guest_order_details | tojson | safe }}'>
-                    <input type="hidden" name="order_id" value="{{ guest_order_id }}">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" class="form-control" value="{{ guest_order_details.email }}" disabled>
+
+    {% if guest_order_details %}
+        <div class="success-layout-container animated-element" id="success-layout-container">
+            
+            <div class="success-column" id="success-column">
+                <div class="admin-card" style="margin-bottom: 0; width: 100%;">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
                     </div>
-                     <div class="form-group">
-                        <label for="password">Buat Password</label>
-                        <input type="password" id="password" name="password" class="form-control" required>
-                    </div>
-                    <button type="submit" class="cta-button form-button">Buat Akun & Login</button>
-                </form>
+                    <h2 class="section-title" style="margin-bottom: 1rem;">Pesanan Berhasil!</h2>
+                    <p class="success-message" style="margin-bottom: 0;">Terima kasih telah berbelanja di {{ content.app_name }}. Pesanan Anda <strong>#{{ guest_order_id }}</strong> sedang kami proses.</p>
+                </div>
             </div>
-        {% else %}
-            <p class="success-message">Terima kasih telah berbelanja di {{ content.app_name }}. Anda dapat melihat detail pesanan Anda di halaman profil.</p>
-            <a href="{{ url_for('user.user_profile') }}" class="cta-button">Lihat Riwayat Pesanan</a>
-        {% endif %}
-        <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary" style="margin-top: 1.5rem;">Lanjutkan Belanja</a>
-    </div>
+
+            <div class="register-column" id="register-column">
+                <div class="admin-card create-account-prompt" style="width: 100%;">
+                    <h3>Buat Akun untuk Lacak Pesanan</h3>
+                    <p>Buat akun dengan detail di bawah untuk melacak pesanan Anda dan checkout lebih cepat di lain waktu.</p>
+                    <form method="POST" action="{{ url_for('auth.register_from_order') }}">
+                        <input type="hidden" name="order_details" value='{{ guest_order_details | tojson | safe }}'>
+                        <input type="hidden" name="order_id" value="{{ guest_order_id }}">
+                        
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            {% if guest_order_details.email %}
+                                <input type="email" class="form-control" value="{{ guest_order_details.email }}" disabled>
+                            {% else %}
+                                <input type="email" id="email" name="email" class="form-control" placeholder="Masukkan email Anda" required>
+                                <div class="validation-feedback" id="email-feedback"></div>
+                            {% endif %}
+                        </div>
+                         <div class="form-group">
+                            <label for="password">Buat Password</label>
+                            <input type="password" id="password" name="password" class="form-control" required>
+                        </div>
+                        <button type="submit" class="cta-button form-button">Buat Akun & Login</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+        
+        <a href="{{ url_for('product.products_page') }}" 
+           class="cta-button-secondary animated-element" 
+           style="margin-top: 1.5rem;" 
+           data-animation-delay="2500"
+           data-ajax-nav="true">
+           Lanjutkan Belanja
+        </a>
+    
+    {% else %}
+        <div class="success-container animated-element">
+            <div class="admin-card">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h2 class="section-title" style="margin-bottom: 1rem;">Pesanan Berhasil!</h2>
+                <p class="success-message">Terima kasih telah berbelanja di {{ content.app_name }}. Anda dapat melihat detail pesanan Anda di halaman profil.</p>
+                <a href="{{ url_for('user.user_profile') }}" class="cta-button" data-ajax-nav="true">Lihat Riwayat Pesanan</a>
+                <a href="{{ url_for('product.products_page') }}" class="cta-button-secondary" style="margin-top: 1.5rem;" data-ajax-nav="true">Lanjutkan Belanja</a>
+            </div>
+        </div>
+    {% endif %}
+
 </section>

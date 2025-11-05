@@ -62,8 +62,8 @@ async function handleMembershipSubmit(form, button) {
         button.disabled = false;
         button.innerHTML = originalButtonHTML;
     };
-
-    confirmModal.show(confirmTitle, confirmText, performSubmit, onCancel);
+    
+    confirmModal.show(confirmTitle, confirmText, performSubmit, onCancel, false);
 }
 
 

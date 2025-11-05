@@ -1,23 +1,75 @@
-.guest-subscribe-container {
-  max-width: 800px;
+.guest-subscribe-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  text-align: center;
+  padding: 2rem 1rem;
+  overflow-x: hidden;
+}
+
+.guest-subscribe-layout-container {
+  display: flex;
+  width: 200%;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  transform: translateX(25%); 
+  transition: transform 1s cubic-bezier(0.77, 0, 0.175, 1);
+  will-change: transform;
+}
+
+.guest-subscribe-layout-container.show-form {
+  transform: translateX(0);
+}
+
+.package-summary-column,
+.guest-form-column {
+  flex-basis: 50%;
+  width: 50%;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  vertical-align: top;
+  align-items: center; 
+  justify-content: center; 
+}
+
+.guest-form-column {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: opacity 0.5s ease-in-out 0.5s, transform 0.6s ease-in-out 0.5s; 
+  will-change: opacity, transform;
+  text-align: left;
+}
+
+.guest-subscribe-layout-container.show-form .guest-form-column {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .package-summary-column {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 2rem;
-  background-color: var(--color-auth-image-bg);
-  border-right: 1px solid var(--color-border-subtle);
+  background-color: transparent;
+  border-right: none;
+}
+
+.package-summary-column .cancel-link {
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+  margin-top: 1.5rem;
 }
 
 .membership-summary-card {
   background-color: var(--color-background-surface);
-  padding: 1.5rem;
+  padding: 2rem;
   margin-bottom: 0;
   border: 1px solid var(--color-border-default);
   border-radius: var(--border-radius-md);
   width: 100%;
+  max-width: 450px; 
+  box-shadow: 0 4px 10px var(--color-shadow-dark);
 }
 
 .summary-card-label {
@@ -29,32 +81,32 @@
 .summary-card-title {
   margin: 0.5rem 0 0.5rem 0;
   color: var(--color-primary);
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   font-family: var(--font-secondary);
 }
 
 .summary-card-price {
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   font-weight: 700;
   margin-bottom: 1.5rem;
 }
 
 .summary-card-period {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 400;
 }
 
 .summary-card-features {
   list-style: none;
-  padding: 1rem 0 0 0;
-  margin: 1rem 0 0 0;
+  padding: 1.5rem 0 0 0;
+  margin: 1.5rem 0 0 0;
   border-top: 1px solid var(--color-border-default);
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .summary-card-features li {
@@ -78,39 +130,67 @@
   color: var(--color-text-primary);
 }
 
-.guest-subscribe-form {
-  padding: 2rem 2.5rem;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.guest-form-column .form-container {
+    background: var(--color-background-surface);
+    border: 1px solid var(--color-border-default);
+    padding: 1.5rem; 
+    border-radius: var(--border-radius-md);
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 4px 10px var(--color-shadow-dark);
 }
 
-.guest-subscribe-form .section-title {
+.guest-form-column .section-title {
   text-align: left;
+  margin-bottom: 0.75rem; 
 }
 
-.guest-subscribe-form .form-button {
-  margin-top: 1.5rem;
+.guest-form-column .form-group {
+    margin-bottom: 0.5rem;
 }
 
-.cancel-link {
-  width: 100%;
-  text-align: center;
-  margin-top: 1rem;
+.guest-form-column .form-group input {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+}
+
+.guest-form-column .form-button {
+  margin-top: 0.75rem; 
+}
+
+.guest-form-column .form-switch {
+    margin-top: 0.75rem; 
 }
 
 @media (max-width: 767px) {
-  .package-summary-column {
-    padding: 2rem 1.5rem 1.5rem 1.5rem;
-    border-right: none;
-  }
-  
-  .guest-subscribe-form {
-    padding: 1.5rem;
+  .guest-subscribe-layout-container {
+    width: 100%;
+    max-width: 550px;
+    flex-direction: column;
+    transform: translateX(0) !important;
   }
 
-  .guest-subscribe-form .section-title {
+  .package-summary-column,
+  .guest-form-column {
+    width: 100%;
+    padding: 0;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  
+  .package-summary-column .cancel-link {
+    margin-top: 1rem;
+  }
+
+  .guest-form-column {
+    margin-top: 1.5rem;
+  }
+  
+  .guest-form-column .form-container {
+    padding: 1.5rem; 
+  }
+  
+  .guest-form-column .section-title {
     text-align: center;
   }
 }

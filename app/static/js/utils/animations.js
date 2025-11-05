@@ -1,5 +1,5 @@
 export const initAnimations = () => {
-    const animatedElements = document.querySelectorAll('.animated-element');
+    const animatedElements = document.querySelectorAll('.animated-element, .slide-in-from-left, .slide-in-from-right');
     if (!animatedElements.length) return;
 
     const observer = new IntersectionObserver((entries) => {

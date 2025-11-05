@@ -7,6 +7,7 @@ import { initCheckoutPage } from '../pages/checkout.js';
 import { initPaymentPage } from '../pages/payment.js';
 import { initProfileEditor, initUserProfile } from '../pages/profile.js';
 import { initMembershipPage } from '../pages/membership.js';
+import { initSuccessPage } from '../pages/success.js';
 
 const contentWrapperSelector = 'main.page-content-wrapper';
 const loadingClass = 'page-loading';
@@ -57,6 +58,10 @@ function reinitializePublicScripts() {
          console.log("Initializing Membership Page...");
          initMembershipPage();
      }
+    if (document.querySelector('.order-success-page')) {
+        console.log("Initializing Success Page...");
+        initSuccessPage();
+    }
 }
 
 async function loadContentPublic(url, isPopState = false) {

@@ -8,12 +8,18 @@ const initConfirmModalSingleton = () => {
     const textEl = document.getElementById('confirmModalText');
     let onConfirmCallback = null;
     let onCancelCallback = null;
-
-    const show = (title, text, onConfirm, onCancel = null) => {
+    
+    const show = (title, text, onConfirm, onCancel = null, isDangerousAction = false) => {
         titleEl.textContent = title;
         textEl.textContent = text;
         onConfirmCallback = onConfirm;
         onCancelCallback = onCancel;
+
+        if (isDangerousAction) {
+            okBtn.classList.add('btn-danger');
+        } else {
+            okBtn.classList.remove('btn-danger');
+        }
         modal.classList.add('active');
     };
 
@@ -24,6 +30,7 @@ const initConfirmModalSingleton = () => {
         }
         onConfirmCallback = null;
         onCancelCallback = null;
+        okBtn.classList.remove('btn-danger');
     };
 
     okBtn.addEventListener('click', () => {

@@ -12,7 +12,9 @@ export function initActionConfirmations() {
             confirmModal.show(
                 'Konfirmasi Hapus',
                 'Apakah Anda yakin ingin menghapus item ini? Tindakan ini tidak dapat diurungkan.',
-                () => { if(url) window.location.href = url; }
+                () => { if(url) window.location.href = url; },
+                null,
+                true
             );
         }
     });
@@ -24,7 +26,9 @@ export function initActionConfirmations() {
             confirmModal.show(
                 'Konfirmasi Pembatalan',
                 'Apakah Anda yakin ingin membatalkan pesanan ini?',
-                () => { cancelForm.submit(); }
+                () => { cancelForm.submit(); },
+                null,
+                true
             );
         }
     });

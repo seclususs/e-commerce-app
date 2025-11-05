@@ -68,7 +68,7 @@ class RegistrationService:
             
             hashed_password = generate_password_hash(password)
             new_user_id = self.user_repository.create(
-                conn, username, email, hashed_password
+                conn, username, email, hashed_password, full_name=username
             )
 
             self.voucher_service.grant_welcome_voucher(conn, new_user_id)
@@ -148,11 +148,11 @@ class RegistrationService:
                 )
                 raise ValidationError("Email sudah terdaftar. Silakan login.")
             
-            base_username = (
-                name.lower().replace(" ", "")
-                if name
-                else f"guest_{random.randint(1000, 9999)}"
-            )
+            base_username = email.split('@')[0].lower()
+            base_username = ''.join(e for e in base_username if e.isalnum())
+            if not base_username:
+                 base_username = f"guest_{random.randint(1000, 9999)}"
+            
             username = base_username
             attempts = 0
 

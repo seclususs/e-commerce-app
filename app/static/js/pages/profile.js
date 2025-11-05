@@ -90,7 +90,9 @@ async function handleCancelOrder(button) {
                 button.disabled = false;
                 button.textContent = 'Batalkan';
             }
-        }
+        },
+        null,
+        true
     );
 }
 

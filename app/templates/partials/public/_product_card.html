@@ -1,5 +1,5 @@
 {% for product in products %}
-  <div class="product-card animated-element {% if not product.has_variants and product.stock == 0 %}out-of-stock{% endif %}" data-animation-delay="{{ (loop.index0 % 8) * 75 }}">
+  <div class="product-card animated-element {% if product.stock == 0 %}out-of-stock{% endif %}" data-animation-delay="{{ (loop.index0 % 8) * 75 }}">
     <a href="{{ url_for('product.product_detail', id=product.id) }}" class="product-card-link" data-ajax-nav="true"></a>
     <div class="product-image">
       {% if product.discount_price and product.discount_price > 0 %}
@@ -8,7 +8,7 @@
       <img loading="lazy"
            src="{{ url_for('images.serve_image', filename=product.image_url) if product.image_url and product.image_url != 'placeholder.jpg' else 'https://placehold.co/400x400/0f172a/f1f5f9?text=' + product.name }}"
            alt="{{ product.name }}">
-      {% if not product.has_variants and product.stock == 0 %}
+      {% if product.stock == 0 %}
         <div class="stock-overlay">Stok Habis</div>
       {% endif %}
     </div>
@@ -26,7 +26,7 @@
       <div class="additional-info">
         {% if product.has_variants %}
           <span>Pilihan Warna & Ukuran</span>
-          <span>Stok: Bervariasi</span>
+          <span>Stok: {% if product.stock > 0 %}Bervariasi{% else %}Habis{% endif %}</span>
         {% else %}
           <span>Stok: {% if product.stock > 10 %}Tersedia{% elif product.stock > 0 %}Tersisa {{ product.stock }}{% else %}Habis{% endif %}</span>
         {% endif %}

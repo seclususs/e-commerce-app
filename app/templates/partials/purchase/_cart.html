@@ -9,24 +9,20 @@
                     </div>
                 </div>
             </div>
-            <div class="cart-summary admin-card animated-element" data-animation-delay="200">
-                <h3>Ringkasan</h3>
-                <div class="summary-row"><span>Subtotal</span><span id="cartPageSubtotal">Rp 0</span></div>
-                <div class="summary-row"><span>Pengiriman</span><span style="font-size: 0.9em; color: var(--color-text-med);">Dihitung di checkout</span></div>
-                <div class="summary-total"><span>Total</span><span id="cartPageTotal">Rp 0</span></div>
-
-                <div class="hide-on-mobile-cta">
-                    <a href="{{ url_for('purchase.checkout') }}" id="checkout-link" class="cta-button" style="width: 100%; text-align:center; margin-top: 1rem;">
-                        Lanjutkan ke Checkout
-                    </a>
-                </div>
-            </div>
         </div>
     </div>
 </section>
 
-<div class="mobile-cta-bar">
-    <a href="{{ url_for('purchase.checkout') }}" id="checkout-link-mobile" class="cta-button">
-        Lanjutkan ke Checkout
-    </a>
+<div class="floating-cta-bar cart-bar" id="floating-cart-checkout-bar" style="display: none;">
+    <div class="floating-cta-info">
+        <div class="summary-total floating-total">
+            <span>Total</span>
+            <span id="cartPageTotalFloating">Rp 0</span>
+        </div>
+    </div>
+    <div class="floating-cta-action">
+        <a href="{{ url_for('purchase.checkout') }}" id="checkout-link-mobile" class="cta-button cta-button-prominent">
+            Lanjutkan ke Checkout
+        </a>
+    </div>
 </div>

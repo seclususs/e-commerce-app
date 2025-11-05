@@ -216,12 +216,13 @@ class UserService:
         
         logger.debug(
             f"Mencoba memperbarui alamat untuk pengguna ID: {user_id}. "
-            f"Data: {address_data}"
+            f"Data: {address_data.keys()}"
         )
         is_external_conn: bool = conn is not None
         if not is_external_conn:
             logger.debug("Membuat koneksi DB baru untuk update_user_address.")
             conn = get_db_connection()
+            conn.start_transaction()
 
         try:
             self.user_repository.update_address(conn, user_id, address_data)
@@ -263,7 +264,7 @@ class UserService:
                 )
             elif is_external_conn:
                 logger.debug(
-                    f"Kursor ditutup untuk update_user_address "
+                    "Melewati penutupan koneksi untuk update_user_address "
                     f"(ID: {user_id}, koneksi eksternal)."
                 )
 

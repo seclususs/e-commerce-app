@@ -130,7 +130,9 @@ function handleAjaxDelete(link) {
                 link.innerHTML = originalLinkHTML;
                 link.style.pointerEvents = 'auto';
             }
-        }
+        },
+        null,
+        true
     );
 }
 
@@ -172,20 +174,19 @@ async function handleAjaxToggle(link) {
             }
             
             link.textContent = newStatus ? 'Nonaktifkan' : 'Aktifkan';
+            link.style.pointerEvents = 'auto';
             
         } else {
             showNotification(result.message || 'Gagal mengubah status.', true);
             link.textContent = originalLinkText;
+            link.style.pointerEvents = 'auto';
         }
     } catch (error) {
         console.error('AJAX Toggle Error:', error);
         showNotification('Error koneksi.', true);
         link.textContent = originalLinkText;
-    } finally {
         link.style.pointerEvents = 'auto';
-        if (link.innerHTML.includes('spinner')) {
-             link.textContent = originalLinkText;
-        }
+    } finally {
     }
 }
 

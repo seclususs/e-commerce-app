@@ -58,13 +58,14 @@ class UserRepository:
         self, conn: MySQLConnection,
         username: str, email: str,
         hashed_password: str,
+        full_name: Optional[str] = None,
     ) -> int:
         cursor = conn.cursor()
         try:
             cursor.execute(
-                "INSERT INTO users (username, email, password) "
-                "VALUES (%s, %s, %s)",
-                (username, email, hashed_password),
+                "INSERT INTO users (username, email, password, full_name) "
+                "VALUES (%s, %s, %s, %s)",
+                (username, email, hashed_password, full_name or username),
             )
             return cursor.lastrowid
         finally:
@@ -83,9 +84,9 @@ class UserRepository:
                 """
                 INSERT INTO users (
                     username, email, password, phone, address_line_1,
-                    address_line_2, city, province, postal_code
+                    address_line_2, city, province, postal_code, full_name
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     details["username"],
@@ -97,6 +98,7 @@ class UserRepository:
                     details.get("city"),
                     details.get("province"),
                     details.get("postal_code"),
+                    details.get("name"),
                 ),
             )
             return cursor.lastrowid
@@ -140,11 +142,12 @@ class UserRepository:
             cursor.execute(
                 """
                 UPDATE users
-                SET phone = %s, address_line_1 = %s, address_line_2 = %s,
+                SET full_name = %s, phone = %s, address_line_1 = %s, address_line_2 = %s,
                     city = %s, province = %s, postal_code = %s
                 WHERE id = %s
                 """,
                 (
+                    address_data.get("full_name"),
                     address_data.get("phone"),
                     address_data.get("address1"),
                     address_data.get("address2", ""),

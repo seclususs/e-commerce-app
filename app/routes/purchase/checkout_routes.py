@@ -175,6 +175,7 @@ def edit_address() -> Union[str, WerkzeugResponse]:
 
     if request.method == "POST":
         address_data: Dict[str, Any] = {
+            "full_name": request.form.get("full_name"),
             "phone": request.form.get("phone"),
             "address1": request.form.get("address_line_1"),
             "address2": request.form.get("address_line_2", ""),

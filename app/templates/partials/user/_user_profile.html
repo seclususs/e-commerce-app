@@ -17,6 +17,7 @@
                 <div class="info-item">
                     <h3>Alamat Utama</h3>
                     {% if user.address_line_1 %}
+                        <p><strong>Nama Penerima:</strong> {{ user.full_name or user.username }}</p>
                         <p><strong>Telepon:</strong> {{ user.phone }}</p>
                         <p class="address-text">
                            {{ user.address_line_1 }}<br>

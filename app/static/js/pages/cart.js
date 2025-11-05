@@ -11,11 +11,10 @@ function renderCartPage(state) {
     const { items, subtotal } = state;
     const container = document.getElementById('cartPageItems');
     const listContainer = document.querySelector('.cart-items-list');
-    const summary = document.querySelector('.cart-summary');
-    const checkoutLink = document.getElementById('checkout-link');
     const checkoutLinkMobile = document.getElementById('checkout-link-mobile');
+    const floatingBar = document.getElementById('floating-cart-checkout-bar');
 
-    if (!container || !listContainer || !summary) return;
+    if (!container || !listContainer) return;
 
     if (!items || items.length === 0) {
         listContainer.classList.add('is-empty');
@@ -31,17 +30,17 @@ function renderCartPage(state) {
             <a href="${productsUrl}" class="cta-button">Lanjutkan Belanja</a>
             </div>`;
 
-        summary.style.display = 'none';
-        if (checkoutLink) checkoutLink.classList.add('disabled-link');
         if (checkoutLinkMobile) {
             checkoutLinkMobile.classList.add('disabled-link');
         }
+        if (floatingBar) floatingBar.style.display = 'none';
     } else {
         listContainer.classList.remove('is-empty');
-        summary.style.display = 'block';
-        if (checkoutLink) checkoutLink.classList.remove('disabled-link');
         if (checkoutLinkMobile) {
             checkoutLinkMobile.classList.remove('disabled-link');
+        }
+        if (floatingBar) {
+            floatingBar.style.display = 'flex'; 
         }
 
         container.innerHTML = items.map(p => {
@@ -59,9 +58,9 @@ function renderCartPage(state) {
             const hasDiscount = originalPriceToShow !== null && originalPriceToShow > effectivePrice;
 
             const colorInfo = p.color
-                ? `<span>Warna: ${p.color}</span>`
+                ? `<span class="variant-info-item">Warna: ${p.color}</span>`
                 : '';
-            const sizeInfo = p.size ? `<span>Ukuran: ${p.size}</span>` : '';
+            const sizeInfo = p.size ? `<span class="variant-info-item">Ukuran: ${p.size}</span>` : '';
             const isOutOfStock = p.quantity > p.stock;
             const imageUrl = p.image_url
                 ? `/images/${p.image_url}`
@@ -96,12 +95,10 @@ function renderCartPage(state) {
             </div>`;
         }).join('');
         const subtotalNum = Number(subtotal) || 0;
-        document.getElementById('cartPageSubtotal').textContent = formatRupiah(
-            subtotalNum
-        );
-        document.getElementById('cartPageTotal').textContent = formatRupiah(
-            subtotalNum
-        );
+        const cartPageTotalFloating = document.getElementById('cartPageTotalFloating');
+        if (cartPageTotalFloating) {
+             cartPageTotalFloating.textContent = formatRupiah(subtotalNum);
+        }
     }
 }
 
@@ -137,7 +134,7 @@ export function initCartPage() {
     );
 
     document.body.addEventListener('click', (e) => {
-        if (e.target.closest('#checkout-link, #checkout-link-mobile')) {
+        if (e.target.closest('#checkout-link-mobile')) {
             if (cartStore.getState().items.length === 0) {
                 e.preventDefault();
                 showNotification('Keranjang Anda kosong!', true);

@@ -65,7 +65,9 @@ export function initBulkActions() {
             confirmModal.show(
                 'Konfirmasi Hapus Massal',
                 'Apakah Anda yakin ingin menghapus semua produk yang dipilih? Tindakan ini tidak dapat diurungkan.',
-                performSubmit
+                performSubmit,
+                null,
+                true
             );
         } else {
             performSubmit();

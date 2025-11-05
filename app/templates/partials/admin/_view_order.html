@@ -1,9 +1,9 @@
-<div style="margin-bottom: 2rem;">
+<div style="margin-bottom: 2rem;" class="animated-element">
     <a href="{{ url_for('admin.admin_orders') }}" class="cta-button-secondary" data-no-transition>&larr; Kembali ke Daftar Pesanan</a>
     <a href="{{ url_for('admin.admin_order_invoice', id=order.id) }}" target="_blank" class="cta-button" style="float: right;">Cetak Invoice</a>
 </div>
 <div class="order-detail-grid">
-    <div class="admin-card">
+    <div class="admin-card animated-element" data-animation-delay="100">
         <h3>Informasi Pesanan</h3>
         <p><strong>ID Pesanan:</strong> #{{ order.id }}</p>
         <p><strong>Tanggal:</strong> {{ (order.order_date | datetime_from_string).strftime('%d %B %Y, %H:%M') }}</p>
@@ -12,7 +12,7 @@
         <p><strong>Metode Pembayaran:</strong> {{ order.payment_method or 'N/A' }}</p>
         <p id="order-status-display"><strong>Status Saat Ini:</strong> <span class="status-badge status-{{ order.status|status_class }}">{{ order.status|status_translate }}</span></p>
     </div>
-    <div class="admin-card">
+    <div class="admin-card animated-element" data-animation-delay="200">
         <h3>Update Pesanan</h3>
         <form id="update-order-form" action="{{ url_for('admin.update_order_status', id=order.id) }}" method="POST" data-ajax="true" data-update-action="update-status">
             <div class="form-group">
@@ -34,7 +34,7 @@
     </div>
 </div>
 
-<div class="admin-card">
+<div class="admin-card animated-element" data-animation-delay="300">
     <h3>Informasi Pengiriman</h3>
     <p><strong>Nama Penerima:</strong> {{ order.shipping_name or 'N/A' }}</p>
     <p><strong>Telepon:</strong> {{ order.shipping_phone or 'N/A' }}</p>
@@ -45,7 +45,7 @@
     </p>
 </div>
 
-<div class="admin-card">
+<div class="admin-card animated-element" data-animation-delay="400">
     <h3>Item yang Dipesan</h3>
     <div class="table-wrapper">
         <table class="admin-table">

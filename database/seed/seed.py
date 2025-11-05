@@ -86,6 +86,7 @@ def seed_database():
                     user["username"],
                     user["email"],
                     generate_password_hash(user["password"]),
+                    user.get("full_name", user["username"]),
                     user.get("phone"),
                     user.get("address_line_1"),
                     user.get("address_line_2"),
@@ -100,10 +101,10 @@ def seed_database():
             cursor.executemany(
                 """
                 INSERT INTO users (
-                    id, username, email, password, phone, address_line_1,
+                    id, username, email, password, full_name, phone, address_line_1,
                     address_line_2, city, province, postal_code, is_admin,
                     created_at
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 users_to_add,
             )

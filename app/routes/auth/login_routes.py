@@ -1,12 +1,8 @@
 from typing import Any, Dict, Optional, Union
 
 from flask import (
-    flash,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
+    flash, redirect, render_template,
+    request, session, url_for
 )
 import mysql.connector
 from werkzeug.wrappers import Response
@@ -40,22 +36,22 @@ def login() -> Union[Response, str]:
     )
 
     if request.method == "POST":
-        username: Optional[str] = request.form.get("username")
+        username_or_email: Optional[str] = request.form.get("username")
         password: Optional[str] = request.form.get("password")
-        logger.info(f"Percobaan login untuk username: {username}")
+        logger.info(f"Percobaan login untuk: {username_or_email}")
 
-        if not username or not password:
-            flash("Username dan password harus diisi.", "danger")
+        if not username_or_email or not password:
+            flash("Username/Email dan password harus diisi.", "danger")
             return redirect(url_for("auth.login", next=next_url))
 
         try:
             user: Dict[str, Any] = (
-                authentication_service.verify_user_login(username, password)
+                authentication_service.verify_user_login(username_or_email, password)
             )
 
             user_id: int = user["id"]
             logger.info(
-                f"Login berhasil untuk pengguna: {username} (ID: {user_id}), "
+                f"Login berhasil untuk pengguna: {user['username']} (ID: {user_id}), "
                 f"Admin: {bool(user['is_admin'])}"
             )
 
@@ -125,24 +121,24 @@ def login() -> Union[Response, str]:
                 "product.products_page"
             )
             logger.info(
-                f"Mengarahkan pengguna {username} ke {redirect_target}"
+                f"Mengarahkan pengguna {user['username']} ke {redirect_target}"
             )
             return redirect(redirect_target)
 
         except AuthError as ae:
-            logger.warning(f"Login gagal untuk username: {username} - {ae}")
+            logger.warning(f"Login gagal untuk: {username_or_email} - {ae}")
             flash(str(ae), "danger")
 
         except (DatabaseException, ServiceLogicError) as e:
             logger.error(
-                f"Kesalahan service/DB saat login untuk {username}: {e}",
+                f"Kesalahan service/DB saat login untuk {username_or_email}: {e}",
                 exc_info=True,
             )
             flash("Terjadi kesalahan saat mencoba login.", "danger")
 
         except Exception as e:
             logger.error(
-                f"Kesalahan tak terduga saat login untuk {username}: {e}",
+                f"Kesalahan tak terduga saat login untuk {username_or_email}: {e}",
                 exc_info=True,
             )
             flash("Terjadi kesalahan tak terduga.", "danger")
