@@ -1,0 +1,117 @@
+<div class="admin-card animated-element" id="add-product-wizard-container">
+    <div class="wizard-progress">
+        <div class="wizard-progress-bar" id="wizard-progress-bar"></div>
+        <div class="wizard-progress-step active" data-step="1">1. Info Dasar</div>
+        <div class="wizard-progress-step" data-step="2">2. Gambar</div>
+        <div class="wizard-progress-step" data-step="3">3. Tipe Produk</div>
+        <div class="wizard-progress-step" data-step="4">4. Stok</div>
+    </div>
+
+    <form id="add-product-form" method="POST" action="{{ url_for('admin.admin_products') }}" enctype="multipart/form-data" data-ajax="true" data-update-target="#products-table-body" data-update-action="prepend" data-reset-on-success="true">
+        <input type="hidden" name="form_type" value="add_product">
+        
+        <div class="wizard-step active" data-step="1">
+            <h3 class="wizard-step-title">Langkah 1: Informasi Dasar Produk</h3>
+            <div class="form-grid">
+                <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" required></div>
+                <div class="form-group"><label for="category_id">Kategori</label>
+                    <select id="category_id" name="category_id" class="form-control" required>
+                        <option value="" disabled selected>Pilih Kategori</option>
+                        {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group"><label for="price">Harga Asli</label><input type="text" inputmode="numeric" id="price" name="price" required></div>
+                <div class="form-group"><label for="discount_price">Harga Diskon (Opsional)</label><input type="text" inputmode="numeric" id="discount_price" name="discount_price"></div>
+            </div>
+            <div class="form-group" style="margin-top: 1rem;"><label for="description">Deskripsi</label><textarea id="description" name="description" rows="4" required></textarea></div>
+        </div>
+
+        <div class="wizard-step" data-step="2">
+            <h3 class="wizard-step-title">Langkah 2: Gambar Produk</h3>
+            <div class="form-group">
+                <label for="images">Gambar Produk (Bisa pilih satu per satu atau sekaligus)</label>
+                <div>
+                    <label for="images" class="custom-file-upload">Pilih Gambar</label>
+                    <input type="file" id="images" name="images" accept="image/*" multiple required>
+                    <span id="file-name" class="file-name-display">Belum ada file dipilih</span>
+                </div>
+                <p class="form-hint" style="margin-top: 1rem;">Klik pada gambar pratinjau untuk menjadikannya gambar utama (default gambar pertama).</p>
+            </div>
+            <div id="image-previews" class="image-preview-container"></div>
+        </div>
+
+        <div class="wizard-step" data-step="3">
+            <h3 class="wizard-step-title">Langkah 3: Tipe Produk</h3>
+            <div class="form-group">
+                <label>Pilih Tipe Produk</label>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="product_type" value="simple" checked>
+                        <span>Produk Sederhana</span>
+                        <small>Satu jenis produk dengan satu stok (cth: buku).</small>
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="product_type" value="variant">
+                        <span>Produk Bervarian</span>
+                        <small>Produk dengan pilihan (cth: kaos dengan warna/ukuran).</small>
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="wizard-step" data-step="4">
+            <h3 class="wizard-step-title">Langkah 4: Stok</h3>
+            <input type="hidden" name="has_variants" id="has_variants_hidden_input" value="false">
+
+            <div id="wizard-simple-stock-fields" style="display: block;">
+                <h4 class="wizard-step-subtitle">Detail Produk Sederhana</h4>
+                <p class="form-hint">Masukkan detail untuk produk sederhana Anda.</p>
+                <div class="form-grid">
+                    <div class="form-group"><label for="stock">Stok</label><input type="number" id="stock" name="stock" value="10" required></div>
+                    <div class="form-group"><label for="weight_grams">Berat (gram)</label><input type="number" id="weight_grams" name="weight_grams" placeholder="cth: 150" value="150" required></div>
+                    <div class="form-group"><label for="sku">SKU (Opsional)</label><input type="text" id="sku" name="sku" placeholder="cth: KAOS-HW-HITAM"></div>
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="colors">Teks Deskripsi Warna (Opsional)</label>
+                    <input type="text" id="colors" name="colors" placeholder="cth: Hitam, Putih, Biru">
+                </div>
+            </div>
+
+            <div id="wizard-variant-stock-fields" style="display: none;">
+                <p class="form-hint">Tambahkan setidaknya satu varian untuk produk Anda. Stok, berat, dan SKU diatur per-varian.</p>
+                
+                <div style="background: var(--color-background-body); padding: 1rem; border-radius: var(--border-radius-sm); margin-bottom: 1.5rem;">
+                    <div class="form-grid" style="gap: 1rem 1.5rem;">
+                        <div class="form-group" style="margin-bottom:0;"><label for="new_variant_color" class="sr-only">Warna</label><input type="text" id="new_variant_color" placeholder="Warna (cth: Merah)" class="form-control"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label for="new_variant_size" class="sr-only">Ukuran</label><input type="text" id="new_variant_size" placeholder="Ukuran (cth: XL)" class="form-control"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label for="new_variant_stock" class="sr-only">Stok</label><input type="number" id="new_variant_stock" placeholder="Stok" class="form-control"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label for="new_variant_weight" class="sr-only">Berat</label><input type="number" id="new_variant_weight" placeholder="Berat (g)" class="form-control"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label for="new_variant_sku" class="sr-only">SKU</label><input type="text" id="new_variant_sku" placeholder="SKU Varian" class="form-control"></div>
+                        <div class="form-group" style="margin-bottom:0; display: flex; align-items: flex-end;">
+                            <button type="button" id="wizard-add-variant-btn" class="cta-button" style="width: 100%;">Tambah</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="wizard-variant-list-container">
+                    <div id="wizard-variant-list-header" style="display: none; grid-template-columns: 2fr 1fr 1fr 1.5fr 0.5fr; gap: 1rem; padding: 0.75rem 1rem; background: var(--color-background-body); border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0; border: 1px solid var(--color-border-default); border-bottom: 1px solid var(--color-border-default);">
+                        <strong style="font-size: 0.9em; color: var(--color-text-secondary);">Varian</strong>
+                        <strong style="font-size: 0.9em; color: var(--color-text-secondary);">Stok</strong>
+                        <strong style="font-size: 0.9em; color: var(--color-text-secondary);">Berat (g)</strong>
+                        <strong style="font-size: 0.9em; color: var(--color-text-secondary);">SKU</strong>
+                        <strong style="font-size: 0.9em; text-align: right; color: var(--color-text-secondary);">Aksi</strong>
+                    </div>
+                    <div id="wizard-variant-list-items-wrapper" style="border-left: 1px solid var(--color-border-default); border-right: 1px solid var(--color-border-default); border-bottom: 1px solid var(--color-border-default); border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm); overflow: hidden;">
+                         <p class="form-hint" id="wizard-no-variants-hint" style="text-align: center; padding: 1.5rem; margin: 0; background: var(--color-background-body);">Belum ada varian ditambahkan.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="wizard-nav">
+            <button type="button" class="cta-button-secondary" id="wizard-prev" style="display: none;">Kembali</button>
+            <button type="button" class="cta-button" id="wizard-next">Lanjut</button>
+            <button type="submit" class="cta-button" id="wizard-submit" style="display: none;">Tambah Produk</button>
+        </div>
+    </form>
+</div>

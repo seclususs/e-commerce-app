@@ -132,13 +132,15 @@ def manage_variants(
                         {
                             "success": False,
                             "message": message,
-                            "redirect_url": url_for("admin.admin_products"),
+                            "redirect_url": url_for(
+                                "admin.admin_edit_product", id=product_id
+                            ),
                         }
                     ),
                     404,
                 )
             flash(message, "danger")
-            return redirect(url_for("admin.admin_products"))
+            return redirect(url_for("admin.admin_edit_product", id=product_id))
 
         variants: List[Dict[str, Any]] = (
             variant_service.get_variants_for_product(product_id)
@@ -148,7 +150,7 @@ def manage_variants(
 
         if is_ajax:
             html = render_template(
-                "partials/admin/_manage_variants.html",
+                "partials/admin/_manage_variants_content.html",
                 product=product,
                 variants=variants,
                 content=get_content(),
@@ -163,27 +165,25 @@ def manage_variants(
                 }
             )
         else:
-            return render_template(
-                "admin/manage_variants.html",
-                product=product,
-                variants=variants,
-                content=get_content(),
-                product_id=product_id,
+            flash(
+                "Halaman ini telah dipindahkan. Gunakan tab 'Varian Produk' "
+                "di halaman Edit Produk.", "info"
             )
+            return redirect(url_for("admin.admin_edit_product", id=product_id))
 
     except (DatabaseException, ServiceLogicError):
         message = "Gagal memuat halaman varian."
         if is_ajax:
             return jsonify({"success": False, "message": message}), 500
         flash(message, "danger")
-        return redirect(url_for("admin.admin_products"))
+        return redirect(url_for("admin.admin_edit_product", id=product_id))
 
     except Exception:
         message = "Gagal memuat halaman varian."
         if is_ajax:
             return jsonify({"success": False, "message": message}), 500
         flash(message, "danger")
-        return redirect(url_for("admin.admin_products"))
+        return redirect(url_for("admin.admin_edit_product", id=product_id))
 
 
 @admin_bp.route(

@@ -12,8 +12,10 @@
   border: 2px solid var(--color-border-default);
   border-radius: 8px;
   overflow: hidden;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
   cursor: pointer;
+  background: var(--color-background-body);
+  box-shadow: 0 2px 4px var(--color-shadow-dark);
 }
 
 .preview-item img {
@@ -56,7 +58,7 @@
 
 .preview-item.is-main {
   border-color: var(--color-primary);
-  box-shadow: 0 0 10px var(--color-shadow-primary);
+  box-shadow: 0 0 15px var(--color-shadow-primary), 0 2px 4px var(--color-shadow-dark);
 }
 
 .delete-checkbox-overlay {
@@ -109,6 +111,39 @@ html.light-theme .delete-checkbox-overlay .custom-checkbox .checkbox-box .checkm
     background-color: var(--color-white);
 }
 
+.remove-new-preview-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(15, 23, 42, 0.7);
+    color: var(--color-white);
+    border: 1px solid var(--color-white);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 20px;
+    text-align: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: all 0.2s ease;
+    z-index: 4;
+}
+.preview-item.new-preview:hover .remove-new-preview-btn {
+    opacity: 1;
+}
+.remove-new-preview-btn:hover {
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+}
+html.light-theme .remove-new-preview-btn {
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--color-text-primary);
+    border-color: var(--color-text-primary);
+}
+
+
 /* General Form Hint Text */
 .form-hint {
   font-size: 0.9rem;
@@ -117,10 +152,18 @@ html.light-theme .delete-checkbox-overlay .custom-checkbox .checkbox-box .checkm
   margin-top: -0.5rem;
 }
 
+.wizard-step-subtitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+  margin-top: 1.5rem;
+}
+
 /* Bulk Actions Bar in Product Management */
 .bulk-actions-container {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
   align-items: flex-end;
   margin-bottom: 1.5rem;
@@ -129,15 +172,18 @@ html.light-theme .delete-checkbox-overlay .custom-checkbox .checkbox-box .checkm
 }
 
 .bulk-actions-container > .form-group {
-  flex-shrink: 1;
-  flex-basis: auto;
   margin-bottom: 0;
 }
 
 .bulk-actions-container #bulk-category-selector {
-  flex-grow: 1;
   min-width: 200px;
 }
+
+.bulk-actions-container .form-group button[type="submit"] {
+    width: 100%;
+    text-align: center;
+}
+
 
 /* Utility class */
 .hidden {
@@ -169,6 +215,7 @@ html.light-theme .delete-checkbox-overlay .custom-checkbox .checkbox-box .checkm
   cursor: pointer;
   line-height: 1;
   padding: 0 0.5rem;
+  margin-left: auto;
 }
 
 @media (max-width: 767px) {

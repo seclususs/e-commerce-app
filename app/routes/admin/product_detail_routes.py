@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Tuple, Union
 
 from flask import (
-    Response, flash, jsonify, redirect, 
+    Response, flash, jsonify, redirect,
     render_template, request, url_for
 )
 
@@ -15,6 +15,7 @@ from app.exceptions.service_exceptions import ServiceLogicError
 from app.services.products.category_service import category_service
 from app.services.products.product_query_service import product_query_service
 from app.services.products.product_service import product_service
+from app.services.products.variant_service import variant_service
 from app.utils.logging_utils import get_logger
 from app.utils.route_decorators import admin_required
 
@@ -48,10 +49,10 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
 
         except (ValidationError, FileOperationError) as user_error:
             return jsonify({"success": False, "message": str(user_error)}), 400
-        
+
         except RecordNotFoundError as rnfe:
             return jsonify({"success": False, "message": str(rnfe)}), 404
-        
+
         except DatabaseException:
             return (
                 jsonify(
@@ -59,7 +60,7 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
                 ),
                 500,
             )
-        
+
         except ServiceLogicError:
             return (
                 jsonify(
@@ -67,7 +68,7 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
                 ),
                 500,
             )
-        
+
         except Exception:
             return (
                 jsonify(
@@ -96,16 +97,26 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
             "additional_image_urls", []
         )
 
+        variants: List[Dict[str, Any]] = []
+        if product.get("has_variants"):
+            variants = variant_service.get_variants_for_product(id)
+
         page_title = "Edit Produk - Admin"
         header_title = f"Edit Produk: {product.get('name', '')}"
+
+        render_data = {
+            "product": product,
+            "additional_images": additional_images,
+            "categories": categories,
+            "variants": variants,
+            "content": get_content(),
+            "product_id": id
+        }
 
         if is_ajax:
             html = render_template(
                 "partials/admin/_product_editor.html",
-                product=product,
-                additional_images=additional_images,
-                categories=categories,
-                content=get_content(),
+                **render_data
             )
             return jsonify(
                 {
@@ -118,10 +129,7 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
         else:
             return render_template(
                 "admin/product_editor.html",
-                product=product,
-                additional_images=additional_images,
-                categories=categories,
-                content=get_content(),
+                **render_data
             )
 
     except (DatabaseException, ServiceLogicError):
@@ -130,7 +138,7 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
             return jsonify({"success": False, "message": message}), 500
         flash(message, "danger")
         return redirect(url_for("admin.admin_products"))
-    
+
     except Exception:
         message = "Gagal memuat detail produk."
         if is_ajax:
@@ -156,7 +164,7 @@ def delete_product(id: int) -> Tuple[Response, int]:
 
     except RecordNotFoundError as rnfe:
         return jsonify({"success": False, "message": str(rnfe)}), 404
-    
+
     except DatabaseException:
         return (
             jsonify(
@@ -164,7 +172,7 @@ def delete_product(id: int) -> Tuple[Response, int]:
             ),
             500,
         )
-    
+
     except ServiceLogicError:
         return (
             jsonify(
@@ -172,7 +180,7 @@ def delete_product(id: int) -> Tuple[Response, int]:
             ),
             500,
         )
-    
+
     except Exception:
         return (
             jsonify(

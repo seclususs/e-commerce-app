@@ -1,0 +1,55 @@
+<div class="animated-element">
+    <h3>Tambah Varian Baru</h3>
+    <div class="form-grid" style="gap: 1rem 1.5rem; align-items: flex-end;">
+        <form id="add-variant-form" method="POST" action="{{ url_for('admin.manage_variants', product_id=product.id) }}" class="form-grid" data-ajax="true" data-update-target="#variants-table-body" data-update-action="prepend" style="display: contents;">
+            <input type="hidden" name="action" value="add">
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="color">Warna</label>
+                <input type="text" id="color" name="color" placeholder="Nama Warna (cth: Merah)" required class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="size">Ukuran</label>
+                <input type="text" id="size" name="size" placeholder="Nama Ukuran (cth: XL)" required class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="stock">Stok</label>
+                <input type="number" id="stock" name="stock" placeholder="Jumlah Stok" required class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="weight_grams_add">Berat (gram)</label>
+                <input type="number" id="weight_grams_add" name="weight_grams" placeholder="Berat (gram)" required class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="sku_add">SKU</label>
+                <input type="text" id="sku_add" name="sku" placeholder="SKU Varian (Opsional)" class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <button type="submit" class="cta-button" style="width: 100%;">Tambah Varian</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="animated-element" data-animation-delay="200" style="margin-top: 2rem;">
+    <h3>Daftar Varian Saat Ini</h3>
+    <p class="form-hint">Total stok dari semua varian: <strong>{{ product.stock }}</strong>. Ini akan diperbarui secara otomatis saat Anda menambah/mengedit varian.</p>
+    <div class="table-wrapper">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID Varian</th>
+                    <th>Warna</th>
+                    <th>Ukuran</th>
+                    <th>Stok</th>
+                    <th>Berat (gram)</th>
+                    <th>SKU</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="variants-table-body">
+                {% include 'partials/admin/_variant_table_body.html' %}
+            </tbody>
+        </table>
+    </div>
+</div>

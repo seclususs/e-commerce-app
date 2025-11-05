@@ -1,132 +1,85 @@
-<div class="admin-card animated-element">
-    <h3>Tambah Produk Baru</h3>
-    <form id="add-product-form" method="POST" action="{{ url_for('admin.admin_products') }}" enctype="multipart/form-data" data-ajax="true" data-update-target="#products-table-body" data-update-action="prepend" data-reset-on-success="true">
-        <input type="hidden" name="form_type" value="add_product">
-        <div class="form-grid">
-            <div class="form-group"><label for="name">Nama Produk</label><input type="text" id="name" name="name" required></div>
-            <div class="form-group"><label for="price">Harga Asli</label><input type="text" inputmode="numeric" id="price" name="price" required></div>
-            <div class="form-group"><label for="discount_price">Harga Diskon (Opsional)</label><input type="text" inputmode="numeric" id="discount_price" name="discount_price"></div>
-            <div class="form-group"><label for="category_id">Kategori</label>
-                <select id="category_id" name="category_id" class="form-control" required>
-                    <option value="" disabled selected>Pilih Kategori</option>
-                    {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="colors">Teks Deskripsi Warna</label>
-                <input type="text" id="colors" name="colors" placeholder="cth: Hitam, Putih, Biru">
-            </div>
-        </div>
-        <div class="form-group">
-            <label class="custom-checkbox">
-                <input type="checkbox" name="has_variants" id="has-variants-checkbox" class="checkbox-input" data-initial-state="false">
-                <span class="checkbox-box"><span class="checkmark"></span></span>
-                <span>Produk ini memiliki varian (Warna/Ukuran)</span>
-            </label>
-        </div>
-        <div id="non-variant-fields">
-            <div class="form-group" id="stock-input-container">
-                <label for="stock">Stok (jika tidak ada varian)</label>
-                <input type="number" id="stock" name="stock" value="10" required>
-            </div>
-            <div class="form-group" id="weight-input-container-main">
-                <label for="weight_grams">Berat (gram) (jika tidak ada varian)</label>
-                <input type="number" id="weight_grams" name="weight_grams" placeholder="cth: 150" value="150" required>
-            </div>
-             <div class="form-group" id="sku-input-container">
-                <label for="sku">SKU (jika tidak ada varian)</label>
-                <input type="text" id="sku" name="sku" placeholder="cth: KAOS-HW-HITAM">
-            </div>
-        </div>
-        <div class="form-hint" id="variant-conversion-hint" style="display:none; margin-top: 1rem; padding: 1rem; background-color: rgba(59, 130, 246, 0.1); border: 1px solid var(--color-primary); border-radius: var(--border-radius-sm);">
-            <strong>Anda akan membuat produk bervarian.</strong> Stok, berat, dan SKU di atas akan diabaikan. Anda dapat menambahkan varian setelah menyimpan produk ini melalui halaman Edit Produk &gt; Kelola Varian.
-        </div>
-         <span id="manage-variants-link-placeholder" style="display: none;"></span>
-         <div id="non-variant-conversion-hint" style="display:none;"></div>
-
-        <div class="form-group"><label for="description">Deskripsi</label><textarea id="description" name="description" rows="4" required></textarea></div>
-        <div class="form-group">
-            <label for="images">Gambar Produk (Bisa lebih dari satu, pilih gambar utama)</label>
-            <div>
-                <label for="images" class="custom-file-upload">Pilih Gambar</label>
-                <input type="file" id="images" name="images" accept="image/*" multiple required>
-                <span id="file-name" class="file-name-display">Belum ada file dipilih</span>
-            </div>
-        </div>
-        <div id="image-previews" class="image-preview-container"></div>
-        <button type="submit" class="cta-button form-button" style="margin-top: 1rem;">Tambah Produk</button>
-    </form>
-</div>
-
-<div class="admin-card animated-element" data-animation-delay="200">
-    <h3>Daftar Produk</h3>
-
-    <div class="product-search-bar" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-border-default);">
-        <form method="GET" action="{{ url_for('admin.admin_products') }}" id="admin-product-filter-form">
-            <div class="form-grid" style="align-items: flex-end; gap: 1rem;">
-                <div class="form-group">
-                    <label for="search">Cari Nama/SKU</label>
-                    <input type="search" name="search" class="form-control" placeholder="Ketik untuk mencari..." value="{{ request.args.get('search', '') }}">
-                </div>
-                <div class="form-group">
-                    <label for="category">Kategori</label>
-                    <select name="category" class="form-control">
-                        <option value="">Semua Kategori</option>
-                        {% for cat in categories %}
-                            <option value="{{ cat.id }}" {% if request.args.get('category')|int == cat.id %}selected{% endif %}>{{ cat.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="stock_status">Status Stok</label>
-                    <select name="stock_status" class="form-control">
-                        <option value="">Semua</option>
-                        <option value="in_stock" {% if request.args.get('stock_status') == 'in_stock' %}selected{% endif %}>Tersedia</option>
-                        <option value="low_stock" {% if request.args.get('stock_status') == 'low_stock' %}selected{% endif %}>Stok Menipis (≤5)</option>
-                        <option value="out_of_stock" {% if request.args.get('stock_status') == 'out_of_stock' %}selected{% endif %}>Habis</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-actions" style="margin-top: 1.5rem;">
-                <a href="{{ url_for('admin.admin_products') }}" class="cta-button-secondary" id="reset-filter-btn">Reset Filter</a>
-            </div>
-        </form>
+<div class="admin-tabs-container">
+    <div class="admin-tabs">
+        <button type="button" class="admin-tab-btn active" data-tab="tab-list">List Produk</button>
+        <button type="button" class="admin-tab-btn" data-tab="tab-add">Tambah Produk Baru</button>
     </div>
 
-    <form method="POST" action="{{ url_for('admin.admin_products') }}" id="bulk-action-form" data-ajax="true" data-update-action="bulk-action">
-        <input type="hidden" name="form_type" value="bulk_action">
-        <div class="bulk-actions-container">
-            <div class="form-group"><label for="bulk-action-select">Aksi Massal</label>
-                <select name="bulk_action" id="bulk-action-select" class="form-control">
-                    <option value="" disabled selected>Pilih Aksi</option>
-                    <option value="delete">Hapus</option>
-                    <option value="set_category">Ubah Kategori</option>
-                </select>
+    <div class="admin-tab-content active" id="tab-list">
+        <div class="admin-card animated-element">
+            <h3>Daftar Produk</h3>
+
+            <div class="product-search-bar" style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-border-default);">
+                <form method="GET" action="{{ url_for('admin.admin_products') }}" id="admin-product-filter-form">
+                    <div class="form-grid" style="align-items: flex-end; gap: 1rem;">
+                        <div class="form-group">
+                            <label for="search">Cari Nama/SKU</label>
+                            <input type="search" name="search" class="form-control" placeholder="Ketik untuk mencari..." value="{{ request.args.get('search', '') }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Kategori</label>
+                            <select name="category" class="form-control">
+                                <option value="">Semua Kategori</option>
+                                {% for cat in categories %}
+                                    <option value="{{ cat.id }}" {% if request.args.get('category')|int == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="stock_status">Status Stok</label>
+                            <select name="stock_status" class="form-control">
+                                <option value="">Semua</option>
+                                <option value="in_stock" {% if request.args.get('stock_status') == 'in_stock' %}selected{% endif %}>Tersedia</option>
+                                <option value="low_stock" {% if request.args.get('stock_status') == 'low_stock' %}selected{% endif %}>Stok Menipis (≤5)</option>
+                                <option value="out_of_stock" {% if request.args.get('stock_status') == 'out_of_stock' %}selected{% endif %}>Habis</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                             <a href="{{ url_for('admin.admin_products') }}" class="cta-button-secondary" id="reset-filter-btn" style="width: 100%; text-align: center;">Reset Filter</a>
+                        </div>
+                    </div>
+                </form>
             </div>
-            <div id="bulk-category-selector" class="form-group hidden"><label for="bulk-category-id">Kategori Baru</label>
-                 <select name="bulk_category_id" id="bulk-category-id" class="form-control">
-                    {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
-                </select>
-            </div>
-            <div class="form-group"><button type="submit" class="cta-button">Terapkan</button></div>
+
+            <form method="POST" action="{{ url_for('admin.admin_products') }}" id="bulk-action-form" data-ajax="true" data-update-action="bulk-action">
+                <input type="hidden" name="form_type" value="bulk_action">
+                <div class="bulk-actions-container">
+                    <div class="form-group"><label for="bulk-action-select">Aksi Massal</label>
+                        <select name="bulk_action" id="bulk-action-select" class="form-control">
+                            <option value="" disabled selected>Pilih Aksi</option>
+                            <option value="delete">Hapus</option>
+                            <option value="set_category">Ubah Kategori</option>
+                        </select>
+                    </div>
+                    <div id="bulk-category-selector" class="form-group hidden"><label for="bulk-category-id">Kategori Baru</label>
+                         <select name="bulk_category_id" id="bulk-category-id" class="form-control">
+                            {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group"><button type="submit" class="cta-button">Terapkan</button></div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <label class="custom-checkbox" title="Pilih semua">
+                                        <input type="checkbox" id="select-all-products" class="checkbox-input">
+                                        <span class="checkbox-box"><span class="checkmark"></span></span>
+                                    </label>
+                                </th>
+                                <th>ID</th><th>Gambar</th><th>Nama</th><th>SKU</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body">
+                            {% include 'partials/admin/_product_table_body.html' %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
         </div>
-        <div class="table-wrapper">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>
-                            <label class="custom-checkbox" title="Pilih semua">
-                                <input type="checkbox" id="select-all-products" class="checkbox-input">
-                                <span class="checkbox-box"><span class="checkmark"></span></span>
-                            </label>
-                        </th>
-                        <th>ID</th><th>Gambar</th><th>Nama</th><th>SKU</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody id="products-table-body">
-                    {% include 'partials/admin/_product_table_body.html' %}
-                </tbody>
-            </table>
-        </div>
-    </form>
+    </div>
+
+    <div class="admin-tab-content" id="tab-add">
+        {% include 'partials/admin/_add_product.html' %}
+    </div>
 </div>

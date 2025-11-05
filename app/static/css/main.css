@@ -30,5 +30,6 @@
 @import url("admin/layout/admin-layout.css");
 @import url("admin/components/admin-components.css");
 @import url("admin/components/admin-tables.css");
+@import url("admin/components/admin-tabs.css");
 @import url("admin/pages/dashboard.css");
 @import url("admin/pages/reports.css");

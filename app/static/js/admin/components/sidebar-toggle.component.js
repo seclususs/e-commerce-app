@@ -13,13 +13,6 @@ export function initSidebarToggle() {
         document.getElementById('lowStockChart')?.parentElement
     ].filter(Boolean);
 
-    const updateIcon = (isCollapsed) => {
-        if (desktopIcon) {
-            desktopIcon.classList.remove(isCollapsed ? 'fa-chevron-left' : 'fa-chevron-right');
-            desktopIcon.classList.add(isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left');
-        }
-    };
-
     const toggleSidebar = () => {
         const isMobile = window.innerWidth <= 767;
         let isCollapsedNow = false;
@@ -40,7 +33,6 @@ export function initSidebarToggle() {
             localStorage.setItem('sidebarState', isCollapsedNow ? 'collapsed' : 'expanded');
             rootElement.classList.remove('sidebar-mobile-open');
         }
-        updateIcon(isCollapsedNow);
 
         if (isDashboard) {
             setTimeout(() => {
@@ -71,9 +63,6 @@ export function initSidebarToggle() {
         });
     }
 
-    const initialIsCollapsed = rootElement.classList.contains('sidebar-collapsed');
-    updateIcon(initialIsCollapsed);
-
     window.addEventListener('resize', () => {
         const isMobile = window.innerWidth <= 767;
         let isCollapsedOnResize = false;
@@ -90,7 +79,6 @@ export function initSidebarToggle() {
              rootElement.classList.remove('sidebar-collapsed');
              isCollapsedOnResize = false;
         }
-        updateIcon(isCollapsedOnResize);
     });
 
      window.dispatchEvent(new Event('resize'));

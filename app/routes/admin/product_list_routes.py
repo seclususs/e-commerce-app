@@ -70,7 +70,6 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
                 )
                 return jsonify(result), 400
 
-
             elif form_type == "add_product":
                 logger.info("Memproses penambahan produk baru.")
                 result: Dict[str, Any] = product_service.create_product(
@@ -86,7 +85,7 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
                         )
                         html = render_template(
                             "partials/admin/_product_row.html",
-                            product=product_data_from_service, 
+                            product=product_data_from_service,
                         )
                         return (
                             jsonify(
@@ -158,7 +157,7 @@ def admin_products() -> Union[str, Response, Tuple[Response, int]]:
     category_filter: str = request.args.get("category")
     stock_status_filter: str = request.args.get("stock_status")
     is_filter_request: str = request.args.get("is_filter_request") == "true"
-    
+
     page_title = "Manajemen Produk - Admin"
     header_title = "Manajemen Produk"
     logger.debug(

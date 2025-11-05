@@ -8,6 +8,7 @@
 /* Mengatur body untuk layout flex full-height */
 html, body {
     height: 100%;
+    overflow-x: hidden;
 }
 
 body {

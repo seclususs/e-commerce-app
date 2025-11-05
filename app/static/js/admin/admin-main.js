@@ -13,7 +13,8 @@ import { initDashboardFilter } from './components/filters/dashboard-filter.compo
 import { initCronButton } from './utils/cron-simulator.util.js';
 import { initSidebarToggle } from './components/sidebar-toggle.component.js';
 import { initReportFilter } from './components/filters/report-filter.component.js';
-import {initGlobalPriceFormatting} from './utils/price-formatting.js'
+import { initGlobalPriceFormatting } from './utils/price-formatting.js';
+import { initAdminTabs, initAdminWizard } from './components/tabs-wizard.component.js';
 
 export function reinitializeAdminScripts() {
     console.log("Reinitializing Admin Scripts...");
@@ -22,6 +23,7 @@ export function reinitializeAdminScripts() {
     initAjaxAdminForms();
     initAdminCardToggle();
     initGlobalPriceFormatting();
+    initAdminTabs();
 
     if (document.getElementById('salesChart') && typeof Chart !== 'undefined') {
         console.log("Initializing Dashboard Charts...");
@@ -46,9 +48,13 @@ export function reinitializeAdminScripts() {
          console.log("Initializing Cron Button...");
         initCronButton();
     }
-    if (document.querySelector('form[action*="/admin/products"]') || document.querySelector('form[action*="/admin/edit_product"]') || document.querySelector('form[action*="/admin/manage_variants"]')) {
+    if (document.querySelector('form[action*="/admin/products"]') || document.querySelector('form[action*="/admin/edit_product"]')) {
          console.log("Initializing Product Forms...");
         initProductForms();
+    }
+    if (document.getElementById('add-product-wizard-container')) {
+        console.log("Initializing Product Add Wizard...");
+        initAdminWizard();
     }
     if (document.getElementById('bulk-action-form')) {
          console.log("Initializing Bulk Actions...");

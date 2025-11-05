@@ -179,15 +179,28 @@ def toggle_voucher(id: int) -> Tuple[Response, int]:
 
     try:
         result: Dict[str, Any] = voucher_service.toggle_voucher_status(id)
-
+        
         if result.get("success"):
-            return jsonify(result), 200
+            if 'data' in result and 'is_active' in result['data']:
+                result['new_is_active'] = result['data']['is_active']
+                logger.info(
+                    f"Voucher {id} berhasil diubah statusnya. Status baru: {result['new_is_active']}."
+                    )
+                return jsonify(result), 200
+            else:
+                logger.error(
+                    f"Pemanggilan toggle_voucher (id: {id}) berhasil, tetapi tidak mengembalikan 'data.is_active' dalam hasil."
+                    )
+                return jsonify({
+                    "success": False, 
+                    "message": "Kesalahan server: Status berhasil diubah, tetapi keadaan baru tidak dapat dikonfirmasi."
+                }), 500
+            
         else:
-            status_code: int = (
-                404
-                if "tidak ditemukan" in result.get("message", "").lower()
-                else 500
-            )
+            status_code: int = 400
+            if "tidak ditemukan" in result.get("message", "").lower():
+                status_code = 404
+            
             return jsonify(result), status_code
         
     except RecordNotFoundError as rnfe:
@@ -209,7 +222,11 @@ def toggle_voucher(id: int) -> Tuple[Response, int]:
             500,
         )
     
-    except Exception:
+    except Exception as e:
+        logger.error(
+            f"Kesalahan tak terduga saat toggle voucher {id}: {e}", 
+            exc_info=True
+            )
         return (
             jsonify(
                 {

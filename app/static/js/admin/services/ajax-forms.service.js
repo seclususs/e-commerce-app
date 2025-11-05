@@ -146,8 +146,12 @@ async function handleAjaxToggle(link) {
     }
     
     const originalLinkText = link.textContent.trim();
-    const isCurrentlyActive = (originalLinkText.toLowerCase() === 'nonaktifkan');
 
+    if (link.querySelector('.spinner')) {
+        console.warn('Toggle request already in progress.');
+        return;
+    }
+    
     link.innerHTML = `<span class="spinner" style="display: inline-block; width: 0.8em; height: 0.8em; border-width: 2px;"></span>`;
     link.style.pointerEvents = 'none';
 
@@ -158,12 +162,12 @@ async function handleAjaxToggle(link) {
         });
         
         const result = await response.json();
-        
-        if (response.ok && result.success) {
+
+        if (response.ok && result.success && typeof result.new_is_active !== 'undefined') {
             showNotification(result.message || "Status diperbarui!");
 
             const statusCell = row.querySelector('.status-cell');
-            const newStatus = !isCurrentlyActive;
+            const newStatus = result.new_is_active;
 
             if (statusCell) {
                 const statusClass = newStatus ? 'completed' : 'cancelled';
@@ -177,7 +181,12 @@ async function handleAjaxToggle(link) {
             link.style.pointerEvents = 'auto';
             
         } else {
-            showNotification(result.message || 'Gagal mengubah status.', true);
+            let errorMsg = result.message || 'Gagal mengubah status.';
+            if (typeof result.new_is_active === 'undefined') {
+                 errorMsg = 'Gagal mengubah status: Respons server tidak valid.';
+                 console.error('Server response missing "new_is_active" key.', result);
+            }
+            showNotification(errorMsg, true);
             link.textContent = originalLinkText;
             link.style.pointerEvents = 'auto';
         }
@@ -186,7 +195,6 @@ async function handleAjaxToggle(link) {
         showNotification('Error koneksi.', true);
         link.textContent = originalLinkText;
         link.style.pointerEvents = 'auto';
-    } finally {
     }
 }
 

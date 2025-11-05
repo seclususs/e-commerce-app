@@ -7,11 +7,21 @@ export function initAdminImagePreviews() {
         const fileDisplay = document.getElementById(fileNameDisplayId);
 
         if (!imageInput || !previewContainer) return;
+        imageInput.value = null;
+        if (imageInput.fileStore) {
+            imageInput.fileStore = new DataTransfer().files;
+        }
 
         imageInput.addEventListener('change', function(event) {
-            previewContainer.querySelectorAll('.new-preview').forEach(el => el.remove());
+            if (previewContainer.id === 'image-previews') {
+                 previewContainer.innerHTML = '';
+            }
 
             const files = Array.from(event.target.files);
+
+            if (inputId === 'images') {
+                 imageInput.fileStore = event.target.files;
+            }
 
             if (files.length === 0) {
                 if (fileDisplay) fileDisplay.textContent = 'Belum ada file baru dipilih';
@@ -19,7 +29,13 @@ export function initAdminImagePreviews() {
                 return;
             }
 
-            if (fileDisplay) fileDisplay.textContent = `${files.length} file dipilih`;
+            if (fileDisplay) {
+                const totalFiles = (previewContainer.id === 'image-previews') 
+                    ? files.length 
+                    : (document.querySelectorAll('.preview-item.new-preview').length + files.length);
+                fileDisplay.textContent = `${files.length} file baru dipilih`;
+            }
+
 
             files.forEach((file, index) => {
                 const reader = new FileReader();
@@ -39,7 +55,7 @@ export function initAdminImagePreviews() {
                     radio.type = 'radio';
                     radio.name = 'main_image';
                     radio.className = 'main-image-radio';
-                    radio.value = file.name;
+                    radio.value = (inputId === 'images') ? file.name : `new_${file.name}`;
                     radio.tabIndex = -1;
                     previewItem.appendChild(radio);
 
@@ -48,17 +64,42 @@ export function initAdminImagePreviews() {
                     mainIndicator.innerHTML = '<i class="fas fa-star"></i> Utama';
                     previewItem.appendChild(mainIndicator);
 
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'remove-new-preview-btn';
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.title = 'Hapus gambar ini';
+                    removeBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        previewItem.remove();
+                        if (inputId === 'images' && imageInput.fileStore) {
+                            const dt = new DataTransfer();
+                            const currentFiles = Array.from(imageInput.fileStore);
+                            const fileToRemove = currentFiles.find(f => f.name === file.name);
+                            if (fileToRemove) {
+                                currentFiles.splice(currentFiles.indexOf(fileToRemove), 1);
+                            }
+                            currentFiles.forEach(f => dt.items.add(f));
+                            imageInput.files = dt.files;
+                            imageInput.fileStore = dt.files;
+                        }
+                         if (fileDisplay) fileDisplay.textContent = `${document.querySelectorAll('.preview-item.new-preview').length} file baru dipilih`;
+                        ensureMainImageSelection();
+                    };
+                    previewItem.appendChild(removeBtn);
                     previewContainer.appendChild(previewItem);
 
                     const anyMainSelected = document.querySelector('input[name="main_image"]:checked');
-                    if (!anyMainSelected && index === 0) {
+                    if (!anyMainSelected) {
                          radio.checked = true;
                          handleMainImageChange(radio);
+                    } else {
+                         handleMainImageChange(anyMainSelected);
                     }
                 }
                 reader.readAsDataURL(file);
             });
-            ensureMainImageSelection();
+            setTimeout(ensureMainImageSelection, 100);
         });
     };
 
@@ -73,17 +114,21 @@ export function initAdminImagePreviews() {
             if (parentItem && !parentItem.classList.contains('marked-for-deletion')) {
                 parentItem.classList.add('is-main');
                 parentItem.setAttribute('aria-checked', 'true');
-            } else {
+            } else if (parentItem) {
+                 radioInput.checked = false;
+                 ensureMainImageSelection();
+            } else if (!parentItem) {
                  radioInput.checked = false;
                  ensureMainImageSelection();
             }
+        } else if (!radioInput) {
+            ensureMainImageSelection();
         }
     };
 
     const ensureMainImageSelection = () => {
          const checkedRadio = document.querySelector('input[name="main_image"]:checked');
-         const allAvailableImages = document.querySelectorAll('.preview-item:not(.marked-for-deletion)');
-
+         
          let isCheckedValid = false;
          if (checkedRadio) {
              const parentItem = checkedRadio.closest('.preview-item');
@@ -110,7 +155,8 @@ export function initAdminImagePreviews() {
                      item.setAttribute('aria-checked', 'false');
                  });
                  const anyImageExists = document.querySelector('.preview-item');
-                 if (anyImageExists) {
+                 const addProductForm = document.getElementById('add-product-form');
+                 if (anyImageExists && !addProductForm) {
                     showNotification('Peringatan: Tidak ada gambar yang tersisa untuk dijadikan gambar utama.', true);
                  }
              }
@@ -119,16 +165,19 @@ export function initAdminImagePreviews() {
          }
     };
 
-    const form = document.querySelector('form[action*="/admin/edit_product"], form[action*="/admin/products"]');
-    if (form) {
-        if (form.action.includes('/admin/edit_product')) {
-            setupImagePreview('new_images', 'new-image-previews', 'new-file-name');
-        } else {
-            setupImagePreview('images', 'image-previews', 'file-name');
-        }
+    const addProductForm = document.getElementById('add-product-form');
+    const editProductForm = document.querySelector('form[action*="/admin/edit_product"]');
+
+    let formArea = null;
+
+    if (editProductForm) {
+        formArea = editProductForm;
+        setupImagePreview('new_images', 'new-image-previews', 'new-file-name');
+    } else if (addProductForm) {
+        formArea = addProductForm;
+        setupImagePreview('images', 'image-previews', 'file-name');
     }
 
-    const formArea = document.querySelector('.admin-card form[data-ajax="true"]');
     if (formArea) {
         formArea.addEventListener('change', function(e) {
             if (e.target.matches('input[name="main_image"].main-image-radio')) {
@@ -147,7 +196,7 @@ export function initAdminImagePreviews() {
         formArea.addEventListener('click', function(e) {
             const previewItem = e.target.closest('.preview-item');
             
-            if (previewItem && !e.target.closest('.custom-checkbox')) {
+            if (previewItem && !e.target.closest('.custom-checkbox') && !e.target.closest('.remove-new-preview-btn')) {
                 const radio = previewItem.querySelector('.main-image-radio');
                 if (radio && !radio.checked && !radio.disabled && !previewItem.classList.contains('marked-for-deletion')) {
                     radio.checked = true;
@@ -159,7 +208,7 @@ export function initAdminImagePreviews() {
         formArea.addEventListener('keydown', function(e) {
             const previewItem = e.target.closest('.preview-item');
             
-            if (previewItem && (e.key === 'Enter' || e.key === ' ') && !e.target.closest('.custom-checkbox')) {
+            if (previewItem && (e.key === 'Enter' || e.key === ' ') && !e.target.closest('.custom-checkbox')  && !e.target.closest('.remove-new-preview-btn')) {
                  e.preventDefault();
                  const radio = previewItem.querySelector('.main-image-radio');
                  if (radio && !radio.checked && !radio.disabled && !previewItem.classList.contains('marked-for-deletion')) {
@@ -196,8 +245,8 @@ function initVariantCheckbox() {
     const skuInput = document.getElementById('sku');
     const conversionHint = document.getElementById('variant-conversion-hint');
     const nonVariantConversionHint = document.getElementById('non-variant-conversion-hint');
-    const manageVariantsPlaceholder = document.getElementById('manage-variants-link-placeholder');
     const isInitiallyVariant = checkbox.dataset.initialState === 'true';
+    const variantTabButton = document.getElementById('tab-btn-variants');
 
     const toggleInputs = () => {
         const isChecked = checkbox.checked;
@@ -218,15 +267,21 @@ function initVariantCheckbox() {
             nonVariantConversionHint.style.display = isInitiallyVariant && !isChecked ? 'block' : 'none';
         }
 
-        if (manageVariantsPlaceholder) {
-            const form = checkbox.closest('form');
-            const showManageVariants = (!isInitiallyVariant && isChecked) || (isChecked && form && form.action.includes('/admin/products'));
-            manageVariantsPlaceholder.style.display = showManageVariants ? 'inline' : 'none';
+        if (variantTabButton) {
+            variantTabButton.style.display = isChecked ? 'flex' : 'none';
+            if (!isChecked && variantTabButton.classList.contains('active')) {
+                const infoTabButton = document.querySelector('.admin-tab-btn[data-tab="tab-info"]');
+                if (infoTabButton) infoTabButton.click();
+            }
         }
     };
 
     checkbox.addEventListener('change', toggleInputs);
-    toggleInputs();
+    if (document.readyState === 'complete') {
+        toggleInputs();
+    } else {
+        window.addEventListener('load', toggleInputs, { once: true });
+    }
 }
 
 export function initProductForms() {
