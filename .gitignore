@@ -4,8 +4,7 @@ venv/
 env/
 pycache/
 *.pyc
-database/database.db
-database/images/
+*.db
 logs/
 .vscode/
 .DS_Store
