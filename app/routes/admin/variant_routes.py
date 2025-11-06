@@ -26,6 +26,7 @@ logger = get_logger(__name__)
 def manage_variants(
     product_id: int,
 ) -> Union[str, Response, Tuple[Response, int]]:
+    
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
     if request.method == "POST":
@@ -40,9 +41,12 @@ def manage_variants(
                 size: str = request.form.get("size")
                 stock: str = request.form.get("stock")
                 weight_grams: str = request.form.get("weight_grams")
+                price: str = request.form.get("price")
+                discount_price: str = request.form.get("discount_price")
                 sku: str = request.form.get("sku")
                 result = variant_service.add_variant(
-                    product_id, color, size, stock, weight_grams, sku
+                    product_id, color, size, stock, weight_grams,
+                    price, discount_price, sku
                 )
 
                 if result.get("success"):
@@ -70,10 +74,12 @@ def manage_variants(
                 size: str = request.form.get("size")
                 stock: str = request.form.get("stock")
                 weight_grams: str = request.form.get("weight_grams")
+                price: str = request.form.get("price")
+                discount_price: str = request.form.get("discount_price")
                 sku: str = request.form.get("sku")
                 result = variant_service.update_variant(
                     product_id, variant_id, color, size,
-                    stock, weight_grams, sku
+                    stock, weight_grams, price, discount_price, sku
                 )
 
                 if result.get("success"):

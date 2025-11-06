@@ -1,5 +1,6 @@
 import json
-from typing import Any, Dict, Optional
+from decimal import Decimal, InvalidOperation
+from typing import Any, Dict, List, Optional
 
 import mysql.connector
 from mysql.connector.connection import MySQLConnection
@@ -20,7 +21,9 @@ from app.services.products.image_service import ImageService, image_service
 from app.services.products.variant_conversion_service import (
     VariantConversionService, variant_conversion_service
 )
-from app.services.products.variant_service import VariantService, variant_service
+from app.services.products.variant_service import (
+    VariantService, variant_service
+)
 from app.services.orders.stock_service import StockService, stock_service
 from app.utils.logging_utils import get_logger
 
@@ -72,13 +75,14 @@ class ProductService:
                 )
                 return {"success": False, "message": image_error}
             
-            has_variants: bool = "has_variants" in form_data
+            has_variants: bool = form_data.get("has_variants") == 'true'
             stock: Any = 0 if has_variants else form_data.get("stock", 10)
             weight_grams: Any = (
                 0 if has_variants else form_data.get("weight_grams", 0)
             )
             sku: Optional[str] = form_data.get("sku") or None
             sku = sku.upper().strip() if sku else None
+            
             if (
                 not form_data.get("name")
                 or not form_data.get("price")
@@ -88,6 +92,7 @@ class ProductService:
                 raise ValidationError(
                     "Nama, Harga, Kategori, dan Deskripsi wajib diisi."
                 )
+                
             product_data: Dict[str, Any] = {
                 "name": form_data["name"],
                 "price": form_data["price"],
@@ -102,12 +107,76 @@ class ProductService:
                 "weight_grams": weight_grams,
                 "sku": sku,
             }
+            
             conn = get_db_connection()
             conn.start_transaction()
+            
             product_id: int = self.product_repository.create(
                 conn, product_data
             )
+            
+            if has_variants:
+                variants_json: Optional[str] = form_data.get("variants_json")
+                if not variants_json:
+                    raise ValidationError(
+                        "Data varian tidak ditemukan."
+                        )
+                
+                try:
+                    variants_list: List[Dict[str, Any]] = json.loads(
+                        variants_json
+                    )
+                except json.JSONDecodeError:
+                    raise ValidationError("Format data varian tidak valid.")
+
+                if not variants_list:
+                    raise ValidationError(
+                        "Produk bervarian harus memiliki setidaknya satu varian."
+                    )
+                
+                total_stock: int = 0
+                for v in variants_list:
+                    try:
+                        validated_data = (
+                            self.variant_service._validate_variant_data(
+                                v.get("color"),
+                                v.get("size"),
+                                v.get("stock"),
+                                v.get("weight_grams"),
+                                v.get("price") or None,
+                                v.get("discount_price") or None
+                            )
+                        )
+                        v_sku = (
+                            v.get("sku").upper().strip()
+                            if v.get("sku") else None
+                        )
+                        
+                        self.variant_repository.create(
+                            conn,
+                            product_id,
+                            validated_data["color"],
+                            validated_data["size"],
+                            validated_data["stock_int"],
+                            validated_data["weight_int"],
+                            validated_data["price_decimal"],
+                            validated_data["discount_price_decimal"],
+                            v_sku
+                        )
+                        total_stock += validated_data["stock_int"]
+                        
+                    except (ValidationError, InvalidOperation) as e:
+                        raise ValidationError(
+                            f"Data varian tidak valid ({v.get('color')}/{v.get('size')}): {e}"
+                        )
+
+                self.product_repository.update_stock(
+                    conn, product_id, total_stock
+                )
+                product_data["stock"] = total_stock
+
             conn.commit()
+            
             new_product_details = (
                 self.product_repository.find_with_category(conn, product_id)
             )
@@ -123,6 +192,13 @@ class ProductService:
                 product_id, None, conn
             )
             new_product_details["variants"] = []
+            if has_variants:
+                new_product_details["variants"] = (
+                    self.variant_service.get_variants_for_product(
+                        product_id, conn
+                    )
+                )
+
             try:
                 new_product_details["additional_image_urls"] = (
                     json.loads(new_product_details["additional_image_urls"])
@@ -148,23 +224,36 @@ class ProductService:
         except mysql.connector.IntegrityError as e:
             if conn and conn.is_connected():
                 conn.rollback()
+            
             current_sku: str = (form_data.get("sku") or "").upper().strip()
-            if e.errno == 1062 and current_sku:
-                logger.warning(
-                    f"Service: Pembuatan produk gagal: SKU duplikat '{current_sku}'."
-                )
-                return {
-                    "success": False,
-                    "message": f'SKU "{current_sku}" sudah ada. Harap gunakan SKU yang unik.',
-                }
-            elif e.errno == 1062:
-                logger.warning(
-                    f"Service: Pembuatan produk gagal: Error entri duplikat (kemungkinan nama)."
-                )
-                return {
-                    "success": False,
-                    "message": f'Nama produk "{form_data["name"]}" mungkin sudah ada.',
-                }
+            if e.errno == 1062:
+                err_msg: str = str(e).lower()
+                if "sku" in err_msg or (current_sku and current_sku in err_msg):
+                    failed_sku = current_sku or "salah satu varian"
+                    logger.warning(
+                        f"Service: Pembuatan produk gagal: SKU duplikat '{failed_sku}'."
+                    )
+                    return {
+                        "success": False,
+                        "message": f'SKU "{failed_sku}" sudah ada. Harap gunakan SKU yang unik.',
+                    }
+                elif "uk_product_color_size" in err_msg:
+                    logger.warning(
+                        f"Service: Pembuatan produk gagal: Kombinasi varian duplikat."
+                    )
+                    return {
+                        "success": False,
+                        "message": "Kombinasi Warna/Ukuran varian ada yang duplikat.",
+                    }
+                else:
+                    logger.warning(
+                        f"Service: Pembuatan produk gagal: Error entri duplikat (kemungkinan nama)."
+                    )
+                    return {
+                        "success": False,
+                        "message": f'Nama produk "{form_data["name"]}" mungkin sudah ada.',
+                    }
+
             logger.error(
                 f"Service: Error integritas database saat pembuatan produk: {e}",
                 exc_info=True,

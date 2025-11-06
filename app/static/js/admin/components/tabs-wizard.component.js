@@ -1,5 +1,14 @@
 import { showNotification } from '../../components/notification.js';
 
+const formatRupiah = (numStr) => {
+    if (!numStr) return '';
+    const num = parseInt(numStr.replace(/[^0-9]/g, ''), 10);
+    if (isNaN(num)) return '';
+    return `Rp ${num.toLocaleString('id-ID')}`;
+};
+
+const unformatPrice = (value) => String(value).replace(/[^0-9]/g, '');
+
 export function initAdminTabs() {
     const tabContainers = document.querySelectorAll('.admin-tabs-container, #product-editor-container');
 
@@ -77,7 +86,7 @@ export function initAdminWizard() {
         const isSimple = selectedType === 'simple';
         if (simpleStockFields) simpleStockFields.style.display = isSimple ? 'block' : 'none';
         if (variantStockFields) variantStockFields.style.display = isSimple ? 'none' : 'block';
-        if (hiddenHasVariants) hiddenHasVariants.value = isSimple ? 'false' : 'true';
+        if (hiddenHasVariants) hiddenHasVariants.value = isSimple ? 'true' : 'false';
         if (simpleStockInput) simpleStockInput.required = isSimple;
         if (simpleWeightInput) simpleWeightInput.required = isSimple;
     };
@@ -93,12 +102,16 @@ export function initAdminWizard() {
             const sizeInput = document.getElementById('new_variant_size');
             const stockInput = document.getElementById('new_variant_stock');
             const weightInput = document.getElementById('new_variant_weight');
+            const priceInput = document.getElementById('new_variant_price');
+            const discountPriceInput = document.getElementById('new_variant_discount_price');
             const skuInput = document.getElementById('new_variant_sku');
 
             const color = colorInput.value.trim();
             const size = sizeInput.value.trim();
             const stock = stockInput.value.trim();
             const weight = weightInput.value.trim();
+            const price = unformatPrice(priceInput.value);
+            const discountPrice = unformatPrice(discountPriceInput.value);
             const sku = skuInput.value.trim();
 
             if (!color || !size || !stock || !weight) {
@@ -118,7 +131,7 @@ export function initAdminWizard() {
             
             variantItem.className = 'wizard-variant-list-item';
             variantItem.style.display = 'grid';
-            variantItem.style.gridTemplateColumns = '2fr 1fr 1fr 1.5fr 0.5fr';
+            variantItem.style.gridTemplateColumns = '2fr 1.5fr 1.5fr 1fr 1fr 1.5fr 0.5fr';
             variantItem.style.gap = '1rem';
             variantItem.style.padding = '1rem';
             variantItem.style.borderBottom = '1px solid var(--color-border-subtle)';
@@ -129,6 +142,8 @@ export function initAdminWizard() {
                 <div>
                     <strong style="color: var(--color-text-primary); font-size: 0.9em;">${color} / ${size}</strong>
                 </div>
+                <div style="font-size: 0.9em;">${formatRupiah(price) || 'Harga Induk'}</div>
+                <div style="font-size: 0.9em;">${formatRupiah(discountPrice) || 'Harga Induk'}</div>
                 <div style="font-size: 0.9em;">${stock}</div>
                 <div style="font-size: 0.9em;">${weight}g</div>
                 <div style="font-size: 0.9em; word-break: break-all;">${sku || 'N/A'}</div>
@@ -140,6 +155,8 @@ export function initAdminWizard() {
                 <input type="hidden" name="variants[${variantIndex}][size]" value="${size}">
                 <input type="hidden" name="variants[${variantIndex}][stock]" value="${stock}">
                 <input type="hidden" name="variants[${variantIndex}][weight_grams]" value="${weight}">
+                <input type="hidden" name="variants[${variantIndex}][price]" value="${price}">
+                <input type="hidden" name="variants[${variantIndex}][discount_price]" value="${discountPrice}">
                 <input type="hidden" name="variants[${variantIndex}][sku]" value="${sku || ''}">
             `;
             variantListWrapper.appendChild(variantItem);
@@ -152,6 +169,8 @@ export function initAdminWizard() {
             sizeInput.value = '';
             stockInput.value = '';
             weightInput.value = '';
+            priceInput.value = '';
+            discountPriceInput.value = '';
             skuInput.value = '';
             colorInput.focus();
         });
@@ -232,5 +251,41 @@ export function initAdminWizard() {
              radio.addEventListener('change', updateStep4Content);
         });
     }
+    
+    form.addEventListener('submit', (e) => {
+        const selectedType = form.querySelector('input[name="product_type"]:checked').value;
+        
+        if (selectedType === 'variant') {
+            const variants = [];
+            const variantItems = document.querySelectorAll('#wizard-variant-list-items-wrapper .wizard-variant-list-item');
+            
+            variantItems.forEach(item => {
+                const color = item.querySelector('input[name*="[color]"]').value;
+                const size = item.querySelector('input[name*="[size]"]').value;
+                const stock = item.querySelector('input[name*="[stock]"]').value;
+                const weight_grams = item.querySelector('input[name*="[weight_grams]"]').value;
+                const price = item.querySelector('input[name*="[price]"]').value;
+                const discount_price = item.querySelector('input[name*="[discount_price]"]').value;
+                const sku = item.querySelector('input[name*="[sku]"]').value;
+                
+                variants.push({ 
+                    color, size, stock, weight_grams, 
+                    price: price || null, 
+                    discount_price: discount_price || null, 
+                    sku: sku || null 
+                });
+            });
+
+            let jsonInput = form.querySelector('input[name="variants_json"]');
+            if (!jsonInput) {
+                jsonInput = document.createElement('input');
+                jsonInput.type = 'hidden';
+                jsonInput.name = 'variants_json';
+                form.appendChild(jsonInput);
+            }
+            jsonInput.value = JSON.stringify(variants);
+        }
+    });
+    
     updateWizardUI();
 }

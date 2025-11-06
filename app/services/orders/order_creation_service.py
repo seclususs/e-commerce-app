@@ -142,8 +142,13 @@ class OrderCreationService:
             )
 
         product_ids = [item["product_id"] for item in held_items]
+        variant_ids = [
+            item["variant_id"] for item in held_items if item["variant_id"]
+        ]
+        
         logger.debug(
-            f"Mempersiapkan item untuk pesanan. ID Produk: {product_ids}"
+            f"Mempersiapkan item untuk pesanan. "
+            f"ID Produk: {product_ids}, ID Varian: {variant_ids}"
         )
         if not product_ids:
             logger.error(
@@ -170,6 +175,16 @@ class OrderCreationService:
                 conn, product_ids
             )
             products_map = {p["id"]: p for p in products_db}
+            
+            variants_map = {}
+            if variant_ids:
+                variants_db = (
+                    self.variant_service.variant_repository.find_batch_minimal(
+                        conn, variant_ids
+                    )
+                )
+                variants_map = {v["id"]: v for v in variants_db}
+
             subtotal = Decimal("0")
             items_for_order = []
 
@@ -184,12 +199,27 @@ class OrderCreationService:
                         f"Produk '{item.get('name', 'N/A')}' "
                         f"tidak lagi tersedia."
                     )
+                
+                variant = (
+                    variants_map.get(item["variant_id"])
+                    if item["variant_id"] else None
+                )
+
+                price_at_order = (
+                    variant['price']
+                    if variant and variant.get('price') is not None
+                    else product['price']
+                )
+                discount_price_at_order = (
+                    variant['discount_price']
+                    if variant and variant.get('discount_price') is not None
+                    else product.get('discount_price')
+                )
 
                 effective_price = (
-                    product["discount_price"]
-                    if product["discount_price"]
-                    and product["discount_price"] > 0
-                    else product["price"]
+                    discount_price_at_order
+                    if discount_price_at_order and discount_price_at_order > 0
+                    else price_at_order
                 )
                 
                 if member_discount_percent > 0:
@@ -203,9 +233,14 @@ class OrderCreationService:
                 subtotal += Decimal(str(effective_price)) * Decimal(
                     str(item["quantity"])
                 )
+                
+                final_product_data = {**product}
+                final_product_data.pop('price', None)
+                final_product_data.pop('discount_price', None)
+                
                 items_for_order.append(
                     {
-                        **product,
+                        **final_product_data,
                         "quantity": item["quantity"],
                         "price_at_order": effective_price,
                         "variant_id": item["variant_id"],

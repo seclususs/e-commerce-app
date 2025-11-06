@@ -63,6 +63,7 @@ class CartService:
                 item["stock"] = self.stock_service.get_available_stock(
                     item["id"], stock_variant_id, conn
                 )
+                
                 price = (
                     Decimal(str(item["price"]))
                     if item["price"] is not None
@@ -73,6 +74,7 @@ class CartService:
                     if item["discount_price"] is not None
                     else Decimal("0.0")
                 )
+                
                 effective_price = (
                     discount_price
                     if discount_price and discount_price > Decimal("0.0")
@@ -430,33 +432,40 @@ class CartService:
                 if not product_info:
                     continue
 
+                variant_info = (
+                    variants_map.get(db_variant_id) if db_variant_id else None
+                )
+                
                 if (
                     db_variant_id is not None and
-                    db_variant_id not in variants_map
+                    not variant_info
                 ):
                     continue
 
                 if product_info.get("has_variants") and db_variant_id is None:
                     continue
-
-                final_item = {**product_info}
                 
+                final_item = {**product_info}
+
                 price = (
-                    Decimal(str(final_item.get("price")))
-                    if final_item.get("price") is not None
-                    else Decimal("0.0")
+                    variant_info['price']
+                    if variant_info and variant_info.get('price') is not None
+                    else product_info['price']
                 )
                 discount_price = (
-                    Decimal(str(final_item.get("discount_price")))
-                    if final_item.get("discount_price") is not None
-                    else Decimal("0.0")
+                    variant_info['discount_price']
+                    if variant_info and variant_info.get('discount_price') is not None
+                    else product_info.get('discount_price')
+                )
+
+                effective_price = (
+                    Decimal(str(discount_price))
+                    if discount_price and Decimal(str(discount_price)) > 0
+                    else Decimal(str(price))
                 )
                 
-                effective_price = (
-                    discount_price
-                    if discount_price and discount_price > 0
-                    else price
-                )
+                final_item["price"] = price
+                final_item["discount_price"] = discount_price
                 final_item["effective_price"] = effective_price
 
                 final_item["stock"] = self.stock_service.get_available_stock(
@@ -464,12 +473,12 @@ class CartService:
                 )
                 final_item["variant_id"] = db_variant_id
                 final_item["color"] = (
-                    variants_map[db_variant_id]["color"]
-                    if db_variant_id is not None else None
+                    variant_info["color"]
+                    if variant_info else None
                 )
                 final_item["size"] = (
-                    variants_map[db_variant_id]["size"]
-                    if db_variant_id is not None else None
+                    variant_info["size"]
+                    if variant_info else None
                 )
                 final_item["quantity"] = quantity
                 if final_item["quantity"] > 0:

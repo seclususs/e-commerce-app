@@ -4,7 +4,7 @@
         <div class="wizard-progress-step active" data-step="1">1. Info Dasar</div>
         <div class="wizard-progress-step" data-step="2">2. Gambar</div>
         <div class="wizard-progress-step" data-step="3">3. Tipe Produk</div>
-        <div class="wizard-progress-step" data-step="4">4. Stok</div>
+        <div class="wizard-progress-step" data-step="4">4. Stok & Varian</div>
     </div>
 
     <form id="add-product-form" method="POST" action="{{ url_for('admin.admin_products') }}" enctype="multipart/form-data" data-ajax="true" data-update-target="#products-table-body" data-update-action="prepend" data-reset-on-success="true">
@@ -60,7 +60,7 @@
         </div>
         
         <div class="wizard-step" data-step="4">
-            <h3 class="wizard-step-title">Langkah 4: Stok</h3>
+            <h3 class="wizard-step-title">Langkah 4: Stok & Varian</h3>
             <input type="hidden" name="has_variants" id="has_variants_hidden_input" value="false">
 
             <div id="wizard-simple-stock-fields" style="display: block;">
@@ -78,14 +78,16 @@
             </div>
 
             <div id="wizard-variant-stock-fields" style="display: none;">
-                <p class="form-hint">Tambahkan setidaknya satu varian untuk produk Anda. Stok, berat, dan SKU diatur per-varian.</p>
+                <p class="form-hint">Tambahkan setidaknya satu varian untuk produk Anda. Stok, berat, dan SKU diatur per-varian. Kosongkan harga untuk memakai harga produk utama.</p>
                 
                 <div style="background: var(--color-background-body); padding: 1rem; border-radius: var(--border-radius-sm); margin-bottom: 1.5rem;">
-                    <div class="form-grid" style="gap: 1rem 1.5rem;">
+                    <div class="form-grid" style="gap: 1rem 1.5rem; grid-template-columns: repeat(4, 1fr);">
                         <div class="form-group" style="margin-bottom:0;"><label for="new_variant_color" class="sr-only">Warna</label><input type="text" id="new_variant_color" placeholder="Warna (cth: Merah)" class="form-control"></div>
                         <div class="form-group" style="margin-bottom:0;"><label for="new_variant_size" class="sr-only">Ukuran</label><input type="text" id="new_variant_size" placeholder="Ukuran (cth: XL)" class="form-control"></div>
                         <div class="form-group" style="margin-bottom:0;"><label for="new_variant_stock" class="sr-only">Stok</label><input type="number" id="new_variant_stock" placeholder="Stok" class="form-control"></div>
                         <div class="form-group" style="margin-bottom:0;"><label for="new_variant_weight" class="sr-only">Berat</label><input type="number" id="new_variant_weight" placeholder="Berat (g)" class="form-control"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label for="new_variant_price" class="sr-only">Harga</label><input type="text" inputmode="numeric" id="new_variant_price" placeholder="Harga (Kosong = Induk)" class="form-control"></div>
+                        <div class="form-group" style="margin-bottom:0;"><label for="new_variant_discount_price" class="sr-only">Diskon</label><input type="text" inputmode="numeric" id="new_variant_discount_price" placeholder="Diskon (Kosong = Induk)" class="form-control"></div>
                         <div class="form-group" style="margin-bottom:0;"><label for="new_variant_sku" class="sr-only">SKU</label><input type="text" id="new_variant_sku" placeholder="SKU Varian" class="form-control"></div>
                         <div class="form-group" style="margin-bottom:0; display: flex; align-items: flex-end;">
                             <button type="button" id="wizard-add-variant-btn" class="cta-button" style="width: 100%;">Tambah</button>
@@ -94,8 +96,10 @@
                 </div>
 
                 <div id="wizard-variant-list-container">
-                    <div id="wizard-variant-list-header" style="display: none; grid-template-columns: 2fr 1fr 1fr 1.5fr 0.5fr; gap: 1rem; padding: 0.75rem 1rem; background: var(--color-background-body); border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0; border: 1px solid var(--color-border-default); border-bottom: 1px solid var(--color-border-default);">
+                    <div id="wizard-variant-list-header" style="display: none; grid-template-columns: 2fr 1.5fr 1.5fr 1fr 1fr 1.5fr 0.5fr; gap: 1rem; padding: 0.75rem 1rem; background: var(--color-background-body); border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0; border: 1px solid var(--color-border-default); border-bottom: 1px solid var(--color-border-default);">
                         <strong style="font-size: 0.9em; color: var(--color-text-secondary);">Varian</strong>
+                        <strong style="font-size: 0.9em; color: var(--color-text-secondary);">Harga</strong>
+                        <strong style="font-size: 0.9em; color: var(--color-text-secondary);">Diskon</strong>
                         <strong style="font-size: 0.9em; color: var(--color-text-secondary);">Stok</strong>
                         <strong style="font-size: 0.9em; color: var(--color-text-secondary);">Berat (g)</strong>
                         <strong style="font-size: 0.9em; color: var(--color-text-secondary);">SKU</strong>

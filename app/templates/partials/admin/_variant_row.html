@@ -14,6 +14,22 @@
            class="form-control" 
            required 
            form="form-variant-{{ variant.id }}"> </td>
+  <td data-label="Harga:">
+    <input type="text" 
+           inputmode="numeric"
+           name="price" 
+           value="{{ variant.price|int if variant.price is not none else '' }}" 
+           class="form-control" 
+           placeholder="Harga Produk"
+           form="form-variant-{{ variant.id }}"> </td>
+  <td data-label="Harga Diskon:">
+    <input type="text" 
+           inputmode="numeric"
+           name="discount_price" 
+           value="{{ variant.discount_price|int if variant.discount_price is not none else '' }}" 
+           class="form-control" 
+           placeholder=""
+           form="form-variant-{{ variant.id }}"> </td>
   <td data-label="Stok:">
     <input type="number" 
            name="stock" 

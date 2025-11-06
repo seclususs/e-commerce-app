@@ -44,16 +44,10 @@ function renderCartPage(state) {
         }
 
         container.innerHTML = items.map(p => {
-            const priceNum = Number(p.price) || 0;
-            const discountPriceNum = Number(p.discount_price) || 0;
             const effectivePrice = Number(p.effective_price) || 0;
-            
-            let originalPriceToShow = null;
-            if (p.original_effective_price) {
-                originalPriceToShow = Number(p.original_effective_price);
-            } else if (discountPriceNum > 0) {
-                originalPriceToShow = priceNum;
-            }
+            const originalPriceToShow = Number(p.original_effective_price) || (
+                (p.discount_price && p.discount_price > 0) ? Number(p.price) : null
+            );
             
             const hasDiscount = originalPriceToShow !== null && originalPriceToShow > effectivePrice;
 

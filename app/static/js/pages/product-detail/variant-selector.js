@@ -1,5 +1,18 @@
 export let selectedVariantId = null;
 
+const formatRupiah = (num) => {
+    if (num === null || num === undefined) return '';
+    return `Rp ${Number(num).toLocaleString('id-ID', {
+        minimumFractionDigits: 0, maximumFractionDigits: 0
+    })}`;
+};
+
+const calculatePercentage = (discount, original) => {
+    if (!discount || !original || original <= 0) return 0;
+    const discountAmount = original - discount;
+    return Math.round((discountAmount / original) * 100);
+};
+
 export function initVariantSelector() {
     const dataEl = document.getElementById('variant-data');
     if (!dataEl) {
@@ -15,6 +28,15 @@ export function initVariantSelector() {
     const quantityInput = document.getElementById('quantity-input');
     const stockDisplay = document.getElementById('stock-display');
     const originalStockText = stockDisplay ? stockDisplay.innerHTML : '';
+    const priceContainer = document.getElementById('product-price-display');
+    const mainPriceEl = document.getElementById('main-price-display');
+    const originalPriceEl = document.getElementById('original-price-display');
+    const discountBadgeEl = document.getElementById('discount-badge-display');
+    const floatingMainPriceEl = document.getElementById('floating-main-price-display');
+    const floatingOriginalPriceEl = document.getElementById('floating-original-price-display');
+    const floatingDiscountBadgeEl = document.getElementById('floating-discount-badge-display');
+    const productBasePrice = parseFloat(priceContainer.dataset.basePrice) || null;
+    const productBaseDiscountPrice = parseFloat(priceContainer.dataset.baseDiscountPrice) || null;
     const colorStock = new Map();
     allVariants.forEach(v => {
         const stock = v.stock || 0;
@@ -24,6 +46,54 @@ export function initVariantSelector() {
     let selectedColor = null;
     let selectedSize = null;
     let selectedVariant = null;
+
+    const updatePriceDisplay = (price, discountPrice) => {
+        const effectivePrice = (discountPrice && discountPrice > 0) ? discountPrice : price;
+        const originalPrice = (discountPrice && discountPrice > 0) ? price : null;
+
+        const formattedEffectivePrice = formatRupiah(effectivePrice);
+        const formattedOriginalPrice = formatRupiah(originalPrice);
+
+        let perc = 0;
+        let hasDiscount = originalPrice && originalPrice > effectivePrice;
+        if (hasDiscount) {
+            perc = calculatePercentage(effectivePrice, originalPrice);
+        }
+
+        if (mainPriceEl && originalPriceEl && discountBadgeEl) {
+            mainPriceEl.textContent = formattedEffectivePrice;
+            if (hasDiscount) {
+                originalPriceEl.textContent = formattedOriginalPrice;
+                originalPriceEl.style.display = 'inline';
+                discountBadgeEl.textContent = `Hemat ${perc}%`;
+                discountBadgeEl.style.display = 'inline-block';
+                mainPriceEl.classList.add('discount-price');
+            } else {
+                originalPriceEl.style.display = 'none';
+                discountBadgeEl.style.display = 'none';
+                mainPriceEl.classList.remove('discount-price');
+            }
+        }
+        
+        if (floatingMainPriceEl && floatingOriginalPriceEl && floatingDiscountBadgeEl) {
+            floatingMainPriceEl.textContent = formattedEffectivePrice;
+            if (hasDiscount) {
+                floatingOriginalPriceEl.textContent = formattedOriginalPrice;
+                floatingOriginalPriceEl.style.display = 'inline';
+                floatingDiscountBadgeEl.textContent = `Hemat ${perc}%`;
+                floatingDiscountBadgeEl.style.display = 'inline-block';
+                floatingMainPriceEl.classList.add('discount-price');
+            } else {
+                floatingOriginalPriceEl.style.display = 'none';
+                floatingDiscountBadgeEl.style.display = 'none';
+                floatingMainPriceEl.classList.remove('discount-price');
+            }
+        }
+    };
+    
+    const resetPriceDisplay = () => {
+        updatePriceDisplay(productBasePrice, productBaseDiscountPrice);
+    };
 
     const resetSelections = () => {
         selectedColor = null;
@@ -65,6 +135,7 @@ export function initVariantSelector() {
             stockDisplay.innerHTML = originalStockText;
         }
         
+        resetPriceDisplay();
         quantityInput?.dispatchEvent(new CustomEvent('variantUpdated'));
     };
 
@@ -96,8 +167,14 @@ export function initVariantSelector() {
                         `<span style="color: var(--color-danger);"> ${selectedVariant.color} / ${selectedVariant.size}: HABIS</span>`;
                 }
             }
+            
+            updatePriceDisplay(
+                selectedVariant.price,
+                selectedVariant.discount_price
+            );
+            
         } else {
-            selectedVariantId = null; // Update state
+            selectedVariantId = null;
             if (addToCartBtn) addToCartBtn.disabled = true;
             if (quantityInput) {
                 quantityInput.value = 1;
@@ -125,6 +202,8 @@ export function initVariantSelector() {
                     warningEl.textContent = 'Silakan pilih ukuran.';
                 }
             }
+            
+            resetPriceDisplay();
         }
         quantityInput?.dispatchEvent(new CustomEvent('variantUpdated'));
     };

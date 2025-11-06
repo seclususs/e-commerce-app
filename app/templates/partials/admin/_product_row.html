@@ -20,11 +20,18 @@
   <td data-label="SKU:" class="collapsible-detail">{{ product.sku or 'N/A' }}</td>
   <td data-label="Kategori:" class="collapsible-detail category-name-cell">{{ product.category_name or 'N/A' }}</td>
   <td data-label="Harga:" class="collapsible-detail price-cell">
-    {% if product.discount_price and product.discount_price > 0 %}
-      <span class="discount-price">{{ (product.discount_price or 0)|rupiah }}</span>
-      <del>{{ (product.price or 0)|rupiah }}</del>
+    {% set effective_price = (product.discount_price if product.discount_price and product.discount_price > 0 else product.price) or 0 %}
+    {% set original_price = (product.price if product.discount_price and product.discount_price > 0 else None) or 0 %}
+
+    {% if product.has_variants %}
+        <span style="font-style: italic; color: var(--color-text-secondary);">Mulai dari</span><br>
+    {% endif %}
+
+    {% if original_price > 0 and effective_price < original_price %}
+      <span class="discount-price">{{ effective_price|rupiah }}</span>
+      <del>{{ original_price|rupiah }}</del>
     {% else %}
-      <span>{{ (product.price or 0)|rupiah }}</span>
+      <span>{{ effective_price|rupiah }}</span>
     {% endif %}
   </td>
   <td data-label="Stok:" class="collapsible-detail">

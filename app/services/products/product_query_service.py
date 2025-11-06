@@ -17,6 +17,7 @@ from app.services.orders.stock_service import StockService, stock_service
 from app.services.products.variant_service import (
     VariantService, variant_service
 )
+from app.services.reports.dashboard_report_service import convert_decimals
 from app.utils.logging_utils import get_logger
 
 
@@ -177,12 +178,24 @@ class ProductQueryService:
                     variant["stock"] = self.stock_service.get_available_stock(
                         product_id, variant["id"], conn
                     )
+                    
+                    variant['price'] = (
+                        variant['price']
+                        if variant.get('price') is not None
+                        else product['price']
+                    )
+                    variant['discount_price'] = (
+                        variant['discount_price']
+                        if variant.get('discount_price') is not None
+                        else product.get('discount_price')
+                    )
             else:
                 product["stock"] = self.stock_service.get_available_stock(
                     product_id, None, conn
                 )
 
-            product["variant_json_data"] = json.dumps(product["variants"])
+            variants_for_json = convert_decimals(product["variants"])
+            product["variant_json_data"] = json.dumps(variants_for_json)
             product["unique_colors"] = unique_colors
             product["unique_sizes"] = unique_sizes
 
@@ -194,7 +207,7 @@ class ProductQueryService:
                 f"Kesalahan database saat mengambil produk {product_id}: {e}",
                 exc_info=True,
             )
-            if conn.is_connected():
+            if conn and conn.is_connected():
                 conn.rollback()
             raise DatabaseException(
                 f"Kesalahan database saat mengambil produk: {e}"
@@ -205,7 +218,7 @@ class ProductQueryService:
                 f"Kesalahan saat mengambil ID produk {product_id}: {e}",
                 exc_info=True,
             )
-            if conn.is_connected():
+            if conn and conn.is_connected():
                 conn.rollback()
             raise ServiceLogicError(
                 f"Kesalahan layanan saat mengambil produk: {e}"

@@ -404,6 +404,44 @@ html.light-theme .floating-cta-info .stock-hold-timer a {
     font-size: 1rem;
 }
 
+.floating-bar-price-container {
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.floating-main-price {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    line-height: 1.2;
+}
+
+html.light-theme .floating-main-price {
+    color: var(--color-primary-dark);
+}
+
+.floating-bar-price-container .floating-main-price.discount-price {
+    color: var(--color-danger);
+}
+
+.floating-original-price {
+    font-size: 0.9rem;
+    color: var(--color-text-tertiary);
+    text-decoration: line-through;
+    line-height: 1.2;
+}
+
+.floating-bar-price-container .discount-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    line-height: 1.3;
+    margin-left: 0.25rem !important;
+}
+
 @media (max-width: 767px) {
     .hide-on-mobile-cta {
         display: none;
@@ -526,6 +564,15 @@ html.light-theme .floating-cta-info .stock-hold-timer a {
 
     .floating-bar-warnings {
         text-align: center;
+    }
+
+    .floating-bar-price-container {
+        justify-content: center;
+        margin-bottom: 0.5rem;
+        min-height: 1.5rem;
+    }
+    .floating-main-price {
+        font-size: 1.3rem;
     }
 
     .product-detail-bar .stock-warning-message {

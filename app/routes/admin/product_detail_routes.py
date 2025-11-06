@@ -15,7 +15,6 @@ from app.exceptions.service_exceptions import ServiceLogicError
 from app.services.products.category_service import category_service
 from app.services.products.product_query_service import product_query_service
 from app.services.products.product_service import product_service
-from app.services.products.variant_service import variant_service
 from app.utils.logging_utils import get_logger
 from app.utils.route_decorators import admin_required
 
@@ -97,9 +96,7 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
             "additional_image_urls", []
         )
 
-        variants: List[Dict[str, Any]] = []
-        if product.get("has_variants"):
-            variants = variant_service.get_variants_for_product(id)
+        variants: List[Dict[str, Any]] = product.get("variants", [])
 
         page_title = "Edit Produk - Admin"
         header_title = f"Edit Produk: {product.get('name', '')}"
@@ -132,17 +129,29 @@ def admin_edit_product(id: int) -> Union[str, Response, Tuple[Response, int]]:
                 **render_data
             )
 
-    except (DatabaseException, ServiceLogicError):
+    except (DatabaseException, ServiceLogicError) as e:
+        logger.error(
+            f"Gagal memuat halaman edit produk {id}: {e}", 
+            exc_info=True
+            )
         message = "Gagal memuat detail produk."
         if is_ajax:
-            return jsonify({"success": False, "message": message}), 500
+            return jsonify(
+                {"success": False, "message": message}
+                ), 500
         flash(message, "danger")
         return redirect(url_for("admin.admin_products"))
 
-    except Exception:
+    except Exception as e:
+        logger.error(
+            f"Kesalahan tak terduga saat memuat edit produk {id}: {e}", 
+            exc_info=True
+            )
         message = "Gagal memuat detail produk."
         if is_ajax:
-            return jsonify({"success": False, "message": message}), 500
+            return jsonify(
+                {"success": False, "message": message}
+                ), 500
         flash(message, "danger")
         return redirect(url_for("admin.admin_products"))
 

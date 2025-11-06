@@ -44,6 +44,8 @@ CREATE TABLE product_variants (
     size VARCHAR(50) NOT NULL,
     stock INT NOT NULL,
     weight_grams INT DEFAULT 0,
+    price DECIMAL(10, 2) DEFAULT NULL,
+    discount_price DECIMAL(10, 2) DEFAULT NULL,
     sku VARCHAR(100) UNIQUE,
     FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE,
     UNIQUE KEY uk_product_color_size (product_id, color, size)

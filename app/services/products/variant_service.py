@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Optional
+from decimal import Decimal, InvalidOperation
 
 import mysql.connector
 from mysql.connector.connection import MySQLConnection
@@ -55,16 +56,16 @@ class VariantService:
                 conn.close()
 
 
-    def add_variant(
+    def _validate_variant_data(
         self,
-        product_id: Any,
         color: str,
         size: str,
         stock: Any,
         weight_grams: Any,
-        sku: Optional[str],
+        price: Any,
+        discount_price: Any
     ) -> Dict[str, Any]:
-
+        
         try:
             stock_int: int = int(stock)
             weight_int: int = int(weight_grams)
@@ -78,9 +79,45 @@ class VariantService:
                     "harus diisi dengan benar."
                 )
 
-        except (ValueError, TypeError):
-            raise ValidationError("Stok dan berat harus berupa angka.")
+            price_decimal: Optional[Decimal] = None
+            if price:
+                price_decimal = Decimal(str(price))
+            
+            discount_price_decimal: Optional[Decimal] = None
+            if discount_price:
+                discount_price_decimal = Decimal(str(discount_price))
 
+            return {
+                "color": color,
+                "size": size,
+                "stock_int": stock_int,
+                "weight_int": weight_int,
+                "price_decimal": price_decimal,
+                "discount_price_decimal": discount_price_decimal
+            }
+
+        except (ValueError, TypeError, InvalidOperation):
+            raise ValidationError(
+                "Stok, berat, dan harga harus berupa angka yang valid."
+                )
+
+
+    def add_variant(
+        self,
+        product_id: Any,
+        color: str,
+        size: str,
+        stock: Any,
+        weight_grams: Any,
+        price: Any,
+        discount_price: Any,
+        sku: Optional[str],
+    ) -> Dict[str, Any]:
+
+        validated_data = self._validate_variant_data(
+            color, size, stock, weight_grams, price, discount_price
+        )
+        
         conn: Optional[MySQLConnection] = None
         upper_sku: Optional[str] = sku.upper().strip() if sku else None
 
@@ -88,8 +125,14 @@ class VariantService:
             conn = get_db_connection()
             conn.start_transaction()
             new_id = self.variant_repository.create(
-                conn, product_id, color, size,
-                stock_int, weight_int, upper_sku
+                conn, product_id,
+                validated_data["color"],
+                validated_data["size"],
+                validated_data["stock_int"],
+                validated_data["weight_int"],
+                validated_data["price_decimal"],
+                validated_data["discount_price_decimal"],
+                upper_sku
             )
             self.update_total_stock_from_variants(product_id, conn)
             conn.commit()
@@ -150,24 +193,14 @@ class VariantService:
         size: str,
         stock: Any,
         weight_grams: Any,
+        price: Any,
+        discount_price: Any,
         sku: Optional[str],
     ) -> Dict[str, Any]:
 
-        try:
-            stock_int: int = int(stock)
-            weight_int: int = int(weight_grams)
-            if (
-                not color or not color.strip() or
-                not size or not size.strip() or
-                stock_int < 0 or weight_int < 0
-            ):
-                raise ValidationError(
-                    "Warna, ukuran, stok (>=0), dan berat (>=0) "
-                    "harus diisi dengan benar."
-                )
-
-        except (ValueError, TypeError):
-            raise ValidationError("Stok dan berat harus berupa angka.")
+        validated_data = self._validate_variant_data(
+            color, size, stock, weight_grams, price, discount_price
+        )
 
         conn: Optional[MySQLConnection] = None
         upper_sku: Optional[str] = sku.upper().strip() if sku else None
@@ -179,10 +212,12 @@ class VariantService:
                 conn,
                 variant_id,
                 product_id,
-                color,
-                size,
-                stock_int,
-                weight_grams,
+                validated_data["color"],
+                validated_data["size"],
+                validated_data["stock_int"],
+                validated_data["weight_int"],
+                validated_data["price_decimal"],
+                validated_data["discount_price_decimal"],
                 upper_sku,
             )
             if rowcount > 0:

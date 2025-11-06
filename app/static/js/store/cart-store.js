@@ -55,7 +55,7 @@ const cartStore = (() => {
                 } else {
                     const detailedItems = await cartAPI.getGuestCartDetails(guestCart);
                     const subtotal = detailedItems.reduce((sum, p) => {
-                        const effectivePrice = (p.discount_price && p.discount_price > 0) ? p.discount_price : p.price;
+                        const effectivePrice = Number(p.effective_price) || 0;
                         return sum + (effectivePrice * p.quantity);
                     }, 0);
                     state.items = detailedItems;

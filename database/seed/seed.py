@@ -158,6 +158,8 @@ def seed_database():
                     item["size"],
                     item["stock"],
                     item["weight_grams"],
+                    item.get("price"),
+                    item.get("discount_price"),
                     item.get("sku"),
                 )
                 for item in data["product_variants"]
@@ -165,8 +167,9 @@ def seed_database():
             cursor.executemany(
                 """
                 INSERT INTO product_variants (
-                    id, product_id, color, size, stock, weight_grams, sku
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    id, product_id, color, size, stock, weight_grams,
+                    price, discount_price, sku
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 variants_data,
             )

@@ -12,7 +12,10 @@ class CartRepository:
         try:
             query = """
                 SELECT
-                    p.id, p.name, p.price, p.discount_price, p.image_url,
+                    p.id, p.name,
+                    COALESCE(pv.price, p.price) AS price,
+                    COALESCE(pv.discount_price, p.discount_price) AS discount_price,
+                    p.image_url,
                     p.has_variants, uc.quantity, uc.variant_id,
                     uc.id as cart_item_id, pv.color, pv.size
                 FROM user_carts uc

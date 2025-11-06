@@ -33,7 +33,7 @@ function renderCheckoutSummary(state) {
         const memberPrice = Number(p.effective_price) || 0;
         const priceBeforeMemberDiscount = Number(p.original_effective_price) || 0;
 
-        const hasProductDiscount = discountPriceNum > 0 && discountPriceNum < priceNum;
+        const hasProductDiscount = (discountPriceNum > 0 && discountPriceNum < priceNum) || (priceBeforeMemberDiscount > 0 && priceBeforeMemberDiscount < priceNum);
         const hasMemberDiscount = priceBeforeMemberDiscount > 0 && priceBeforeMemberDiscount > memberPrice;
 
         const colorInfo = p.color ? `${p.color}` : '';
@@ -43,23 +43,22 @@ function renderCheckoutSummary(state) {
             : '';
         
         let priceDisplayHTML = '';
+        
+        const originalPrice = (
+            (priceBeforeMemberDiscount > 0) ? priceBeforeMemberDiscount :
+            (discountPriceNum > 0) ? priceNum :
+            null
+        );
 
         if (hasMemberDiscount) {
-            if (hasProductDiscount) {
-                priceDisplayHTML = `
-                    <br><small style="color: var(--color-text-med); text-decoration: line-through; opacity: 0.7;">${formatRupiah(priceNum)}</small>
-                    <br><small style="color: var(--color-text-med); text-decoration: line-through;">${formatRupiah(priceBeforeMemberDiscount)} (Diskon Produk)</small>
-                    <br><small style="color: var(--color-success);">Diskon Member ${memberDiscountPercent}%</small>
-                `;
-            } else {
-                priceDisplayHTML = `
-                    <br><small style="color: var(--color-text-med); text-decoration: line-through;">${formatRupiah(priceBeforeMemberDiscount)}</small>
-                    <br><small style="color: var(--color-success);">Diskon Member ${memberDiscountPercent}%</small>
-                `;
-            }
-        } else if (hasProductDiscount) {
             priceDisplayHTML = `
-                <br><small style="color: var(--color-text-med); text-decoration: line-through;">${formatRupiah(priceNum)}</small>
+                <br><small style="color: var(--color-text-med); text-decoration: line-through;">${formatRupiah(priceBeforeMemberDiscount)}</small>
+                <br><small style="color: var(--color-success);">Diskon Member ${memberDiscountPercent}%</small>
+            `;
+        } else if (hasProductDiscount) {
+            const basePrice = (originalPrice > memberPrice) ? originalPrice : priceNum;
+            priceDisplayHTML = `
+                <br><small style="color: var(--color-text-med); text-decoration: line-through;">${formatRupiah(basePrice)}</small>
             `;
         }
 

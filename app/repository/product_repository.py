@@ -192,41 +192,72 @@ class ProductRepository:
     ) -> List[Dict[str, Any]]:
         cursor = conn.cursor(dictionary=True)
         try:
-            query = (
-                "SELECT p.*, c.name AS category_name "
-                "FROM products p "
-                "LEFT JOIN categories c ON p.category_id = c.id "
-                "WHERE 1=1"
-            )
+            query_base = """
+                SELECT
+                    p.id, p.name, p.description, p.category_id, p.colors,
+                    p.popularity, p.image_url, p.additional_image_urls,
+                    p.stock, p.has_variants, p.weight_grams, p.sku,
+                    c.name AS category_name,
+                    IF(
+                        p.has_variants,
+                        MIN(COALESCE(pv.price, p.price)),
+                        p.price
+                    ) AS price,
+                    IF(
+                        p.has_variants,
+                        MIN(COALESCE(pv.discount_price, p.discount_price)),
+                        p.discount_price
+                    ) AS discount_price
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN product_variants pv ON p.id = pv.product_id
+            """
+            
             params = []
+            where_clauses = ["1=1"]
+
             if filters.get("search"):
                 search_term = f"%{filters['search']}%"
-                query += (
-                    " AND (p.name LIKE %s OR p.description LIKE %s "
+                where_clauses.append(
+                    "(p.name LIKE %s OR p.description LIKE %s "
                     "OR p.colors LIKE %s OR c.name LIKE %s)"
                 )
                 params.extend(
                     [search_term, search_term, search_term, search_term]
                 )
             if filters.get("category"):
-                query += " AND p.category_id = %s"
+                where_clauses.append("p.category_id = %s")
                 params.append(filters["category"])
+
+            query_where = " WHERE " + " AND ".join(where_clauses)
+            query_group = (
+                " GROUP BY p.id, p.name, p.description, p.category_id, "
+                "p.colors, p.popularity, p.image_url, "
+                "p.additional_image_urls, p.stock, p.has_variants, "
+                "p.weight_grams, p.sku, c.name"
+            )
+            
             sort_by = filters.get("sort", "popularity")
+            order_query = ""
             if sort_by == "price_asc":
-                query += (
-                    " ORDER BY CASE "
-                    "WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 "
-                    "THEN p.discount_price ELSE p.price END ASC"
-                )
+                order_query = """
+                    ORDER BY COALESCE(
+                        IF(p.has_variants, MIN(COALESCE(pv.discount_price, p.discount_price)), p.discount_price),
+                        IF(p.has_variants, MIN(COALESCE(pv.price, p.price)), p.price)
+                    ) ASC
+                """
             elif sort_by == "price_desc":
-                query += (
-                    " ORDER BY CASE "
-                    "WHEN p.discount_price IS NOT NULL AND p.discount_price > 0 "
-                    "THEN p.discount_price ELSE p.price END DESC"
-                )
+                order_query = """
+                    ORDER BY COALESCE(
+                        IF(p.has_variants, MIN(COALESCE(pv.discount_price, p.discount_price)), p.discount_price),
+                        IF(p.has_variants, MIN(COALESCE(pv.price, p.price)), p.price)
+                    ) DESC
+                """
             else:
-                query += " ORDER BY p.popularity DESC"
-            cursor.execute(query, tuple(params))
+                order_query = " ORDER BY p.popularity DESC"
+            
+            final_query = query_base + query_where + query_group + order_query
+            cursor.execute(final_query, tuple(params))
             return cursor.fetchall()
         finally:
             cursor.close()
@@ -240,11 +271,27 @@ class ProductRepository:
     ) -> List[Dict[str, Any]]:
         cursor = conn.cursor(dictionary=True)
         try:
-            query = (
-                "SELECT p.*, c.name AS category_name "
-                "FROM products p "
-                "LEFT JOIN categories c ON p.category_id = c.id"
-            )
+            query_base = """
+                SELECT
+                    p.id, p.name, p.description, p.category_id, p.colors,
+                    p.popularity, p.image_url, p.additional_image_urls,
+                    p.stock, p.has_variants, p.weight_grams, p.sku,
+                    c.name AS category_name,
+                    IF(
+                        p.has_variants,
+                        MIN(COALESCE(pv.price, p.price)),
+                        p.price
+                    ) AS price,
+                    IF(
+                        p.has_variants,
+                        MIN(COALESCE(pv.discount_price, p.discount_price)),
+                        p.discount_price
+                    ) AS discount_price
+                FROM products p
+                LEFT JOIN categories c ON p.category_id = c.id
+                LEFT JOIN product_variants pv ON p.id = pv.product_id
+            """
+            
             params = []
             where_clauses = []
             if search:
@@ -260,10 +307,21 @@ class ProductRepository:
                 where_clauses.append("p.stock > 0 AND p.stock <= 5")
             elif stock_status == "out_of_stock":
                 where_clauses.append("p.stock <= 0")
+            
+            query_where = ""
             if where_clauses:
-                query += " WHERE " + " AND ".join(where_clauses)
-            query += " ORDER BY p.id DESC"
-            cursor.execute(query, tuple(params))
+                query_where = " WHERE " + " AND ".join(where_clauses)
+            
+            query_group = (
+                " GROUP BY p.id, p.name, p.description, p.category_id, "
+                "p.colors, p.popularity, p.image_url, "
+                "p.additional_image_urls, p.stock, p.has_variants, "
+                "p.weight_grams, p.sku, c.name"
+            )
+            query_order = " ORDER BY p.id DESC"
+            
+            final_query = query_base + query_where + query_group + query_order
+            cursor.execute(final_query, tuple(params))
             return cursor.fetchall()
         finally:
             cursor.close()
