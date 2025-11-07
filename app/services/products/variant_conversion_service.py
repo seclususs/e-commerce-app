@@ -48,14 +48,20 @@ class VariantConversionService:
                 else 0
             )
             initial_sku: Optional[str] = product_data.get("sku")
+            initial_price: Any = product_data.get("price")
+            initial_discount_price: Any = product_data.get("discount_price")
+            
             add_result: Dict[str, Any] = self.variant_service.add_variant(
                 product_id,
                 "STANDAR",
                 "STANDAR",
                 initial_stock,
                 initial_weight,
-                initial_sku.upper() if initial_sku else None,
+                initial_price,
+                initial_discount_price,
+                initial_sku.upper() if initial_sku else None
             )
+
             if not add_result["success"] and "sudah ada" not in add_result[
                 "message"
             ]:

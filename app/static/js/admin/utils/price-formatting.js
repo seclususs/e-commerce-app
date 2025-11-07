@@ -11,7 +11,7 @@ export function initGlobalPriceFormatting() {
     const unformatPrice = (value) => String(value).replace(/[^0-9]/g, '');
 
     adminForms.forEach(form => {
-        const priceInputs = form.querySelectorAll('input[name="price"], input[name="discount_price"]');
+        const priceInputs = form.querySelectorAll('input[inputmode="numeric"]');
 
         priceInputs.forEach(input => {
             if (input.dataset.formatted) return;

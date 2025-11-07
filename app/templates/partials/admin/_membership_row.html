@@ -9,7 +9,8 @@
            form="form-membership-{{ membership.id }}">
   </td>
   <td data-label="Harga:">
-    <input type="number" 
+    <input type="text" 
+           inputmode="numeric"
            name="price" 
            value="{{ membership.price|int }}" 
            class="form-control" 
