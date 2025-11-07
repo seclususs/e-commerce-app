@@ -85,7 +85,8 @@ class TestProductQueryService(BaseTestCase):
     def test_get_product_by_id_success_with_variants(self):
         mock_product = {
             "id": 1, "name": "Test", "has_variants": True,
-            "image_url": "main.jpg", "additional_image_urls": None
+            "image_url": "main.jpg", "additional_image_urls": None,
+            "price": 10000, "discount_price": None
         }
         mock_variants = [
             {"id": 10, "size": "M", "color": "RED"}, 
@@ -105,6 +106,7 @@ class TestProductQueryService(BaseTestCase):
         )
         self.assertEqual(result["variants"][0]["stock"], 5)
         self.assertEqual(result["variants"][1]["stock"], 8)
+        self.assertEqual(result["variants"][0]["price"], 10000)
         self.assertNotIn("stock", result)
         self.assertEqual(result["unique_colors"], ["BLUE", "RED"])
         self.assertEqual(result["unique_sizes"], ["L", "M"])

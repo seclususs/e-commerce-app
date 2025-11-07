@@ -61,7 +61,8 @@ class TestRegistrationService(BaseTestCase):
         
         self.mock_gen_hash.assert_called_once_with(self.password)
         self.mock_user_repo.create.assert_called_once_with(
-            self.db_conn, self.username, self.email, "hashed_password"
+            self.db_conn, self.username, self.email, "hashed_password", 
+            full_name=self.username
         )
         self.mock_voucher_svc.grant_welcome_voucher.assert_called_once_with(
             self.db_conn, 1
@@ -109,7 +110,8 @@ class TestRegistrationService(BaseTestCase):
             True, ""
         )
         self.mock_user_repo.create_guest.return_value = 2
-        mock_guest_user = {"id": 2, "username": "guestuser", "is_admin": False}
+        
+        mock_guest_user = {"id": 2, "username": "guest", "is_admin": False}
         self.mock_user_repo.find_by_id.return_value = mock_guest_user
         
         result = self.registration_service.register_guest_user(
@@ -117,7 +119,9 @@ class TestRegistrationService(BaseTestCase):
         )
         
         self.mock_gen_hash.assert_called_once_with(self.password)
-        expected_details = {**self.guest_details, "username": "guestuser"}
+        
+        expected_details = {**self.guest_details, "username": "guest"}
+        
         self.mock_user_repo.create_guest.assert_called_once_with(
             self.db_conn, expected_details, "hashed_password"
         )

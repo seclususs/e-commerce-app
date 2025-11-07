@@ -53,12 +53,13 @@ class TestAuthenticationService(BaseTestCase):
 
     def test_verify_user_login_user_not_found(self):
         self.mock_user_repo.find_by_username.return_value = None
+        self.mock_user_repo.find_by_email.return_value = None
         
         with self.assertRaises(AuthError) as cm:
             self.auth_service.verify_user_login(self.username, self.password)
             
         self.mock_check_hash.assert_not_called()
-        self.assertIn("Username atau password salah", str(cm.exception))
+        self.assertIn("Username/Email atau password salah", str(cm.exception))
 
     def test_verify_user_login_wrong_password(self):
         self.mock_user_repo.find_by_username.return_value = self.mock_user
@@ -68,7 +69,7 @@ class TestAuthenticationService(BaseTestCase):
             self.auth_service.verify_user_login(self.username, self.password)
             
         self.mock_check_hash.assert_called_once()
-        self.assertIn("Username atau password salah", str(cm.exception))
+        self.assertIn("Username/Email atau password salah", str(cm.exception))
 
     def test_verify_user_login_db_error(self):
         self.mock_user_repo.find_by_username.side_effect = (

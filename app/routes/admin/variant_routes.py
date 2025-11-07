@@ -156,7 +156,7 @@ def manage_variants(
 
         if is_ajax:
             html = render_template(
-                "partials/admin/_manage_variants_content.html",
+                "partials/admin/_variants_content.html",
                 product=product,
                 variants=variants,
                 content=get_content(),

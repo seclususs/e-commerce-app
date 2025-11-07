@@ -15,6 +15,7 @@ class TestAuthRegisterRoutes(BaseTestCase):
             "app.routes.auth.register_routes.registration_service"
         )
         self.mock_service = self.service_patch.start()
+        self.mock_service.validation_service = MagicMock()
         
         self.user_service_patch = patch(
             "app.routes.user.profile_routes.user_service"
@@ -82,6 +83,9 @@ class TestAuthRegisterRoutes(BaseTestCase):
         self.mock_user_service.get_active_subscription.return_value = None
         
         self.mock_cursor.rowcount = 1
+        self.mock_service.validation_service.validate_email_availability.return_value = (
+            True, ""
+        )
         
         response = self.client.post(
             url_for("auth.register_from_order"),
@@ -100,7 +104,7 @@ class TestAuthRegisterRoutes(BaseTestCase):
             self.assertEqual(sess["user_id"], 2)
             
         self.mock_cursor.execute.assert_any_call(
-            "UPDATE orders SET user_id = %s "
+            "UPDATE orders SET user_id = %s, shipping_email = %s "
             "WHERE id = %s AND user_id IS NULL",
-            (2, "100"),
+            (2, "guest@b.c", "100"),
         )

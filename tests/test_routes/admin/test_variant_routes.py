@@ -30,6 +30,8 @@ class TestAdminVariantRoutes(BaseTestCase):
             "id": 1,
             "name": "Test Product",
             "has_variants": True,
+            "price": 10000,
+            "discount_price": 0
         }
 
     def tearDown(self):
@@ -40,15 +42,29 @@ class TestAdminVariantRoutes(BaseTestCase):
         self.mock_query_service.get_product_by_id.return_value = (
             self.mock_product
         )
+        
+        mock_complete_variant = {
+            "id": 10, 
+            "size": "M",
+            "color": "BLUE",
+            "stock": 5,
+            "weight_grams": 100,
+            "price": 10000,
+            "discount_price": 0,
+            "sku": "SKU-M"
+        }
         self.mock_variant_service.get_variants_for_product.return_value = [
-            {"id": 10, "size": "M"}
+            mock_complete_variant
         ]
+        
         response = self.client.get(
-            url_for("admin.manage_variants", product_id=1)
+            url_for("admin.manage_variants", product_id=1),
+            headers={"X-Requested-With": "XMLHttpRequest"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Test Product", response.data)
         self.assertIn(b"M", response.data)
+        self.assertIn(b"BLUE", response.data)
 
     def test_manage_variants_get_no_variant_product(self):
         self.mock_product["has_variants"] = False
@@ -61,16 +77,38 @@ class TestAdminVariantRoutes(BaseTestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_manage_variants_post_add_success(self):
+        mock_new_variant = {
+            "id": 11, 
+            "size": "L",
+            "color": "RED",
+            "stock": 10,
+            "weight_grams": 100,
+            "price": 10000,
+            "discount_price": 0,
+            "sku": "SKU-L"
+        }
         self.mock_variant_service.add_variant.return_value = {
             "success": True,
-            "data": {"id": 11, "size": "L"},
+            "data": mock_new_variant,
         }
         self.mock_query_service.get_product_by_id.return_value = (
             self.mock_product
         )
+
+        form_data = {
+            "action": "add",
+            "color": "RED",
+            "size": "L",
+            "stock": 10,
+            "weight_grams": 100,
+            "price": 10000,
+            "discount_price": 0,
+            "sku": "SKU-L"
+        }
+
         response = self.client.post(
             url_for("admin.manage_variants", product_id=1),
-            data={"action": "add", "size": "L", "stock": 10},
+            data=form_data,
         )
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)
@@ -81,9 +119,22 @@ class TestAdminVariantRoutes(BaseTestCase):
         self.mock_variant_service.update_variant.return_value = {
             "success": True
         }
+        
+        form_data = {
+            "action": "update", 
+            "variant_id": 10, 
+            "color": "RED",
+            "size": "XL", 
+            "stock": 10,
+            "weight_grams": 100,
+            "price": 10000,
+            "discount_price": 0,
+            "sku": "SKU-XL"
+        }
+        
         response = self.client.post(
             url_for("admin.manage_variants", product_id=1),
-            data={"action": "update", "variant_id": 10, "size": "XL"},
+            data=form_data,
         )
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.data)

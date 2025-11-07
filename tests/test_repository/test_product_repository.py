@@ -87,8 +87,9 @@ class TestProductRepository(BaseTestCase):
         
         self.mock_cursor.execute.assert_called_once()
         query = self.mock_cursor.execute.call_args[0][0]
-        self.assertIn("ORDER BY CASE", query)
-        self.assertIn("THEN p.discount_price ELSE p.price END ASC", query)
+        self.assertIn("ORDER BY COALESCE(", query)
+        self.assertIn("MIN(COALESCE(pv.discount_price, p.discount_price))", query)
+        self.assertIn(") ASC", query)
         self.mock_cursor.close.assert_called_once()
 
     def test_find_filtered_search_and_category(self):

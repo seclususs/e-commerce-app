@@ -72,13 +72,13 @@ class TestUserRepository(BaseTestCase):
         self.mock_cursor.lastrowid = 2
         
         result = self.repository.create(
-            self.db_conn, "new", "new@b.c", "hash"
+            self.db_conn, "new", "new@b.c", "hash", full_name="new"
         )
 
         self.mock_cursor.execute.assert_called_once_with(
-            "INSERT INTO users (username, email, password) "
-            "VALUES (%s, %s, %s)",
-            ("new", "new@b.c", "hash")
+            "INSERT INTO users (username, email, password, full_name) "
+            "VALUES (%s, %s, %s, %s)",
+            ("new", "new@b.c", "hash", "new")
         )
         self.assertEqual(result, 2)
         self.mock_cursor.close.assert_called_once()
@@ -87,7 +87,8 @@ class TestUserRepository(BaseTestCase):
         details = {
             "username": "guest1", "email": "g@b.c", "phone": "123",
             "address1": "Jalan 1", "city": "Kota", "province": "Prov",
-            "postal_code": "12345"
+            "postal_code": "12345",
+            "name": "Guest One"
         }
         self.mock_cursor.lastrowid = 3
         
@@ -95,9 +96,10 @@ class TestUserRepository(BaseTestCase):
 
         self.mock_cursor.execute.assert_called_once()
         params = self.mock_cursor.execute.call_args[0][1]
+        
         self.assertEqual(params, (
             "guest1", "g@b.c", "hash2", "123", "Jalan 1", "",
-            "Kota", "Prov", "12345"
+            "Kota", "Prov", "12345", "Guest One"
         ))
         self.assertEqual(result, 3)
         self.mock_cursor.close.assert_called_once()
@@ -132,6 +134,7 @@ class TestUserRepository(BaseTestCase):
 
     def test_update_address(self):
         address_data = {
+            "full_name": "User 456",
             "phone": "456", "address1": "Jalan 2", "address2": "Apt 1",
             "city": "Kota 2", "province": "Prov 2", "postal_code": "54321"
         }
@@ -141,8 +144,9 @@ class TestUserRepository(BaseTestCase):
 
         self.mock_cursor.execute.assert_called_once()
         params = self.mock_cursor.execute.call_args[0][1]
+        
         self.assertEqual(params, (
-            "456", "Jalan 2", "Apt 1", "Kota 2", "Prov 2", "54321", 1
+            "User 456", "456", "Jalan 2", "Apt 1", "Kota 2", "Prov 2", "54321", 1
         ))
         self.assertEqual(result, 1)
         self.mock_cursor.close.assert_called_once()
